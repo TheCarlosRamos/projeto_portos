@@ -13,6 +13,11 @@
   color: #2c3e50;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
 .btn-primary {
   background-color: #3498db;
   color: white;
@@ -165,4 +170,34 @@
   padding: 3rem;
   font-size: 1.2rem;
   color: #7f8c8d;
+}
+
+.import-info {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.import-info p {
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}
+
+.import-info ul {
+  margin: 0.5rem 0 0 1.5rem;
+  color: #555;
+}
+
+.import-info li {
+  margin-bottom: 0.25rem;
+}
+
+.importing-message {
+  text-align: center;
+  padding: 1rem;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  color: #1976d2;
+  margin-top: 1rem;
 }

@@ -91,4 +91,17 @@ export const situacoesApi = {
   deletar: (id: number) => api.delete(`/situacoes/${id}`),
 };
 
+// ETL
+export const etlApi = {
+  importarExcel: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/etl/importar-excel', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+};
+
 export default api;

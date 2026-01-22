@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { processosApi, situacoesApi, Processo, Situacao } from '../services/api';
+import { processosApi, situacoesApi, etlApi, Processo, Situacao } from '../services/api';
 import './Processos.css';
 
 const Processos: React.FC = () => {
@@ -7,6 +7,8 @@ const Processos: React.FC = () => {
   const [situacoes, setSituacoes] = useState<Situacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [formData, setFormData] = useState<Partial<Processo>>({
     numero_processo: '',
     data_protocolo: '',
@@ -78,6 +80,28 @@ const Processos: React.FC = () => {
     }
   };
 
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      alert('Por favor, selecione um arquivo Excel (.xlsx ou .xls)');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      await etlApi.importarExcel(file);
+      alert('Planilha importada com sucesso!');
+      setShowImportModal(false);
+      carregarDados();
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Erro ao importar planilha');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Carregando...</div>;
   }
@@ -86,17 +110,22 @@ const Processos: React.FC = () => {
     <div className="processos">
       <div className="page-header">
         <h1>Processos</h1>
-        <button className="btn-primary" onClick={() => {
-          setFormData({
-            numero_processo: '',
-            data_protocolo: '',
-            licenca: '',
-            situacao_geral_id: undefined,
-          });
-          setShowForm(true);
-        }}>
-          + Novo Processo
-        </button>
+        <div className="header-buttons">
+          <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
+            📊 Importar Excel
+          </button>
+          <button className="btn-primary" onClick={() => {
+            setFormData({
+              numero_processo: '',
+              data_protocolo: '',
+              licenca: '',
+              situacao_geral_id: undefined,
+            });
+            setShowForm(true);
+          }}>
+            + Novo Processo
+          </button>
+        </div>
       </div>
 
       <div className="filtros">
@@ -176,6 +205,48 @@ const Processos: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Importar Planilha Excel</h2>
+            <div className="import-info">
+              <p><strong>Formato esperado:</strong></p>
+              <ul>
+                <li>Arquivo Excel (.xlsx ou .xls)</li>
+                <li>Abas com nomes contendo anos (ex: "2023", "Dados 2024")</li>
+                <li>Colunas: "nº processo", "data do protocolo", "licença", "situação geral"</li>
+                <li>Opcional: colunas de indicadores (financeiro, km, etc.)</li>
+              </ul>
+            </div>
+            <div className="form-group">
+              <label>Selecione o arquivo Excel:</label>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileImport}
+                disabled={importing}
+                className="input"
+              />
+            </div>
+            <div className="form-actions">
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={() => setShowImportModal(false)}
+                disabled={importing}
+              >
+                Cancelar
+              </button>
+            </div>
+            {importing && (
+              <div className="importing-message">
+                Processando planilha... Isso pode levar alguns minutos.
+              </div>
+            )}
           </div>
         </div>
       )}
