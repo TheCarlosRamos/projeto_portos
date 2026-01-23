@@ -75,6 +75,7 @@ const Portos: React.FC = () => {
     setErro(null);
     
     try {
+      console.log('Carregando dados para aba:', abaAtiva);
       switch (abaAtiva) {
         case 'concessoes':
           await carregarConcessoes();
@@ -86,6 +87,7 @@ const Portos: React.FC = () => {
           await carregarAcompanhamentos();
           break;
       }
+      console.log('Dados carregados:', { concessoes, servicos, acompanhamentos });
     } catch (error) {
       setErro('Erro ao carregar dados');
       console.error(error);
@@ -95,17 +97,23 @@ const Portos: React.FC = () => {
   };
 
   const carregarConcessoes = async () => {
+    console.log('Carregando concessões...');
     const response = await portosApi.listarConcessoes();
+    console.log('Concessões recebidas:', response.data);
     setConcessoes(response.data);
   };
 
   const carregarServicos = async () => {
+    console.log('Carregando serviços...');
     const response = await portosApi.listarServicos();
+    console.log('Serviços recebidos:', response.data);
     setServicos(response.data);
   };
 
   const carregarAcompanhamentos = async () => {
+    console.log('Carregando acompanhamentos...');
     const response = await portosApi.listarAcompanhamentos();
+    console.log('Acompanhamentos recebidos:', response.data);
     setAcompanhamentos(response.data);
   };
 
@@ -124,22 +132,65 @@ const Portos: React.FC = () => {
   const handleImportExcel = async (file: File) => {
     try {
       setImporting(true);
+      console.log('Iniciando importação do arquivo:', file.name);
+      console.log('Tipo do arquivo:', file.type);
+      console.log('Tamanho:', file.size);
+      
+      // Validar arquivo
+      if (!file.name.match(/\.(xlsx|xls)$/)) {
+        console.error('Arquivo não é Excel:', file.name);
+        alert('Por favor, selecione um arquivo Excel (.xlsx ou .xls)');
+        return;
+      }
+      
       const formData = new FormData();
       formData.append('file', file);
+      
+      console.log('FormData criado, verificando conteúdo...');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const [key, value] of formData.entries() as any) {
+        console.log(`FormData ${key}:`, value);
+      }
+      
+      console.log('Enviando requisição para:', '/api/etl/importar-excel-portuarios');
+      
       const response = await api.post('/etl/importar-excel-portuarios', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      alert('Planilha importada com sucesso!');
-      setShowImportModal(false);
-      carregarDados();
-    } catch (error) {
-      console.error('Erro ao importar planilha:', error);
-      alert('Erro ao importar planilha. Verifique o formato e tente novamente.');
+      
+      console.log('Resposta do servidor:', response.status);
+      console.log('Dados da resposta:', response.data);
+      
+      if (response.status === 200) {
+        alert('Planilha importada com sucesso!');
+        setShowImportModal(false);
+        carregarDados();
+      } else {
+        console.error('Status não esperado:', response.status);
+        alert('Erro ao importar planilha. Status: ' + response.status);
+      }
+    } catch (error: any) {
+      console.error('Erro completo na importação:', error);
+      console.error('Response:', error.response);
+      console.error('Mensagem:', error.message);
+      
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error('Data:', error.response.data);
+        alert(`Erro ${error.response.status}: ${error.response.data.detail || error.response.data.message || 'Erro desconhecido'}`);
+      } else {
+        alert('Erro ao importar planilha. Verifique a conexão com o servidor.');
+      }
     } finally {
       setImporting(false);
     }
+  };
+
+  const handleTest = () => {
+    console.log('Botão clicado!');
+    alert('Botão está funcionando!');
   };
 
   const renderizarTabelaConcessoes = () => (
@@ -375,6 +426,12 @@ const Portos: React.FC = () => {
             </button>
             <button 
               className="btn btn-outline-secondary"
+              onClick={handleTest}
+            >
+              🔄 Testar
+            </button>
+            <button 
+              className="btn btn-outline-primary"
               onClick={carregarDados}
             >
               🔄 Atualizar
@@ -454,6 +511,302 @@ const Portos: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Importação de Excel */}
+      {showImportModal && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">📥 Importar Planilha Portuária</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowImportModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-info">
+                  <h6>📋 Estrutura da Planilha Esperada:</h6>
+                  <div className="row">
+                    <div className="col-md-4">
+                      <strong>Tabela 0 - Cadastro:</strong><br />
+                      Zona portuária, UF, Obj. de Concessão, Tipo, CAPEX Total, Data de assinatura, Descrição, Coordenada E, Coordenada S, Fuso
+                    </div>
+                    <div className="col-md-4">
+                      <strong>Tabela 1 - Serviços:</strong><br />
+                      Obj. de Concessão, Tipo de Serviço, Fase, Serviço, Descrição, Prazos, % CAPEX, CAPEX do Serviço
+                    </div>
+                    <div className="col-md-4">
+                      <strong>Tabela 2 - Acompanhamento:</strong><br />
+                      Serviço, % executada, CAPEX (Reaj.), Valor executado, Data da atualização, Responsável, Cargo, Setor, Riscos
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mb-3">
+                  <label htmlFor="excelFile" className="form-label">Selecione a planilha Excel:</label>
+                  <input 
+                    type="file" 
+                    className="form-control" 
+                    id="excelFile"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleImportExcel(file);
+                      }
+                    }}
+                  />
+                  {importing && (
+                    <div className="mt-2">
+                      <div className="loading-spinner"></div>
+                      <small className="text-muted">Importando planilha...</small>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowImportModal(false)}
+                  disabled={importing}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Concessão */}
+      {showConcessaoForm && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">➕ Nova Concessão Portuária</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowConcessaoForm(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form>
+                  <div className="mb-3">
+                    <label className="form-label">Zona Portuária</label>
+                    <select className="form-select">
+                      <option value="">Selecione...</option>
+                      <option value="1">Porto Organizado de Santos</option>
+                      <option value="2">Porto Organizado do Rio de Janeiro</option>
+                      <option value="3">Porto Organizado de Maceió</option>
+                      <option value="4">Porto Organizado de São Sebastião</option>
+                      <option value="5">Não se aplica - MT/MS</option>
+                      <option value="6">Não se aplica - PR</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Objeto de Concessão</label>
+                    <input type="text" className="form-control" placeholder="Ex: TECON 10" />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Tipo</label>
+                    <select className="form-select">
+                      <option value="">Selecione...</option>
+                      <option value="Concessão">Concessão</option>
+                      <option value="Arrendamento">Arrendamento</option>
+                      <option value="Autorização">Autorização</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">CAPEX Total</label>
+                    <input type="number" className="form-control" placeholder="0.00" />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Data de Assinatura</label>
+                    <input type="date" className="form-control" />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Descrição</label>
+                    <textarea className="form-control" rows={3} placeholder="Descrição da concessão..."></textarea>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Coordenada E (UTM)</label>
+                      <input type="number" className="form-control" placeholder="0.00" />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Coordenada S (UTM)</label>
+                      <input type="number" className="form-control" placeholder="0.00" />
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Fuso</label>
+                    <input type="number" className="form-control" placeholder="23" />
+                  </div>
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowConcessaoForm(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="button" className="btn btn-success">
+                  Salvar Concessão
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Serviço */}
+      {showServicoForm && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">➕ Novo Serviço Portuário</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowServicoForm(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form>
+                  <div className="mb-3">
+                    <label className="form-label">Concessão</label>
+                    <select className="form-select">
+                      <option value="">Selecione...</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Tipo de Serviço</label>
+                    <select className="form-select">
+                      <option value="">Selecione...</option>
+                      <option value="1">CMO</option>
+                      <option value="2">Disponibilidade de Infraestrutura</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Fase</label>
+                    <input type="text" className="form-control" placeholder="Ex: 1ª" />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Nome do Serviço</label>
+                    <input type="text" className="form-control" placeholder="Nome do serviço..." />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Descrição</label>
+                    <textarea className="form-control" rows={3} placeholder="Descrição do serviço..."></textarea>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">% de CAPEX</label>
+                      <input type="number" className="form-control" placeholder="0.00" min="0" max="100" />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">CAPEX do Serviço</label>
+                      <input type="number" className="form-control" placeholder="0.00" />
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowServicoForm(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="button" className="btn btn-success">
+                  Salvar Serviço
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Acompanhamento */}
+      {showAcompanhamentoForm && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">➕ Novo Acompanhamento</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowAcompanhamentoForm(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form>
+                  <div className="mb-3">
+                    <label className="form-label">Serviço</label>
+                    <select className="form-select">
+                      <option value="">Selecione...</option>
+                    </select>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">% Executada</label>
+                      <input type="number" className="form-control" placeholder="0.00" min="0" max="100" />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">CAPEX (Reaj.)</label>
+                      <input type="number" className="form-control" placeholder="0.00" />
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Valor Executado</label>
+                    <input type="number" className="form-control" placeholder="0.00" />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Data da Atualização</label>
+                    <input type="date" className="form-control" />
+                  </div>
+                  <div className="row">
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Responsável</label>
+                      <input type="text" className="form-control" placeholder="Nome do responsável" />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Cargo</label>
+                      <input type="text" className="form-control" placeholder="Cargo" />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Setor</label>
+                      <input type="text" className="form-control" placeholder="Setor" />
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowAcompanhamentoForm(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="button" className="btn btn-success">
+                  Salvar Acompanhamento
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

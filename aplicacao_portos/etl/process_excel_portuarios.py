@@ -3,13 +3,14 @@ Script ETL para processar planilhas Excel de concessões portuárias.
 Estrutura baseada na especificação técnica real do sistema.
 """
 import pandas as pd
+import re
+from decimal import Decimal, InvalidOperation
+from datetime import datetime
+from typing import Dict, Optional, List
+from sqlalchemy.orm import Session
+from pathlib import Path
 import sys
 import os
-import re
-from pathlib import Path
-from typing import Dict, List, Optional
-from datetime import datetime
-from decimal import Decimal
 
 # Adicionar o diretório backend ao path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
@@ -165,16 +166,28 @@ def processar_data(data) -> Optional[str]:
 
 def normalizar_valor_numerico(valor) -> Decimal:
     """Normaliza valores numéricos e monetários"""
-    if pd.isna(valor) or valor == "":
+    if pd.isna(valor) or valor == "" or valor == "nan":
         return Decimal("0")
     
     try:
         valor_str = str(valor).strip()
+        
+        # Se já é Decimal, retornar
+        if isinstance(valor, Decimal):
+            return valor
+        
         # Remover símbolos monetários e espaços
         valor_str = re.sub(r'[R$\s]', '', valor_str)
         valor_str = valor_str.replace(".", "").replace(",", ".")
+        
+        # Se está vazio após limpeza
+        if not valor_str or valor_str == "":
+            return Decimal("0")
+        
+        # Converter para Decimal
         return Decimal(valor_str)
-    except:
+    except (ValueError, TypeError, InvalidOperation):
+        print(f"Erro ao converter valor '{valor}' para Decimal: {str(e)}")
         return Decimal("0")
 
 def criar_ou_obter_zona_portuaria(db: Session, nome: str, uf: str) -> ZonaPortuaria:
@@ -245,7 +258,7 @@ def identificar_servico(db: Session, zona_portuaria: str, uf: str, objeto_conces
 
 def processar_aba_cadastro(df: pd.DataFrame, db: Session) -> Dict[str, int]:
     """Processa a aba de cadastro (concessões)"""
-    print(f"  📋 Processando aba de Cadastro - {len(df)} linhas")
+    print(f"  [CADASTRO] Processando aba de Cadastro - {len(df)} linhas")
     
     processados = 0
     erros = 0
@@ -262,7 +275,7 @@ def processar_aba_cadastro(df: pd.DataFrame, db: Session) -> Dict[str, int]:
             # Verificar se já existe
             existente = identificar_concessao(db, zona_portuaria, uf, objeto_concessao)
             if existente:
-                print(f"    ℹ️  Concessão já existe: {zona_portuaria} - {uf} - {objeto_concessao}")
+                print(f"    [INFO] Concessão já existe: {zona_portuaria} - {uf} - {objeto_concessao}")
                 processados += 1
                 continue
             
@@ -282,16 +295,28 @@ def processar_aba_cadastro(df: pd.DataFrame, db: Session) -> Dict[str, int]:
                 "fuso": int(row.get("fuso")) if pd.notna(row.get("fuso")) else None,
             }
             
+            # Validar tipo
+            tipo = concessao_data["tipo"]
+            if tipo not in ["Concessão", "Arrendamento", "Autorização"]:
+                print(f"    [WARN] Tipo inválido: {tipo}. Usando 'Concessão' como padrão.")
+                concessao_data["tipo"] = "Concessão"
+            
+            # Validar CAPEX
+            if concessao_data["capex_total"] <= 0:
+                print(f"    [WARN] CAPEX inválido: {concessao_data['capex_total']}. Pulando linha.")
+                continue
+            
             concessao = Concessao(**concessao_data)
             db.add(concessao)
             db.commit()
             db.refresh(concessao)
             
-            print(f"    ✅ Concessão criada: {zona_portuaria} - {uf} - {objeto_concessao}")
+            print(f"    [OK] Concessão criada: {zona_portuaria} - {uf} - {objeto_concessao}")
             processados += 1
             
         except Exception as e:
-            print(f"    ❌ Erro ao processar linha {idx + 1}: {e}")
+            print(f"    [ERRO] Erro ao processar linha {idx + 1}: {e}")
+            print(f"       Dados: {dict(row)}")
             erros += 1
             db.rollback()
             continue
@@ -300,50 +325,45 @@ def processar_aba_cadastro(df: pd.DataFrame, db: Session) -> Dict[str, int]:
 
 def processar_aba_servicos(df: pd.DataFrame, db: Session) -> Dict[str, int]:
     """Processa a aba de serviços"""
-    print(f"  🔧 Processando aba de Serviços - {len(df)} linhas")
+    print(f"  [SERVICOS] Processando aba de Serviços - {len(df)} linhas")
     
     processados = 0
     erros = 0
     
     for idx, row in df.iterrows():
         try:
+            zona_portuaria = str(row.get("zona_portuaria", "")).strip()
+            uf = str(row.get("uf", "")).strip()
             objeto_concessao = str(row.get("objeto_concessao", "")).strip()
+            tipo_servico = str(row.get("tipo_servico", "")).strip()
+            fase = str(row.get("fase", "")).strip()
             nome_servico = str(row.get("servico", "")).strip()
             
-            if not all([objeto_concessao, nome_servico]) or objeto_concessao == "nan":
+            if not all([zona_portuaria, uf, objeto_concessao, tipo_servico, fase, nome_servico]):
                 continue
             
-            # Buscar concessão (busca por objeto em qualquer zona)
-            concessao = db.query(Concessao).filter(
-                Concessao.objeto_concessao == objeto_concessao.strip()
-            ).first()
-            
-            if not concessao:
-                print(f"    ⚠️  Concessão não encontrada: {objeto_concessao}")
-                erros += 1
-                continue
-            
-            # Verificar se serviço já existe
-            existente = db.query(Servico).filter(
-                Servico.concessao_id == concessao.id,
-                Servico.nome == nome_servico.strip()
-            ).first()
-            
+            # Verificar se já existe
+            existente = identificar_servico(db, zona_portuaria, uf, objeto_concessao, nome_servico)
             if existente:
-                print(f"    ℹ️  Serviço já existe: {nome_servico}")
+                print(f"    [INFO] Serviço já existe: {zona_portuaria} - {uf} - {objeto_concessao} - {nome_servico}")
                 processados += 1
                 continue
             
-            # Criar tipo de serviço
-            tipo_servico = criar_ou_obter_tipo_servico(
-                db, str(row.get("tipo_servico", "Não Informado"))
-            )
+            # Obter concessão
+            concessao = identificar_concessao(db, zona_portuaria, uf, objeto_concessao)
+            if not concessao:
+                print(f"    [WARN] Concessão não encontrada: {zona_portuaria} - {uf} - {objeto_concessao}")
+                erros += 1
+                continue
+            
+            # Obter ou criar tipo de serviço
+            tipo_servico_obj = criar_ou_obter_tipo_servico(db, tipo_servico)
             
             # Criar serviço
             servico_data = {
                 "concessao_id": concessao.id,
-                "tipo_servico_id": tipo_servico.id,
-                "fase": str(row.get("fase", "1ª")).strip(),
+                "tipo_servico_id": tipo_servico_obj.id,
+                "fase": fase,
                 "nome": nome_servico,
                 "descricao": str(row.get("descricao", "")).strip() or None,
                 "prazo_inicio_anos": int(row.get("prazo_inicio_anos")) if pd.notna(row.get("prazo_inicio_anos")) else None,
@@ -351,7 +371,7 @@ def processar_aba_servicos(df: pd.DataFrame, db: Session) -> Dict[str, int]:
                 "prazo_final_anos": int(row.get("prazo_final_anos")) if pd.notna(row.get("prazo_final_anos")) else None,
                 "data_final": processar_data(row.get("data_final")),
                 "fonte_prazo": str(row.get("fonte_prazo", "")).strip() or None,
-                "percentual_capex": normalizar_valor_numerico(row.get("percentual_capex")),
+                "percentual_capex": float(row.get("percentual_capex")) if pd.notna(row.get("percentual_capex")) else 0,
                 "capex_servico": normalizar_valor_numerico(row.get("capex_servico")),
                 "fonte_percentual": str(row.get("fonte_percentual", "")).strip() or None,
             }
@@ -361,11 +381,11 @@ def processar_aba_servicos(df: pd.DataFrame, db: Session) -> Dict[str, int]:
             db.commit()
             db.refresh(servico)
             
-            print(f"    ✅ Serviço criado: {nome_servico}")
+            print(f"    [OK] Serviço criado: {zona_portuaria} - {uf} - {objeto_concessao} - {nome_servico}")
             processados += 1
             
         except Exception as e:
-            print(f"    ❌ Erro ao processar linha {idx + 1}: {e}")
+            print(f"    [ERRO] Erro ao processar linha {idx + 1}: {e}")
             erros += 1
             db.rollback()
             continue
@@ -374,7 +394,7 @@ def processar_aba_servicos(df: pd.DataFrame, db: Session) -> Dict[str, int]:
 
 def processar_aba_acompanhamento(df: pd.DataFrame, db: Session) -> Dict[str, int]:
     """Processa a aba de acompanhamento"""
-    print(f"  📊 Processando aba de Acompanhamento - {len(df)} linhas")
+    print(f"  [ACOMPANHAMENTO] Processando aba de Acompanhamento - {len(df)} linhas")
     
     processados = 0
     erros = 0
@@ -394,7 +414,7 @@ def processar_aba_acompanhamento(df: pd.DataFrame, db: Session) -> Dict[str, int
             ).first()
             
             if not servico:
-                print(f"    ⚠️  Serviço não encontrado: {nome_servico}")
+                print(f"    [WARN] Serviço não encontrado: {nome_servico}")
                 erros += 1
                 continue
             
@@ -428,11 +448,11 @@ def processar_aba_acompanhamento(df: pd.DataFrame, db: Session) -> Dict[str, int
                 db.add(associacao)
                 db.commit()
             
-            print(f"    ✅ Acompanhamento criado: {nome_servico}")
+            print(f"    [OK] Acompanhamento criado: {nome_servico}")
             processados += 1
             
         except Exception as e:
-            print(f"    ❌ Erro ao processar linha {idx + 1}: {e}")
+            print(f"    [ERRO] Erro ao processar linha {idx + 1}: {e}")
             erros += 1
             db.rollback()
             continue
@@ -441,14 +461,14 @@ def processar_aba_acompanhamento(df: pd.DataFrame, db: Session) -> Dict[str, int
 
 def processar_planilha(arquivo: str, db: Session):
     """Processa uma planilha Excel de concessões portuárias"""
-    print(f"Processando arquivo: {arquivo}")
+    print(f"[ETL] Iniciando processamento do arquivo: {arquivo}")
     
     try:
         excel_file = pd.ExcelFile(arquivo)
-        print(f"Abas encontradas: {list(excel_file.sheet_names)}")
+        print(f"[ETL] Abas encontradas: {list(excel_file.sheet_names)}")
     except Exception as e:
-        print(f"Erro ao ler arquivo: {e}")
-        return
+        print(f"[ETL] Erro ao ler arquivo: {e}")
+        return {"processados": 0, "erros": 1}
     
     total_processados = 0
     total_erros = 0
@@ -460,25 +480,25 @@ def processar_planilha(arquivo: str, db: Session):
         tipo_aba = MAPEAMENTO_ABAS.get(nome_aba.strip().lower(), nome_aba.strip().lower())
         
         if not tipo_aba:
-            print(f"  ⚠️  Aba não reconhecida: '{nome_aba}'. Pulando...")
+            print(f"  [WARN] Aba não reconhecida: '{nome_aba}'. Pulando...")
             continue
         
         # Ler dados da aba
         try:
             df = pd.read_excel(excel_file, sheet_name=nome_aba)
-            print(f"  📊 Linhas na aba: {len(df)}")
+            print(f"  [INFO] Linhas na aba: {len(df)}")
         except Exception as e:
-            print(f"  ❌ Erro ao ler aba: {e}")
+            print(f"  [ERRO] Erro ao ler aba: {e}")
             total_erros += 1
             continue
         
         if df.empty:
-            print(f"  ⚠️  Aba vazia. Pulando...")
+            print(f"  [WARN] Aba vazia. Pulando...")
             continue
         
         # Normalizar nomes de colunas
         df.columns = [normalizar_nome_coluna(col, tipo_aba) for col in df.columns]
-        print(f"  📋 Colunas: {', '.join(df.columns[:10])}")
+        print(f"  [INFO] Colunas: {', '.join(df.columns[:10])}")
         
         # Processar conforme tipo da aba
         if tipo_aba == "cadastro":
@@ -488,14 +508,14 @@ def processar_planilha(arquivo: str, db: Session):
         elif tipo_aba == "acompanhamento":
             resultado = processar_aba_acompanhamento(df, db)
         else:
-            print(f"  ⚠️  Tipo de aba não implementado: {tipo_aba}")
+            print(f"  [WARN] Tipo de aba não implementado: {tipo_aba}")
             continue
         
         total_processados += resultado["processados"]
         total_erros += resultado["erros"]
     
     print(f"\n{'='*50}")
-    print(f"✅ Processamento concluído!")
+    print(f"[OK] Processamento concluído!")
     print(f"   Total processados: {total_processados}")
     print(f"   Total erros: {total_erros}")
     print(f"{'='*50}")
@@ -509,7 +529,7 @@ def main():
     arquivo = sys.argv[1]
     
     if not os.path.exists(arquivo):
-        print(f"❌ Arquivo não encontrado: {arquivo}")
+        print(f"[ERRO] Arquivo não encontrado: {arquivo}")
         sys.exit(1)
     
     # Criar tabelas se não existirem
