@@ -102,6 +102,44 @@ export const etlApi = {
       },
     });
   },
+  importarExcelPortuarios: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/etl/importar-excel-portuarios', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+};
+
+// APIs Portuárias
+export const portosApi = {
+  // Concessões
+  listarConcessoes: () => api.get('/concessoes/'),
+  obterConcessao: (id: number) => api.get(`/concessoes/${id}`),
+  criarConcessao: (data: any) => api.post('/concessoes/', data),
+  atualizarConcessao: (id: number, data: any) => api.put(`/concessoes/${id}`, data),
+  deletarConcessao: (id: number) => api.delete(`/concessoes/${id}`),
+  
+  // Serviços
+  listarServicos: () => api.get('/servicos/'),
+  obterServico: (id: number) => api.get(`/servicos/${id}`),
+  criarServico: (data: any) => api.post('/servicos/', data),
+  atualizarServico: (id: number, data: any) => api.put(`/servicos/${id}`, data),
+  deletarServico: (id: number) => api.delete(`/servicos/${id}`),
+  
+  // Acompanhamentos
+  listarAcompanhamentos: () => api.get('/acompanhamentos/'),
+  obterAcompanhamento: (id: number) => api.get(`/acompanhamentos/${id}`),
+  criarAcompanhamento: (data: any) => api.post('/acompanhamentos/', data),
+  atualizarAcompanhamento: (id: number, data: any) => api.put(`/acompanhamentos/${id}`, data),
+  deletarAcompanhamento: (id: number) => api.delete(`/acompanhamentos/${id}`),
+  
+  // Domínios
+  listarZonasPortuarias: () => api.get('/dominios/zonas-portuarias/'),
+  listarTiposServico: () => api.get('/dominios/tipos-servico/'),
+  listarRiscos: () => api.get('/dominios/riscos/'),
 };
 
 export default api;

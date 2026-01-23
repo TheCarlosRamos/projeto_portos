@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Processos from './pages/Processos';
-import Metas from './pages/Metas';
-import Indicadores from './pages/Indicadores';
+import Portos from './pages/Portos';
 import './App.css';
 
 function App() {
@@ -12,12 +10,10 @@ function App() {
     <Router>
       <div className="App">
         <Navbar />
-        <main className="container">
+        <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/processos" element={<Processos />} />
-            <Route path="/metas" element={<Metas />} />
-            <Route path="/indicadores" element={<Indicadores />} />
+            <Route path="/portos" element={<Portos />} />
           </Routes>
         </main>
       </div>

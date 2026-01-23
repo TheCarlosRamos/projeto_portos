@@ -6,45 +6,33 @@ const Home: React.FC = () => {
   return (
     <div className="home">
       <div className="hero">
-        <h1>Bem-vindo ao Sistema de Gestão de Processos e Metas</h1>
+        <h1>🚢 Sistema Portuário</h1>
         <p className="subtitle">
-          Sistema web para cadastro, gerenciamento, acompanhamento e análise de processos administrativos e metas físicas/financeiras.
+          Sistema completo para gestão de concessões portuárias, serviços e acompanhamentos.
         </p>
       </div>
 
       <div className="features">
-        <div className="feature-card">
-          <div className="feature-icon">📄</div>
-          <h3>Processos</h3>
-          <p>Gerencie processos administrativos de forma centralizada</p>
-          <Link to="/processos" className="feature-link">Ver Processos →</Link>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">📅</div>
-          <h3>Metas</h3>
-          <p>Acompanhe metas por ano e processo</p>
-          <Link to="/metas" className="feature-link">Ver Metas →</Link>
-        </div>
-
-        <div className="feature-card">
-          <div className="feature-icon">📊</div>
-          <h3>Indicadores</h3>
-          <p>Monitore indicadores físicos e financeiros</p>
-          <Link to="/indicadores" className="feature-link">Ver Indicadores →</Link>
+        <div className="feature-card featured">
+          <div className="feature-icon">🚢</div>
+          <h3>Sistema Portuário</h3>
+          <p>Gestão completa de concessões, serviços e acompanhamentos portuários</p>
+          <Link to="/portos" className="feature-link">Acessar Sistema Portuário →</Link>
         </div>
       </div>
 
       <div className="info-section">
-        <h2>Funcionalidades</h2>
+        <h2>Sistema Portuário - Funcionalidades</h2>
         <ul>
-          <li>✅ Cadastro e edição de processos administrativos</li>
-          <li>✅ Gerenciamento de metas por ano</li>
-          <li>✅ Controle de indicadores físicos e financeiros</li>
-          <li>✅ Filtros e buscas avançadas</li>
-          <li>✅ Importação de dados via planilhas Excel</li>
-          <li>✅ Dashboard analítico e relatórios</li>
+          <li> Cadastro de Concessões Portuárias</li>
+          <li> Gestão de Serviços com % CAPEX</li>
+          <li> Acompanhamento de Obras e Serviços</li>
+          <li> Importação de Planilhas Excel</li>
+          <li> Relatórios e Indicadores em Tempo Real</li>
+          <li> Estrutura Baseada na Planilha Real</li>
         </ul>
+        
+
       </div>
     </div>
   );

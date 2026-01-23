@@ -7,13 +7,11 @@ const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          📊 Gestão de Processos e Metas
+          🚢 Sistema Portuário
         </Link>
         <div className="navbar-menu">
           <Link to="/" className="navbar-link">Início</Link>
-          <Link to="/processos" className="navbar-link">Processos</Link>
-          <Link to="/metas" className="navbar-link">Metas</Link>
-          <Link to="/indicadores" className="navbar-link">Indicadores</Link>
+          <Link to="/portos" className="navbar-link">🚢 Portos</Link>
         </div>
       </div>
     </nav>
