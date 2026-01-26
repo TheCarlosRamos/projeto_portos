@@ -26,236 +26,6 @@ pagina = st.sidebar.selectbox(
     ["📊 Dashboard", "📋 Planilha 00 - Cadastro", "📋 Planilha 01 - Serviços", "📋 Planilha 02 - Acompanhamento"]
 )
 
-# Função para mostrar detalhes do porto
-def show_porto_details(porto_id):
-    """Exibe detalhes completos de um porto específico com mapa"""
-    
-    try:
-        conn = db.sqlite3.connect(db.DB_PATH)
-        
-        # Dados principais do porto
-        query_porto = """
-        SELECT 
-            c.id,
-            c.zona_portuaria as name,
-            c.obj_concessao as description,
-            c.tipo as project_type,
-            c.capex_total as investment,
-            c.data_ass_contrato as contract_date,
-            c.descricao as full_description,
-            c.coord_e_utm,
-            c.coord_s_utm,
-            c.fuso
-        FROM cadastro c
-        WHERE c.id = ?
-        """
-        
-        porto = pd.read_sql_query(query_porto, conn, params=(porto_id,))
-        
-        if porto.empty:
-            st.error(f"Porto não encontrado (ID: {porto_id})")
-            conn.close()
-            return
-        
-        porto = porto.iloc[0]
-        
-        # UFs do porto
-        query_ufs = """
-        SELECT uf.sigla FROM uf uf
-        JOIN cadastro_uf cu ON uf.sigla = cu.uf_sigla
-        WHERE cu.cadastro_id = ?
-        """
-        
-        df_ufs = pd.read_sql_query(query_ufs, conn, params=(porto_id,))
-        ufs = df_ufs['sigla'].tolist()
-        
-        # Serviços do porto
-        query_servicos = """
-        SELECT 
-            s.id,
-            s.tipo_servico,
-            s.fase,
-            s.servico,
-            s.descricao_servico,
-            s.prazo_inicio_anos,
-            s.data_inicio,
-            s.prazo_final_anos,
-            s.data_final,
-            s.fonte_prazo,
-            s.perc_capex,
-            s.capex_servico,
-            s.fonte_perc_capex
-        FROM servico s
-        WHERE s.cadastro_id = ?
-        ORDER BY s.tipo_servico, s.fase
-        """
-        
-        df_servicos = pd.read_sql_query(query_servicos, conn, params=(porto_id,))
-        
-        # Acompanhamentos mais recentes
-        query_acompanhamentos = """
-        SELECT 
-            a.descricao,
-            a.perc_executada,
-            a.capex_reaj,
-            a.valor_executado,
-            a.data_atualizacao,
-            a.responsavel,
-            a.cargo,
-            a.setor,
-            a.risco_tipo,
-            a.risco_descricao
-        FROM acompanhamento a
-        JOIN servico s ON a.servico_id = s.id
-        WHERE s.cadastro_id = ?
-        ORDER BY a.data_atualizacao DESC
-        LIMIT 10
-        """
-        
-        df_acompanhamentos = pd.read_sql_query(query_acompanhamentos, conn, params=(porto_id,))
-        
-        conn.close()
-        
-        # Exibir detalhes
-        st.markdown("---")
-        st.subheader(f"📍 Ficha do Porto: {porto['name']}")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("**Informações Gerais:**")
-            st.write(f"- **Descrição:** {porto['description']}")
-            st.write(f"- **Tipo:** {porto['project_type'] or 'N/A'}")
-            st.write(f"- **Data do Contrato:** {porto['contract_date'] or 'N/A'}")
-            st.write(f"- **Investimento:** R$ {porto['investment']/1000000:.1f}M" if pd.notna(porto['investment']) else "- **Investimento:** N/A")
-            st.write(f"- **UFs:** {', '.join(ufs) if ufs else 'N/A'}")
-        
-        with col2:
-            st.write("**Coordenadas:**")
-            if pd.notna(porto['coord_e_utm']) and pd.notna(porto['coord_s_utm']):
-                st.write(f"- **UTM E:** {porto['coord_e_utm']}")
-                st.write(f"- **UTM N:** {porto['coord_s_utm']}")
-                st.write(f"- **Fuso:** {porto['fuso'] or 'N/A'}")
-            else:
-                st.write("- Coordenadas não disponíveis")
-        
-        if pd.notna(porto['full_description']):
-            st.write("**Descrição Completa:**")
-            st.write(porto['full_description'])
-        
-        # Mapa
-        if pd.notna(porto['coord_e_utm']) and pd.notna(porto['coord_s_utm']):
-            st.write("**🗺️ Localização:**")
-            
-            # Conversão UTM para lat/lng (aproximada para o Brasil)
-            # Usando uma conversão simplificada para demonstração
-            utm_e = float(porto['coord_e_utm'])
-            utm_n = float(porto['coord_s_utm'])
-            fuso = int(porto['fuso']) if pd.notna(porto['fuso']) else 23
-            
-            # Conversão aproximada (simplificada)
-            # Para precisão real, seria necessário usar bibliotecas como pyproj
-            # Esta é uma aproximação para o território brasileiro
-            
-            # Fórmula simplificada para conversão UTM -> lat/lng
-            # Considerando o datum SIRGAS2000 (comum no Brasil)
-            lat = -15.0 + (utm_n - 8300000) / 110000  # Aproximação para latitude
-            lng = -60.0 + (utm_e - 500000) / 110000 + (fuso - 21) * 6  # Aproximação para longitude
-            
-            # Ajustes finos para melhor precisão
-            lat = max(-33.75, min(5.27, lat))  # Limites do Brasil
-            lng = max(-73.99, min(-28.85, lng))  # Limites do Brasil
-            
-            # Criar dados para o mapa
-            map_data = pd.DataFrame({
-                'lat': [lat],
-                'lon': [lng],
-                'name': [porto['name']],
-                'description': [f"Coordenadas UTM: E={utm_e}, N={utm_n}, Fuso={fuso}<br>Lat/Lng: {lat:.4f}, {lng:.4f}"]
-            })
-            
-            # Criar mapa com Plotly
-            fig_map = px.scatter_mapbox(
-                map_data,
-                lat="lat",
-                lon="lon", 
-                hover_name="name",
-                hover_data=["description"],
-                zoom=8,
-                height=400,
-                mapbox_style="open-street-map",
-                title=f"Localização - {porto['name']}"
-            )
-            
-            fig_map.update_layout(
-                margin={"r":0,"t":30,"l":0,"b":0}
-            )
-            
-            st.plotly_chart(fig_map, use_container_width=True)
-            
-            # Informações de coordenadas
-            col1, col2 = st.columns(2)
-            with col1:
-                st.info(f"📍 **Coordenadas UTM:**<br>E: {utm_e}<br>N: {utm_n}<br>Fuso: {fuso}")
-            with col2:
-                st.info(f"🌍 **Coordenadas Geográficas:**<br>Latitude: {lat:.6f}°<br>Longitude: {lng:.6f}°")
-            
-            st.info("📍 **Nota:** Conversão UTM para lat/lng é aproximada. Para precisão cartográfica, seria necessária biblioteca especializada como pyproj.")
-        else:
-            st.warning("📍 Coordenadas não disponíveis para este porto.")
-        
-        if not df_servicos.empty:
-            st.write("**🔧 Serviços:**")
-            for _, servico in df_servicos.iterrows():
-                with st.expander(f"🔧 {servico['servico'] or 'Serviço sem nome'}"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write(f"- **Tipo:** {servico['tipo_servico'] or 'N/A'}")
-                        st.write(f"- **Fase:** {servico['fase'] or 'N/A'}")
-                        st.write(f"- **Início:** {servico['data_inicio'] or 'N/A'}")
-                        st.write(f"- **Final:** {servico['data_final'] or 'N/A'}")
-                    
-                    with col2:
-                        st.write(f"- **CAPEX:** R$ {servico['capex_servico']/1000000:.1f}M" if pd.notna(servico['capex_servico']) else "- **CAPEX:** N/A")
-                        st.write(f"- **% CAPEX:** {servico['perc_capex']*100:.1f}%" if pd.notna(servico['perc_capex']) else "- **% CAPEX:** N/A")
-                        st.write(f"- **Fonte Prazo:** {servico['fonte_prazo'] or 'N/A'}")
-                    
-                    if pd.notna(servico['descricao_servico']):
-                        st.write("**Descrição:**")
-                        st.write(servico['descricao_servico'])
-        
-        if not df_acompanhamentos.empty:
-            st.write("**📅 Atualizações Recentes:**")
-            for _, acomp in df_acompanhamentos.iterrows():
-                with st.expander(f"📅 {acomp['data_atualizacao']} - {acomp['responsavel'] or 'N/A'}"):
-                    st.write(acomp['descricao'])
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        if pd.notna(acomp['perc_executada']):
-                            st.write(f"- **Executado:** {acomp['perc_executada']*100:.1f}%")
-                        if pd.notna(acomp['valor_executado']):
-                            st.write(f"- **Valor Executado:** R$ {acomp['valor_executado']/1000000:.1f}M")
-                    
-                    with col2:
-                        st.write(f"- **Responsável:** {acomp['responsavel'] or 'N/A'}")
-                        st.write(f"- **Cargo:** {acomp['cargo'] or 'N/A'}")
-                        st.write(f"- **Setor:** {acomp['setor'] or 'N/A'}")
-                    
-                    with col3:
-                        if pd.notna(acomp['risco_descricao']):
-                            st.warning(f"⚠️ **Risco:** {acomp['risco_descricao']}")
-        
-        if st.button("🔙 Voltar para o Dashboard"):
-            if 'selected_porto_id' in st.session_state:
-                del st.session_state.selected_porto_id
-            st.rerun()
-            
-    except Exception as e:
-        st.error(f"Erro ao carregar detalhes do porto: {e}")
-
 # Conteúdo principal baseado na página selecionada
 if pagina == "📊 Dashboard":
     st.header("📊 Dashboard de Concessões Portuárias")
@@ -368,29 +138,228 @@ if pagina == "📊 Dashboard":
         
         df_display = df_display[list(column_mapping.keys())].rename(columns=column_mapping)
         
-        # Adicionar coluna de IDs para os botões
-        df_display['ID'] = df_portos['id']  # Usar ID real do banco em vez do index
+        # Adicionar botões de detalhes para cada porto
+        df_display['Ações'] = df_display.apply(
+            lambda row: f'<button onclick="window.location.href=\'?porto_id={row.name}\'" style="background:#2E4E8C;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;">Ver Detalhes</button>', 
+            axis=1
+        )
         
-        # Mostrar tabela sem botões HTML
-        st.dataframe(df_display, use_container_width=True)
-        
-        # Adicionar botões de detalhes separadamente
-        st.subheader("🔍 Ações")
-        if df_display.empty:
-            st.warning("Nenhum porto encontrado para exibir ações.")
-        else:
-            cols = st.columns(min(4, len(df_display)))
-            for i, (_, row) in enumerate(df_display.iterrows()):
-                with cols[i % 4]:
-                    if st.button(f"Ver Detalhes - {row['Porto']}", key=f"detalhes_{row['ID']}"):
-                        st.session_state.selected_porto_id = row['ID']
-                        st.rerun()
+        st.dataframe(df_display, use_container_width=True, unsafe_allow_html=True)
         
         # Verificar se foi solicitado detalhes de um porto específico
-        if 'selected_porto_id' in st.session_state:
-            show_porto_details(st.session_state.selected_porto_id)
+        porto_id = st.query_params.get('porto_id')
+        if porto_id:
+            show_porto_details(int(porto_id))
 
-elif pagina == "📋 Planilha 00 - Cadastro":
+def show_porto_details(porto_id):
+    """Exibe detalhes completos de um porto específico com mapa"""
+    
+    try:
+        conn = db.sqlite3.connect(db.DB_PATH)
+        
+        # Dados principais do porto
+        query_porto = """
+        SELECT 
+            c.id,
+            c.zona_portuaria as name,
+            c.obj_concessao as description,
+            c.tipo as project_type,
+            c.capex_total as investment,
+            c.data_ass_contrato as contract_date,
+            c.descricao as full_description,
+            c.coord_e_utm,
+            c.coord_s_utm,
+            c.fuso
+        FROM cadastro c
+        WHERE c.id = ?
+        """
+        
+        porto = pd.read_sql_query(query_porto, conn, params=(porto_id,))
+        
+        if porto.empty:
+            st.error("Porto não encontrado")
+            conn.close()
+            return
+        
+        porto = porto.iloc[0]
+        
+        # UFs do porto
+        query_ufs = """
+        SELECT uf.sigla FROM uf uf
+        JOIN cadastro_uf cu ON uf.sigla = cu.uf_sigla
+        WHERE cu.cadastro_id = ?
+        """
+        
+        df_ufs = pd.read_sql_query(query_ufs, conn, params=(porto_id,))
+        ufs = df_ufs['sigla'].tolist()
+        
+        # Serviços do porto
+        query_servicos = """
+        SELECT 
+            s.id,
+            s.tipo_servico,
+            s.fase,
+            s.servico,
+            s.descricao_servico,
+            s.prazo_inicio_anos,
+            s.data_inicio,
+            s.prazo_final_anos,
+            s.data_final,
+            s.fonte_prazo,
+            s.perc_capex,
+            s.capex_servico,
+            s.fonte_perc_capex
+        FROM servico s
+        WHERE s.cadastro_id = ?
+        ORDER BY s.tipo_servico, s.fase
+        """
+        
+        df_servicos = pd.read_sql_query(query_servicos, conn, params=(porto_id,))
+        
+        # Acompanhamentos mais recentes
+        query_acompanhamentos = """
+        SELECT 
+            a.descricao,
+            a.perc_executada,
+            a.capex_reaj,
+            a.valor_executado,
+            a.data_atualizacao,
+            a.responsavel,
+            a.cargo,
+            a.setor,
+            a.risco_tipo,
+            a.risco_descricao
+        FROM acompanhamento a
+        JOIN servico s ON a.servico_id = s.id
+        WHERE s.cadastro_id = ?
+        ORDER BY a.data_atualizacao DESC
+        LIMIT 10
+        """
+        
+        df_acompanhamentos = pd.read_sql_query(query_acompanhamentos, conn, params=(porto_id,))
+        
+        conn.close()
+        
+        # Exibir detalhes
+        st.markdown("---")
+        st.subheader(f"📍 Ficha do Porto: {porto['name']}")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Informações Gerais:**")
+            st.write(f"- **Descrição:** {porto['description']}")
+            st.write(f"- **Tipo:** {porto['project_type'] or 'N/A'}")
+            st.write(f"- **Data do Contrato:** {porto['contract_date'] or 'N/A'}")
+            st.write(f"- **Investimento:** R$ {porto['investment']/1000000:.1f}M" if pd.notna(porto['investment']) else "- **Investimento:** N/A")
+            st.write(f"- **UFs:** {', '.join(ufs) if ufs else 'N/A'}")
+        
+        with col2:
+            st.write("**Coordenadas:**")
+            if pd.notna(porto['coord_e_utm']) and pd.notna(porto['coord_s_utm']):
+                st.write(f"- **UTM E:** {porto['coord_e_utm']}")
+                st.write(f"- **UTM N:** {porto['coord_s_utm']}")
+                st.write(f"- **Fuso:** {porto['fuso'] or 'N/A'}")
+            else:
+                st.write("- Coordenadas não disponíveis")
+        
+        if pd.notna(porto['full_description']):
+            st.write("**Descrição Completa:**")
+            st.write(porto['full_description'])
+        
+        # Mapa
+        if pd.notna(porto['coord_e_utm']) and pd.notna(porto['coord_s_utm']):
+            st.write("**🗺️ Localização:**")
+            
+            # Criar mapa centrado nas coordenadas UTM
+            # Nota: Para simplificar, vamos mostrar as coordenadas UTM diretamente
+            # Em uma implementação completa, seria necessário converter UTM para lat/lng
+            
+            # Criar mapa com coordenadas aproximadas (usando as coordenadas UTM como se fossem lat/lng para demonstração)
+            # Isso é uma simplificação - em produção, você precisaria converter UTM para lat/lng
+            
+            # Para o mapa, vamos usar uma abordagem mais simples
+            map_data = pd.DataFrame({
+                'lat': [-14.235],  # Centro do Brasil (aproximado)
+                'lon': [-51.925],  # Centro do Brasil (aproximado)
+                'name': [porto['name']],
+                'description': [f"Coordenadas UTM: E={porto['coord_e_utm']}, N={porto['coord_s_utm']}"]
+            })
+            
+            # Criar mapa com Plotly
+            fig_map = px.scatter_mapbox(
+                map_data,
+                lat="lat",
+                lon="lon", 
+                hover_name="name",
+                hover_data=["description"],
+                zoom=3,
+                height=400,
+                mapbox_style="open-street-map"
+            )
+            
+            fig_map.update_layout(
+                title=f"Localização aproximada - {porto['name']}",
+                margin={"r":0,"t":30,"l":0,"b":0}
+            )
+            
+            st.plotly_chart(fig_map, use_container_width=True)
+            
+            st.info("📍 **Nota:** As coordenadas mostradas são aproximadas. Para precisão total, seria necessária conversão de UTM para latitude/longitude.")
+        
+        if not df_servicos.empty:
+            st.write("**🔧 Serviços:**")
+            for _, servico in df_servicos.iterrows():
+                with st.expander(f"🔧 {servico['servico'] or 'Serviço sem nome'}"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write(f"- **Tipo:** {servico['tipo_servico'] or 'N/A'}")
+                        st.write(f"- **Fase:** {servico['fase'] or 'N/A'}")
+                        st.write(f"- **Início:** {servico['data_inicio'] or 'N/A'}")
+                        st.write(f"- **Final:** {servico['data_final'] or 'N/A'}")
+                    
+                    with col2:
+                        st.write(f"- **CAPEX:** R$ {servico['capex_servico']/1000000:.1f}M" if pd.notna(servico['capex_servico']) else "- **CAPEX:** N/A")
+                        st.write(f"- **% CAPEX:** {servico['perc_capex']*100:.1f}%" if pd.notna(servico['perc_capex']) else "- **% CAPEX:** N/A")
+                        st.write(f"- **Fonte Prazo:** {servico['fonte_prazo'] or 'N/A'}")
+                    
+                    if pd.notna(servico['descricao_servico']):
+                        st.write("**Descrição:**")
+                        st.write(servico['descricao_servico'])
+        
+        if not df_acompanhamentos.empty:
+            st.write("**📅 Atualizações Recentes:**")
+            for _, acomp in df_acompanhamentos.iterrows():
+                with st.expander(f"📅 {acomp['data_atualizacao']} - {acomp['responsavel'] or 'N/A'}"):
+                    st.write(acomp['descricao'])
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if pd.notna(acomp['perc_executada']):
+                            st.write(f"- **Executado:** {acomp['perc_executada']*100:.1f}%")
+                        if pd.notna(acomp['valor_executado']):
+                            st.write(f"- **Valor Executado:** R$ {acomp['valor_executado']/1000000:.1f}M")
+                    
+                    with col2:
+                        st.write(f"- **Responsável:** {acomp['responsavel'] or 'N/A'}")
+                        st.write(f"- **Cargo:** {acomp['cargo'] or 'N/A'}")
+                        st.write(f"- **Setor:** {acomp['setor'] or 'N/A'}")
+                    
+                    with col3:
+                        if pd.notna(acomp['risco_descricao']):
+                            st.warning(f"⚠️ **Risco:** {acomp['risco_descricao']}")
+        
+        if st.button("🔙 Voltar para o Dashboard"):
+            st.query_params.clear()
+            st.rerun()
+            
+    except Exception as e:
+        st.error(f"Erro ao carregar detalhes do porto: {e}")
+
+# Conteúdo principal baseado na página selecionada
+if pagina == "� Dashboard":
     st.title('Gestão de Concessões Portuárias – Planilha 00')
     
     # Carregar dados do banco na primeira execução
