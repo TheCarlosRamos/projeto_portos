@@ -8,9 +8,8 @@
       "CAPEX Total": 6454903000,
       "Data de assinatura do contrato": null,
       "Descrição": "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.",
-      "Coordenada E (UTM)": 363506.31,
-      "Coordenada S (UTM)": 7353284.66,
-      "Fuso": 23.0
+      "Latitude": -23.926132,
+      "Longitude": -46.34027
     },
     {
       "Zona portuária": "Não se aplica",
@@ -20,9 +19,8 @@
       "CAPEX Total": 63796000,
       "Data de assinatura do contrato": null,
       "Descrição": "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.",
-      "Coordenada E (UTM)": null,
-      "Coordenada S (UTM)": null,
-      "Fuso": null
+      "Latitude": null,
+      "Longitude": null
     },
     {
       "Zona portuária": "Porto Organizado de Maceió",
@@ -32,9 +30,8 @@
       "CAPEX Total": 1978000,
       "Data de assinatura do contrato": null,
       "Descrição": "Terminal destinado a movimentação de passageiros.",
-      "Coordenada E (UTM)": null,
-      "Coordenada S (UTM)": null,
-      "Fuso": null
+      "Latitude": null,
+      "Longitude": null
     },
     {
       "Zona portuária": "Porto Organizado do Rio de Janeiro",
@@ -44,9 +41,8 @@
       "CAPEX Total": 101741000,
       "Data de assinatura do contrato": null,
       "Descrição": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
-      "Coordenada E (UTM)": 683608.71,
-      "Coordenada S (UTM)": 7466878.73,
-      "Fuso": 23.0
+      "Latitude": -22.896621,
+      "Longitude": -43.209639
     },
     {
       "Zona portuária": "Não se aplica",
@@ -56,9 +52,8 @@
       "CAPEX Total": 1226475000,
       "Data de assinatura do contrato": "2026-02-20",
       "Descrição": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
-      "Coordenada E (UTM)": 753202.27,
-      "Coordenada S (UTM)": 7177980.34,
-      "Fuso": 22.0
+      "Latitude": -25.492142,
+      "Longitude": -48.479187
     },
     {
       "Zona portuária": "Porto Organizado de São Sebastião",
@@ -68,9 +63,8 @@
       "CAPEX Total": 656085000,
       "Data de assinatura do contrato": null,
       "Descrição": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
-      "Coordenada E (UTM)": 459300.75,
-      "Coordenada S (UTM)": 7366609.17,
-      "Fuso": 23.0
+      "Latitude": -23.812704,
+      "Longitude": -45.400052
     }
   ],
   "Tabela 01 - Serviços": [

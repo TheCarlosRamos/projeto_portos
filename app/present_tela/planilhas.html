@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Planilhas - Sistema Portuário</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2E4E8C;
+            --primary-dark: #243B6B;
+            --primary-light: #3E5FA4;
+            --accent-green: #2E7D32;
+            --accent-yellow: #F7B500;
+            --accent-red: #C62828;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #4A4A4A;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .file-card {
+            transition: all 0.3s ease;
+        }
+
+        .file-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(46, 78, 140, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(46, 78, 140, 0.1);
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 h-full shadow-xl">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-8">
+                    <i class="fas fa-ship text-2xl text-blue-600"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Sistema Portuário</h1>
+                </div>
+                
+                <nav class="space-y-2">
+                    <a href="/" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-dashboard"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/cadastro" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Cadastro</span>
+                    </a>
+                    <a href="/planilhas" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Planilhas</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-y-auto">
+            <div class="p-8">
+                <div class="max-w-6xl mx-auto">
+                    <!-- Header -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-3xl font-bold text-gray-800">Gestão de Planilhas</h2>
+                                <p class="text-gray-600 mt-2">Importe e gerencie planilhas de projetos portuários</p>
+                            </div>
+                            <button onclick="showUploadModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition">
+                                <i class="fas fa-plus"></i>
+                                Nova Planilha
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Area -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Upload Rápido</h3>
+                        <div id="dropZone" class="upload-area rounded-xl p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-600 mb-2">Arraste uma planilha aqui ou clique para selecionar</p>
+                            <p class="text-sm text-gray-500">Formatos aceitos: .xlsx, .xls, .json</p>
+                            <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.json" multiple>
+                        </div>
+                        
+                        <div id="uploadProgress" class="hidden mt-4">
+                            <div class="bg-gray-200 rounded-full h-2">
+                                <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="uploadStatus" class="text-sm text-gray-600 mt-2">Processando...</p>
+                        </div>
+                    </div>
+
+                    <!-- Files List -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Planilhas Importadas</h3>
+                            <button onclick="loadFiles()" class="text-blue-600 hover:text-blue-700">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                        
+                        <div id="filesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Files will be loaded here -->
+                        </div>
+                        
+                        <div id="emptyState" class="text-center py-12">
+                            <i class="fas fa-file-excel text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">Nenhuma planilha importada ainda</p>
+                            <p class="text-sm text-gray-400 mt-2">Faça upload de uma planilha para começar</p>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Total de Planilhas</p>
+                                    <p id="totalFiles" class="text-2xl font-bold text-gray-800">0</p>
+                                </div>
+                                <i class="fas fa-file-alt text-3xl text-blue-500"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Projetos Importados</p>
+                                    <p id="totalProjects" class="text-2xl font-bold text-gray-800">0</p>
+                                </div>
+                                <i class="fas fa-project-diagram text-3xl text-green-500"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Última Atualização</p>
+                                    <p id="lastUpdate" class="text-lg font-bold text-gray-800">-</p>
+                                </div>
+                                <i class="fas fa-clock text-3xl text-yellow-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Importar Planilha</h3>
+                    <button onclick="closeUploadModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="upload-area rounded-xl p-8 text-center cursor-pointer">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 mb-2">Arraste uma planilha aqui ou clique para selecionar</p>
+                    <p class="text-sm text-gray-500">Formatos aceitos: .xlsx, .xls, .json</p>
+                    <input type="file" id="modalFileInput" class="hidden" accept=".xlsx,.xls,.json">
+                </div>
+                
+                <div class="mt-6">
+                    <h4 class="font-semibold text-gray-800 mb-2">Instruções:</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• A planilha deve conter as abas: "Tabela 00 - Cadastro", "Tabela 01 - Serviços", "Tabela 02 - Acompanhamento"</li>
+                        <li>• O arquivo será processado e os dados importados para o banco</li>
+                        <li>• Dados existentes serão substituídos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-4 flex items-center gap-3 min-w-[300px]">
+            <div id="toastIcon"></div>
+            <div>
+                <p id="toastMessage" class="text-gray-800 font-medium"></p>
+                <p id="toastDescription" class="text-sm text-gray-600"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFiles = [];
+
+        // Upload handlers
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const modalDropZone = document.querySelector('#uploadModal .upload-area');
+        const modalFileInput = document.getElementById('modalFileInput');
+
+        // Main drop zone
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Modal drop zone
+        modalDropZone.addEventListener('click', () => modalFileInput.click());
+
+        modalDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            modalDropZone.classList.add('dragover');
+        });
+
+        modalDropZone.addEventListener('dragleave', () => {
+            modalDropZone.classList.remove('dragover');
+        });
+
+        modalDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            modalDropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        modalFileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        async function handleFiles(files) {
+            for (let file of files) {
+                await uploadFile(file);
+            }
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Mostra progresso
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = '50%';
+            document.getElementById('uploadStatus').textContent = `Enviando ${file.name}...`;
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('uploadStatus').textContent = 'Importação concluída!';
+                    
+                    // Adiciona arquivo à lista
+                    uploadedFiles.push({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        status: 'success',
+                        records: result.records,
+                        uploadTime: new Date().toISOString()
+                    });
+                    
+                    showToast('success', 'Sucesso!', result.message);
+                    updateFilesList();
+                    updateStatistics();
+                    
+                    setTimeout(() => {
+                        document.getElementById('uploadProgress').classList.add('hidden');
+                        document.getElementById('progressBar').style.width = '0%';
+                    }, 2000);
+                } else {
+                    showToast('error', 'Erro!', result.error);
+                    document.getElementById('uploadProgress').classList.add('hidden');
+                }
+            } catch (error) {
+                showToast('error', 'Erro!', 'Falha na comunicação com o servidor');
+                document.getElementById('uploadProgress').classList.add('hidden');
+            }
+        }
+
+        function updateFilesList() {
+            const filesList = document.getElementById('filesList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (uploadedFiles.length === 0) {
+                filesList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                filesList.innerHTML = uploadedFiles.map(file => `
+                    <div class="file-card bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fas ${getFileIcon(file.name)} text-2xl text-blue-500"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800 text-sm truncate">${file.name}</h4>
+                                    <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                                </div>
+                            </div>
+                            <span class="status-badge status-${file.status}">
+                                ${file.status === 'success' ? 'Sucesso' : 'Erro'}
+                            </span>
+                        </div>
+                        
+                        ${file.records ? `
+                            <div class="text-xs text-gray-600 mb-2">
+                                <i class="fas fa-database mr-1"></i>
+                                ${file.records} registros importados
+                            </div>
+                        ` : ''}
+                        
+                        <div class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i>
+                            ${formatDate(file.uploadTime)}
+                        </div>
+                        
+                        <div class="mt-3 flex gap-2">
+                            <button onclick="viewFile('${file.name}')" class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200">
+                                <i class="fas fa-eye mr-1"></i> Visualizar
+                            </button>
+                            <button onclick="deleteFile('${file.name}')" class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
+                                <i class="fas fa-trash mr-1"></i> Excluir
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalFiles').textContent = uploadedFiles.length;
+            
+            const totalRecords = uploadedFiles.reduce((sum, file) => sum + (file.records || 0), 0);
+            document.getElementById('totalProjects').textContent = totalRecords;
+            
+            if (uploadedFiles.length > 0) {
+                const lastFile = uploadedFiles[uploadedFiles.length - 1];
+                document.getElementById('lastUpdate').textContent = formatDate(lastFile.uploadTime);
+            }
+        }
+
+        function getFileIcon(filename) {
+            if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) {
+                return 'fa-file-excel';
+            } else if (filename.endsWith('.json')) {
+                return 'fa-file-code';
+            }
+            return 'fa-file';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function viewFile(filename) {
+            // Implementar visualização do arquivo
+            showToast('info', 'Visualização', `Visualizando ${filename}`);
+        }
+
+        function deleteFile(filename) {
+            if (confirm(`Tem certeza que deseja excluir ${filename}?`)) {
+                uploadedFiles = uploadedFiles.filter(file => file.name !== filename);
+                updateFilesList();
+                updateStatistics();
+                showToast('success', 'Sucesso!', 'Arquivo excluído com sucesso');
+            }
+        }
+
+        function loadFiles() {
+            // Simular carregamento de arquivos do servidor
+            updateFilesList();
+            updateStatistics();
+            showToast('info', 'Atualizado', 'Lista de arquivos atualizada');
+        }
+
+        // Modal functions
+        function showUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+            document.getElementById('uploadModal').classList.add('flex');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+            document.getElementById('uploadModal').classList.remove('flex');
+        }
+
+        // Toast notifications
+        function showToast(type, title, message) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastDescription = document.getElementById('toastDescription');
+            
+            if (type === 'success') {
+                toastIcon.innerHTML = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+            } else if (type === 'error') {
+                toastIcon.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>';
+            } else {
+                toastIcon.innerHTML = '<i class="fas fa-info-circle text-blue-500 text-xl"></i>';
+            }
+            
+            toastMessage.textContent = title;
+            toastDescription.textContent = message;
+            
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFiles();
+        });
+    </script>
+</body>
+</html>

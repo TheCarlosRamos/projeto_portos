@@ -53,6 +53,25 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         }
 
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
         @media (min-width: 1024px) {
             .modal-info-grid {
                 grid-template-areas:
@@ -67,20 +86,48 @@
     </style>
 </head>
 <body>
-    <div class="min-h-screen pb-12">
-        <!-- Header -->
-        <div class="bg-white shadow-md">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <h1 class="text-3xl font-bold text-gray-800">Gestão de Concessões Portuárias</h1>
-                <p class="text-gray-600 mt-2">Acompanhamento de Projetos de Concessão</p>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 h-full shadow-xl">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-8">
+                    <i class="fas fa-ship text-2xl text-blue-600"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Sistema Portuário</h1>
+                </div>
+                
+                <nav class="space-y-2">
+                    <a href="/" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-dashboard"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/cadastro" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Cadastro</span>
+                    </a>
+                    <a href="/planilhas" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Planilhas</span>
+                    </a>
+                </nav>
             </div>
         </div>
 
         <!-- Main Content -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex-1 overflow-y-auto">
+            <div class="min-h-screen pb-12">
+                <!-- Header -->
+                <div class="bg-white shadow-md">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <h1 class="text-3xl font-bold text-gray-800">Gestão de Concessões Portuárias</h1>
+                        <p class="text-gray-600 mt-2">Acompanhamento de Projetos de Concessão</p>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Search and Filter -->
-            <div class="mb-6">
-                <div class="relative">
+            <div class="mb-6 flex gap-4">
+                <div class="relative flex-1">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-search text-gray-400"></i>
                     </div>
@@ -88,6 +135,11 @@
                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
                            placeholder="Buscar projetos...">
                 </div>
+                <button id="reload-btn" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i>
+                    Recarregar Dados
+                </button>
             </div>
 
             <!-- Projects Grid -->
@@ -114,19 +166,23 @@
         let projetosFiltrados = [];
 
         // Função para converter UTM para Lat/Lon (WGS84)
-        // Baseado no algoritmo de Karney (2011) simplificado
         function utmToLatLon(easting, northing, zone) {
             try {
                 // Parâmetros do elipsoide WGS84
                 const a = 6378137.0; // semi-eixo maior (metros)
-                const e2 = 0.00669437999014; // primeira excentricidade ao quadrado
+                const f = 1 / 298.257223563; // achatamento
+                const e2 = 2 * f - f * f; // primeira excentricidade ao quadrado
                 const k0 = 0.9996; // fator de escala
+                
+                // Constantes
                 const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
                 
                 // Remover falsa origem
-                // Hemisfério Sul: northing tem falsa origem de 10.000.000m
                 const x = easting - 500000; // falsa origem leste
-                const y = northing > 10000000 ? northing - 10000000 : northing; // hemisfério sul
+                
+                // Para o Brasil (hemisfério sul), não temos falsa origem no northing
+                // Mas vamos verificar se está no hemisfério sul (northing < 10,000,000)
+                const y = northing;
                 
                 // Calcular longitude do meridiano central do fuso
                 const lon0 = (zone - 1) * 6 - 180 + 3;
@@ -147,10 +203,11 @@
                 const N1 = a / Math.sqrt(1 - e2 * Math.sin(lat1) * Math.sin(lat1));
                 const T1 = Math.tan(lat1) * Math.tan(lat1);
                 const C1 = e2 * Math.cos(lat1) * Math.cos(lat1) / (1 - e2);
+                const R1 = a * (1 - e2) / Math.pow(1 - e2 * Math.sin(lat1) * Math.sin(lat1), 1.5);
                 const D = x / (N1 * k0);
                 
                 // Calcular latitude final
-                const lat = lat1 - (N1 * Math.tan(lat1) / (k0 * a)) * (
+                const lat = lat1 - (N1 * Math.tan(lat1) / (k0 * R1)) * (
                     D*D/2 - (5 + 3*T1 + 10*C1 - 4*C1*C1 - 9*e2) * D*D*D*D/24 +
                     (61 + 90*T1 + 298*C1 + 45*T1*T1 - 252*e2 - 3*C1*C1) * D*D*D*D*D*D/720
                 );
@@ -161,114 +218,207 @@
                     (5 - 2*C1 + 28*T1 - 3*C1*C1 + 8*e2 + 24*T1*T1) * D*D*D*D*D/120
                 ) / Math.cos(lat1);
                 
+                const latDeg = lat * 180 / Math.PI;
+                const lonDeg = lon * 180 / Math.PI;
+                
+                // Validação básica para coordenadas do Brasil
+                if (latDeg < -35 || latDeg > 5 || lonDeg < -75 || lonDeg > -28) {
+                    console.warn('Coordenadas fora dos limites esperados para o Brasil:', latDeg, lonDeg);
+                }
+                
                 return {
-                    lat: lat * 180 / Math.PI,
-                    lon: lon * 180 / Math.PI
+                    lat: latDeg,
+                    lon: lonDeg
                 };
             } catch (error) {
-                console.error('Erro na conversão UTM:', error);
+                console.error('Erro na conversão UTM:', error, 'Coords:', easting, northing, zone);
                 return null;
             }
         }
 
-        // Carregar dados do JSON
+        // Carregar dados da API
         async function loadData() {
             try {
-                const response = await fetch('planilha_portos.json');
+                // Adiciona timestamp para evitar cache
+                const timestamp = new Date().getTime();
+                const response = await fetch(`http://localhost:5000/api/projects?t=${timestamp}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
-                const cadastros = data['Tabela 00 - Cadastro'] || [];
-                const servicos = data['Tabela 01 - Serviços'] || [];
-                const acompanhamentos = data['Tabela 02 - Acompanhamento'] || [];
-
-                // Processar projetos
-                projetosData = cadastros.map((cadastro, index) => {
-                    const projetoId = `projeto-${index}`;
-                    const zona = cadastro['Zona portuária'] || 'Não informado';
-                    const obj = cadastro['Obj. de Concessão'] || '';
-                    const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
-
-                    // Buscar serviços relacionados
-                    const servicosProjeto = servicos.filter(s => 
-                        s['Zona portuária'] === cadastro['Zona portuária'] &&
-                        s['UF'] === cadastro['UF'] &&
-                        s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                    );
-
-                    // Buscar acompanhamentos relacionados
-                    const acompanhamentosProjeto = acompanhamentos.filter(a => 
-                        a['Zona portuária'] === cadastro['Zona portuária'] &&
-                        a['UF'] === cadastro['UF'] &&
-                        a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                    );
-
-                    // Calcular progresso baseado no acompanhamento mais recente
-                    let progresso = 0;
-                    if (acompanhamentosProjeto.length > 0) {
-                        const maisRecente = acompanhamentosProjeto.sort((a, b) => {
-                            const dataA = new Date(a['Data da atualização'] || 0);
-                            const dataB = new Date(b['Data da atualização'] || 0);
-                            return dataB - dataA;
-                        })[0];
-                        progresso = (maisRecente['% executada'] || 0) * 100;
-                    }
-
-                    // ETAPA baseada no status dos serviços
-                    let etapa = 'Planejamento';
-                    const servicosEmExecucao = servicosProjeto.filter(s => {
-                        if (!s['Data de início'] || !s['Data final']) return false;
-                        const inicio = new Date(s['Data de início']);
-                        const fim = new Date(s['Data final']);
-                        const hoje = new Date();
-                        return hoje >= inicio && hoje <= fim;
-                    });
-                    if (servicosEmExecucao.length > 0) {
-                        etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
-                    } else if (progresso > 0) {
-                        etapa = 'Em execução';
-                    }
-
-                    // Mapa - converter UTM para lat/lon se disponível
-                    let mapaEmbed = null;
-                    if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
-                        const coordE = cadastro['Coordenada E (UTM)'];
-                        const coordS = cadastro['Coordenada S (UTM)'];
-                        const fuso = cadastro['Fuso'];
-                        const latLon = utmToLatLon(coordE, coordS, fuso);
-                        if (latLon) {
-                            mapaEmbed = `<iframe width="100%" height="100%" style="border:0" src="https://www.openstreetmap.org/export/embed.html?bbox=${latLon.lon-0.01},${latLon.lat-0.01},${latLon.lon+0.01},${latLon.lat+0.01}&layer=mapnik&marker=${latLon.lat},${latLon.lon}" frameborder="0"></iframe>`;
-                        }
-                    }
-
-                    return {
-                        id: projetoId,
-                        nome: nomeProjeto,
-                        zona: zona,
-                        uf: cadastro['UF'] || '',
-                        objConcessao: obj,
-                        tipo: cadastro['Tipo'] || '',
-                        capexTotal: cadastro['CAPEX Total'] || 0,
-                        dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
-                        descricao: cadastro['Descrição'] || 'Sem descrição disponível',
-                        progresso: progresso,
-                        etapa: etapa,
-                        servicos: servicosProjeto,
-                        acompanhamentos: acompanhamentosProjeto,
-                        mapaEmbed: mapaEmbed,
-                        coordenadas: {
-                            e: cadastro['Coordenada E (UTM)'],
-                            s: cadastro['Coordenada S (UTM)'],
-                            fuso: cadastro['Fuso']
-                        }
-                    };
+                console.log('Dados carregados da API em:', new Date().toLocaleString());
+                console.log('Registros encontrados:', data.length);
+                
+                // Processa os dados da API (já vem no formato correto)
+                projetosData = data.map((projeto, index) => {
+                    // Garante ID único
+                    projeto.id = projeto.id || `projeto-${index}`;
+                    return projeto;
                 });
 
                 projetosFiltrados = [...projetosData];
                 renderProjects();
             } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                document.getElementById('projects-grid').innerHTML = 
-                    '<div class="col-span-full text-center text-white p-8"><p>Erro ao carregar dados. Verifique se o arquivo planilha_portos.json está no mesmo diretório.</p></div>';
+                console.error('Erro ao carregar dados da API:', error);
+                
+                // Tenta carregar do JSON como fallback
+                console.log('Tentando carregar do JSON como fallback...');
+                try {
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(`planilha_portos.json?t=${timestamp}`);
+                    const jsonData = await response.json();
+                    
+                    console.log('Dados carregados do JSON em:', new Date().toLocaleString());
+                    console.log('Registros encontrados:', jsonData['Tabela 00 - Cadastro']?.length || 0);
+                    
+                    const cadastros = jsonData['Tabela 00 - Cadastro'] || [];
+                    const servicos = jsonData['Tabela 01 - Serviços'] || [];
+                    const acompanhamentos = jsonData['Tabela 02 - Acompanhamento'] || [];
+
+                    // Processar projetos (mantém lógica original)
+                    projetosData = cadastros.map((cadastro, index) => {
+                        const projetoId = `projeto-${index}`;
+                        const zona = cadastro['Zona portuária'] || 'Não informado';
+                        const obj = cadastro['Obj. de Concessão'] || '';
+                        const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+
+                        // Buscar serviços relacionados
+                        const servicosProjeto = servicos.filter(s => 
+                            s['Zona portuária'] === cadastro['Zona portuária'] &&
+                            s['UF'] === cadastro['UF'] &&
+                            s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                        );
+
+                        // Buscar acompanhamentos relacionados
+                        const acompanhamentosProjeto = acompanhamentos.filter(a => 
+                            a['Zona portuária'] === cadastro['Zona portuária'] &&
+                            a['UF'] === cadastro['UF'] &&
+                            a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                        );
+
+                        // Calcular progresso baseado no acompanhamento mais recente
+                        let progresso = 0;
+                        if (acompanhamentosProjeto.length > 0) {
+                            const maisRecente = acompanhamentosProjeto.sort((a, b) => {
+                                const dataA = new Date(a['Data da atualização'] || 0);
+                                const dataB = new Date(b['Data da atualização'] || 0);
+                                return dataB - dataA;
+                            })[0];
+                            progresso = (maisRecente['% executada'] || 0) * 100;
+                        }
+
+                        // ETAPA baseada no status dos serviços
+                        let etapa = 'Planejamento';
+                        const servicosEmExecucao = servicosProjeto.filter(s => {
+                            if (!s['Data de início'] || !s['Data final']) return false;
+                            const inicio = new Date(s['Data de início']);
+                            const fim = new Date(s['Data final']);
+                            const hoje = new Date();
+                            return hoje >= inicio && hoje <= fim;
+                        });
+                        if (servicosEmExecucao.length > 0) {
+                            etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
+                        } else if (progresso > 0) {
+                            etapa = 'Em execução';
+                        }
+
+                        // Mapa - converter coordenadas se disponível
+                        let mapaEmbed = null;
+                        let coordenadasLatLon = null;
+                        
+                        // Verifica se já tem Lat/Lon direto ou precisa converter UTM
+                        if (cadastro['Latitude'] && cadastro['Longitude']) {
+                            // Usa coordenadas diretas (Lat/Lon)
+                            coordenadasLatLon = {
+                                lat: parseFloat(cadastro['Latitude']),
+                                lon: parseFloat(cadastro['Longitude'])
+                            };
+                            console.log(`Usando coordenadas diretas para ${nomeProjeto}:`, coordenadasLatLon);
+                        } else if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
+                            // Converte de UTM para Lat/Lon
+                            const coordE = parseFloat(cadastro['Coordenada E (UTM)']);
+                            const coordS = parseFloat(cadastro['Coordenada S (UTM)']);
+                            const fuso = parseInt(cadastro['Fuso']);
+                            
+                            console.log(`Convertendo coordenadas UTM para ${nomeProjeto}:`, {coordE, coordS, fuso});
+                            
+                            const latLon = utmToLatLon(coordE, coordS, fuso);
+                            if (latLon && !isNaN(latLon.lat) && !isNaN(latLon.lon)) {
+                                coordenadasLatLon = latLon;
+                                console.log(`Coordenadas convertidas para ${nomeProjeto}:`, latLon);
+                            } else {
+                                console.warn(`Falha na conversão de coordenadas UTM para ${nomeProjeto}:`, latLon);
+                            }
+                        } else {
+                            console.log(`Coordenadas não disponíveis para ${nomeProjeto}:`, {
+                                latitude: cadastro['Latitude'],
+                                longitude: cadastro['Longitude'],
+                                easting: cadastro['Coordenada E (UTM)'],
+                                northing: cadastro['Coordenada S (UTM)'],
+                                zone: cadastro['Fuso']
+                            });
+                        }
+                        
+                        // Gera o mapa se tiver coordenadas válidas
+                        if (coordenadasLatLon && !isNaN(coordenadasLatLon.lat) && !isNaN(coordenadasLatLon.lon)) {
+                            // Usar OpenStreetMap com bounding box adequada
+                            const bboxSize = 0.02; // ~2km de bbox
+                            const bbox = `${coordenadasLatLon.lon-bboxSize},${coordenadasLatLon.lat-bboxSize},${coordenadasLatLon.lon+bboxSize},${coordenadasLatLon.lat+bboxSize}`;
+                            
+                            mapaEmbed = `
+                                <div class="w-full h-full relative">
+                                    <iframe 
+                                        width="100%" 
+                                        height="100%" 
+                                        style="border:0; border-radius: 8px;" 
+                                        src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordenadasLatLon.lat},${coordenadasLatLon.lon}" 
+                                        frameborder="0"
+                                        allowfullscreen>
+                                    </iframe>
+                                    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
+                                        📍 ${coordenadasLatLon.lat.toFixed(6)}, ${coordenadasLatLon.lon.toFixed(6)}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        return {
+                            id: projetoId,
+                            nome: nomeProjeto,
+                            zona: zona,
+                            uf: cadastro['UF'] || '',
+                            objConcessao: obj,
+                            tipo: cadastro['Tipo'] || '',
+                            capexTotal: cadastro['CAPEX Total'] || 0,
+                            dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
+                            descricao: cadastro['Descrição'] || 'Sem descrição disponível',
+                            progresso: progresso,
+                            etapa: etapa,
+                            servicos: servicosProjeto,
+                            acompanhamentos: acompanhamentosProjeto,
+                            mapaEmbed: mapaEmbed,
+                            coordenadas: {
+                                e: cadastro['Coordenada E (UTM)'],
+                                s: cadastro['Coordenada S (UTM)'],
+                                fuso: cadastro['Fuso'],
+                                latitude: cadastro['Latitude'],
+                                longitude: cadastro['Longitude']
+                            },
+                            coordenadasLatLon: coordenadasLatLon
+                        };
+                    });
+
+                    projetosFiltrados = [...projetosData];
+                    renderProjects();
+                    console.log('Dados carregados do JSON com sucesso!');
+                } catch (jsonError) {
+                    console.error('Erro ao carregar do JSON:', jsonError);
+                    document.getElementById('projects-grid').innerHTML = 
+                        '<div class="col-span-full text-center text-white p-8"><p>Erro ao carregar dados. Verifique se o servidor está rodando ou o arquivo JSON está disponível.</p></div>';
+                }
             }
         }
 
@@ -352,10 +502,36 @@
                     </div>
 
                     <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--mapa">
-                        <h3 class="text-lg font-bold mb-2 text-gray-700">Mapa do Projeto</h3>
+                        <h3 class="text-lg font-bold mb-2 text-gray-700">Localização</h3>
                         ${projeto.mapaEmbed
-                            ? `<div class="w-full h-48 md:h-full rounded-lg overflow-hidden border border-gray-200">${projeto.mapaEmbed}</div>`
-                            : '<div class="w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500">Mapa (pequena escala)<br><span class="text-xs">Coordenadas não disponíveis</span></div>'
+                            ? `
+                                <div class="w-full h-48 md:h-full rounded-lg overflow-hidden border border-gray-200 relative">
+                                    ${projeto.mapaEmbed}
+                                </div>
+                                ${projeto.coordenadasLatLon ? `
+                                    <div class="mt-3 text-xs text-gray-600 space-y-1">
+                                        ${projeto.coordenadas.latitude && projeto.coordenadas.longitude ? `
+                                            <p><span class="font-semibold">Coordenadas:</span> ${projeto.coordenadas.latitude.toFixed(6)}°, ${projeto.coordenadas.longitude.toFixed(6)}°</p>
+                                        ` : projeto.coordenadas.e && projeto.coordenadas.s ? `
+                                            <p><span class="font-semibold">UTM:</span> E=${projeto.coordenadas.e}, S=${projeto.coordenadas.s}, Fuso=${projeto.coordenadas.fuso}</p>
+                                            <p><span class="font-semibold">Lat/Lon:</span> ${projeto.coordenadasLatLon.lat.toFixed(6)}°, ${projeto.coordenadasLatLon.lon.toFixed(6)}°</p>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                            `
+                            : `
+                                <div class="w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500">
+                                    <div class="text-center">
+                                        <i class="fas fa-map-marked-alt text-3xl mb-2"></i>
+                                        <p class="text-sm">Coordenadas não disponíveis</p>
+                                        ${projeto.coordenadas.latitude && projeto.coordenadas.longitude ? `
+                                            <p class="text-xs mt-1">Lat/Lon: ${projeto.coordenadas.latitude.toFixed(6)}°, ${projeto.coordenadas.longitude.toFixed(6)}°</p>
+                                        ` : projeto.coordenadas.e ? `
+                                            <p class="text-xs mt-1">UTM: ${projeto.coordenadas.e}, ${projeto.coordenadas.s}</p>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `
                         }
                     </div>
 
@@ -380,6 +556,23 @@
         }
 
         // Event listeners
+        document.getElementById('reload-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('reload-btn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+            btn.disabled = true;
+            
+            try {
+                await loadData();
+                console.log('Dados recarregados com sucesso!');
+            } catch (error) {
+                console.error('Erro ao recarregar dados:', error);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        });
+
         document.getElementById('search-input').addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             projetosFiltrados = projetosData.filter(projeto => 
@@ -423,5 +616,9 @@
         // Carregar dados ao iniciar
         loadData();
     </script>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

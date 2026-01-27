@@ -1,0 +1,710 @@
+#!/usr/bin/env python3
+"""
+API Flask para Gestão de Concessões Portuárias
+Integra banco de dados com frontend HTML
+"""
+
+from flask import Flask, jsonify, request, send_from_directory, redirect, url_for
+from flask_cors import CORS
+import sqlite3
+import json
+from datetime import datetime
+from pathlib import Path
+import pandas as pd
+import os
+from werkzeug.utils import secure_filename
+
+app = Flask(__name__)
+CORS(app)  # Permite requisições do frontend
+
+# Configurações
+DATABASE = 'portos.db'
+JSON_FILE = 'planilha_portos.json'
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'json'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Criar pasta de uploads se não existir
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# --- Banco de Dados ---------------------------------------------------------
+
+def init_db():
+    """Inicializa o banco de dados SQLite"""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    # Tabela de projetos (Cadastro)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS projetos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            zona_portuaria TEXT,
+            uf TEXT,
+            obj_concessao TEXT,
+            tipo TEXT,
+            capex_total REAL,
+            data_assinatura TEXT,
+            descricao TEXT,
+            latitude REAL,
+            longitude REAL,
+            coordenada_e_utm REAL,
+            coordenada_s_utm REAL,
+            fuso INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Tabela de serviços
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS servicos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            projeto_id INTEGER,
+            zona_portuaria TEXT,
+            uf TEXT,
+            obj_concessao TEXT,
+            tipo_servico TEXT,
+            fase TEXT,
+            servico TEXT,
+            descricao_servico TEXT,
+            prazo_inicio_anos REAL,
+            data_inicio TEXT,
+            prazo_final_anos REAL,
+            data_final TEXT,
+            fonte_prazo TEXT,
+            percentual_capex REAL,
+            capex_servico REAL,
+            fonte_percentual TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (projeto_id) REFERENCES projetos (id)
+        )
+    ''')
+    
+    # Tabela de acompanhamento
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS acompanhamento (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            projeto_id INTEGER,
+            zona_portuaria TEXT,
+            uf TEXT,
+            obj_concessao TEXT,
+            tipo_servico TEXT,
+            fase TEXT,
+            servico TEXT,
+            descricao TEXT,
+            percentual_executada REAL,
+            valor_executado REAL,
+            data_atualizacao TEXT,
+            responsavel TEXT,
+            cargo TEXT,
+            setor TEXT,
+            riscos_tipo TEXT,
+            riscos_descricao TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (projeto_id) REFERENCES projetos (id)
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+def get_db_connection():
+    """Conexão com o banco de dados"""
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# --- Importação de Dados ----------------------------------------------------
+
+def import_from_json():
+    """Importa dados do JSON para o banco de dados"""
+    if not Path(JSON_FILE).exists():
+        return False
+    
+    with open(JSON_FILE, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Limpa tabelas
+    cursor.execute('DELETE FROM acompanhamento')
+    cursor.execute('DELETE FROM servicos')
+    cursor.execute('DELETE FROM projetos')
+    
+    # Importa projetos
+    cadastros = data.get('Tabela 00 - Cadastro', [])
+    for cadastro in cadastros:
+        cursor.execute('''
+            INSERT INTO projetos (
+                zona_portuaria, uf, obj_concessao, tipo, capex_total,
+                data_assinatura, descricao, latitude, longitude,
+                coordenada_e_utm, coordenada_s_utm, fuso
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            cadastro.get('Zona portuária'),
+            cadastro.get('UF'),
+            cadastro.get('Obj. de Concessão'),
+            cadastro.get('Tipo'),
+            cadastro.get('CAPEX Total'),
+            cadastro.get('Data de assinatura do contrato'),
+            cadastro.get('Descrição'),
+            cadastro.get('Latitude'),
+            cadastro.get('Longitude'),
+            cadastro.get('Coordenada E (UTM)'),
+            cadastro.get('Coordenada S (UTM)'),
+            cadastro.get('Fuso')
+        ))
+        
+        projeto_id = cursor.lastrowid
+        
+        # Importa serviços relacionados
+        servicos = data.get('Tabela 01 - Serviços', [])
+        servicos_projeto = [
+            s for s in servicos 
+            if s.get('Zona portuária') == cadastro.get('Zona portuária') and
+               s.get('UF') == cadastro.get('UF') and
+               s.get('Obj. de Concessão') == cadastro.get('Obj. de Concessão')
+        ]
+        
+        for servico in servicos_projeto:
+            cursor.execute('''
+                INSERT INTO servicos (
+                    projeto_id, zona_portuaria, uf, obj_concessao,
+                    tipo_servico, fase, servico, descricao_servico,
+                    prazo_inicio_anos, data_inicio, prazo_final_anos, data_final,
+                    fonte_prazo, percentual_capex, capex_servico, fonte_percentual
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                projeto_id,
+                servico.get('Zona portuária'),
+                servico.get('UF'),
+                servico.get('Obj. de Concessão'),
+                servico.get('Tipo de Serviço'),
+                servico.get('Fase'),
+                servico.get('Serviço'),
+                servico.get('Descrição do serviço'),
+                servico.get('Prazo início (anos)'),
+                servico.get('Data de início'),
+                servico.get('Prazo final (anos)'),
+                servico.get('Data final'),
+                servico.get('Fonte (Prazo)'),
+                servico.get('% de CAPEX para o serviço'),
+                servico.get('CAPEX do Serviço'),
+                servico.get('Fonte (% do CAPEX)')
+            ))
+        
+        # Importa acompanhamentos relacionados
+        acompanhamentos = data.get('Tabela 02 - Acompanhamento', [])
+        acompanhamentos_projeto = [
+            a for a in acompanhamentos
+            if a.get('Zona portuária') == cadastro.get('Zona portuária') and
+               a.get('UF') == cadastro.get('UF') and
+               a.get('Obj. de Concessão') == cadastro.get('Obj. de Concessão')
+        ]
+        
+        for acomp in acompanhamentos_projeto:
+            cursor.execute('''
+                INSERT INTO acompanhamento (
+                    projeto_id, zona_portuaria, uf, obj_concessao,
+                    tipo_servico, fase, servico, descricao,
+                    percentual_executada, valor_executado, data_atualizacao,
+                    responsavel, cargo, setor, riscos_tipo, riscos_descricao
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                projeto_id,
+                acomp.get('Zona portuária'),
+                acomp.get('UF'),
+                acomp.get('Obj. de Concessão'),
+                acomp.get('Tipo de Serviço'),
+                acomp.get('Fase'),
+                acomp.get('Serviço'),
+                acomp.get('Descrição'),
+                acomp.get('% executada'),
+                acomp.get('Valor executado'),
+                acomp.get('Data da atualização'),
+                acomp.get('Responsável'),
+                acomp.get('Cargo'),
+                acomp.get('Setor'),
+                acomp.get('Riscos Relacionados (Tipo)'),
+                acomp.get('Riscos Relacionados (Descrição)')
+            ))
+    
+    conn.commit()
+    conn.close()
+    return True
+
+# --- API Endpoints ----------------------------------------------------------
+
+@app.route('/')
+def index():
+    """Serve a página HTML principal"""
+    return send_from_directory('.', 'portos.html')
+
+@app.route('/api/projects')
+def get_projects():
+    """Retorna todos os projetos no formato esperado pelo frontend"""
+    conn = get_db_connection()
+    
+    # Busca projetos
+    projetos = conn.execute('''
+        SELECT * FROM projetos ORDER BY zona_portuaria, obj_concessao
+    ''').fetchall()
+    
+    result = []
+    
+    for projeto in projetos:
+        # Busca serviços do projeto
+        servicos = conn.execute('''
+            SELECT * FROM servicos WHERE projeto_id = ?
+        ''', (projeto['id'],)).fetchall()
+        
+        # Busca acompanhamentos do projeto
+        acompanhamentos = conn.execute('''
+            SELECT * FROM acompanhamento WHERE projeto_id = ?
+        ''', (projeto['id'],)).fetchall()
+        
+        # Calcula progresso
+        progresso = 0
+        if acompanhamentos:
+            mais_recente = max(acompanhamentos, 
+                             key=lambda x: x['data_atualizacao'] or '')
+            progresso = (mais_recente['percentual_executada'] or 0) * 100
+        
+        # Determina etapa
+        etapa = 'Planejamento'
+        servicos_em_execucao = [
+            s for s in servicos
+            if s['data_inicio'] and s['data_final']
+        ]
+        if servicos_em_execucao:
+            etapa = f'Execução - {len(servicos_em_execucao)} serviço(s) em andamento'
+        elif progresso > 0:
+            etapa = 'Em execução'
+        
+        # Prepara coordenadas
+        latitude = projeto['latitude']
+        longitude = projeto['longitude']
+        
+        # Gera mapa se tiver coordenadas
+        mapa_embed = None
+        coordenadas_lat_lon = None
+        
+        if latitude and longitude:
+            coordenadas_lat_lon = {
+                'lat': latitude,
+                'lon': longitude
+            }
+            
+            bbox_size = 0.02
+            bbox = f"{longitude-bbox_size},{latitude-bbox_size},{longitude+bbox_size},{latitude+bbox_size}"
+            
+            mapa_embed = f'''
+                <div class="w-full h-full relative">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        style="border:0; border-radius: 8px;" 
+                        src="https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latitude},{longitude}" 
+                        frameborder="0"
+                        allowfullscreen>
+                    </iframe>
+                    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
+                        📍 {latitude:.6f}, {longitude:.6f}
+                    </div>
+                </div>
+            '''
+        
+        # Nome do projeto
+        zona = projeto['zona_portuaria'] or 'Não informado'
+        obj = projeto['obj_concessao'] or ''
+        nome_projeto = zona if zona == 'Não se aplica' else f"{zona} - {obj}"
+        
+        result.append({
+            'id': f"projeto-{projeto['id']}",
+            'nome': nome_projeto,
+            'zona': zona,
+            'uf': projeto['uf'] or '',
+            'objConcessao': obj,
+            'tipo': projeto['tipo'] or '',
+            'capexTotal': projeto['capex_total'] or 0,
+            'dataAssinatura': projeto['data_assinatura'],
+            'descricao': projeto['descricao'] or 'Sem descrição disponível',
+            'progresso': progresso,
+            'etapa': etapa,
+            'servicos': [dict(s) for s in servicos],
+            'acompanhamentos': [dict(a) for a in acompanhamentos],
+            'mapaEmbed': mapa_embed,
+            'coordenadas': {
+                'e': projeto['coordenada_e_utm'],
+                's': projeto['coordenada_s_utm'],
+                'fuso': projeto['fuso'],
+                'latitude': latitude,
+                'longitude': longitude
+            },
+            'coordenadasLatLon': coordenadas_lat_lon
+        })
+    
+    conn.close()
+    
+    # Formato compatível com o frontend
+    return jsonify(result)
+
+@app.route('/api/import', methods=['POST'])
+def import_data():
+    """Importa dados do JSON para o banco"""
+    try:
+        success = import_from_json()
+        if success:
+            return jsonify({'message': 'Dados importados com sucesso!'})
+        else:
+            return jsonify({'error': 'Arquivo JSON não encontrado'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects', methods=['POST'])
+def create_project():
+    """Cria um novo projeto"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        
+        cursor = conn.execute('''
+            INSERT INTO projetos (
+                zona_portuaria, uf, obj_concessao, tipo, capex_total,
+                data_assinatura, descricao, latitude, longitude,
+                coordenada_e_utm, coordenada_s_utm, fuso
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get('zona_portuaria'),
+            data.get('uf'),
+            data.get('obj_concessao'),
+            data.get('tipo'),
+            data.get('capex_total'),
+            data.get('data_assinatura'),
+            data.get('descricao'),
+            data.get('latitude'),
+            data.get('longitude'),
+            data.get('coordenada_e_utm'),
+            data.get('coordenada_s_utm'),
+            data.get('fuso')
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': 'Projeto criado com sucesso!',
+            'id': cursor.lastrowid
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects/<int:projeto_id>', methods=['PUT'])
+def update_project(projeto_id):
+    """Atualiza um projeto"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        
+        cursor = conn.execute('''
+            UPDATE projetos SET
+                zona_portuaria = ?, uf = ?, obj_concessao = ?, tipo = ?,
+                capex_total = ?, data_assinatura = ?, descricao = ?,
+                latitude = ?, longitude = ?, coordenada_e_utm = ?,
+                coordenada_s_utm = ?, fuso = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (
+            data.get('zona_portuaria'),
+            data.get('uf'),
+            data.get('obj_concessao'),
+            data.get('tipo'),
+            data.get('capex_total'),
+            data.get('data_assinatura'),
+            data.get('descricao'),
+            data.get('latitude'),
+            data.get('longitude'),
+            data.get('coordenada_e_utm'),
+            data.get('coordenada_s_utm'),
+            data.get('fuso'),
+            projeto_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Projeto atualizado com sucesso!'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/servicos', methods=['POST'])
+def create_servico():
+    """Cria um novo serviço"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        
+        cursor = conn.execute('''
+            INSERT INTO servicos (
+                projeto_id, zona_portuaria, uf, obj_concessao,
+                tipo_servico, fase, servico, descricao_servico,
+                prazo_inicio_anos, data_inicio, prazo_final_anos, data_final,
+                fonte_prazo, percentual_capex, capex_servico, fonte_percentual
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get('projeto_id'),
+            data.get('zona_portuaria'),
+            data.get('uf'),
+            data.get('obj_concessao'),
+            data.get('tipo_servico'),
+            data.get('fase'),
+            data.get('servico'),
+            data.get('descricao_servico'),
+            data.get('prazo_inicio_anos'),
+            data.get('data_inicio'),
+            data.get('prazo_final_anos'),
+            data.get('data_final'),
+            data.get('fonte_prazo'),
+            data.get('percentual_capex'),
+            data.get('capex_servico'),
+            data.get('fonte_percentual')
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Serviço criado com sucesso!', 'id': cursor.lastrowid})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/acompanhamento', methods=['POST'])
+def create_acompanhamento():
+    """Cria um novo acompanhamento"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        
+        cursor = conn.execute('''
+            INSERT INTO acompanhamento (
+                projeto_id, zona_portuaria, uf, obj_concessao,
+                tipo_servico, fase, servico, descricao,
+                percentual_executada, valor_executado, data_atualizacao,
+                responsavel, cargo, setor, riscos_tipo, riscos_descricao
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get('projeto_id'),
+            data.get('zona_portuaria'),
+            data.get('uf'),
+            data.get('obj_concessao'),
+            data.get('tipo_servico'),
+            data.get('fase'),
+            data.get('servico'),
+            data.get('descricao'),
+            data.get('percentual_executada'),
+            data.get('valor_executado'),
+            data.get('data_atualizacao'),
+            data.get('responsavel'),
+            data.get('cargo'),
+            data.get('setor'),
+            data.get('riscos_tipo'),
+            data.get('riscos_descricao')
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Acompanhamento criado com sucesso!', 'id': cursor.lastrowid})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- Endpoints de Upload e Arquivos -----------------------------------------
+
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    """Faz upload de planilha Excel ou JSON e importa para o banco"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Nenhum arquivo enviado'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Nenhum arquivo selecionado'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            # Processa o arquivo
+            if filename.endswith('.json'):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                success = import_json_data(data)
+            elif filename.endswith(('.xlsx', '.xls')):
+                data = process_excel_file(filepath)
+                success = import_json_data(data)
+            
+            if success:
+                return jsonify({
+                    'message': f'Arquivo {filename} importado com sucesso!',
+                    'filename': filename,
+                    'records': len(data.get('Tabela 00 - Cadastro', []))
+                })
+            else:
+                return jsonify({'error': 'Erro ao processar arquivo'}), 500
+        else:
+            return jsonify({'error': 'Tipo de arquivo não permitido'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def process_excel_file(filepath):
+    """Processa arquivo Excel e converte para formato JSON"""
+    try:
+        xls = pd.ExcelFile(filepath, engine='openpyxl')
+        data = {}
+        
+        for sheet_name in xls.sheet_names:
+            df = pd.read_excel(filepath, sheet_name=sheet_name, engine='openpyxl')
+            df = df.dropna(axis=0, how='all').dropna(axis=1, how='all')
+            
+            # Normaliza headers se começar com ##
+            if not df.empty and isinstance(df.iat[0,0], str) and df.iat[0,0].strip().startswith('##'):
+                headers = df.iloc[1].astype(str).str.strip().tolist()
+                df = df.iloc[2:].copy()
+                df.columns = headers
+            
+            df.columns = [str(c).strip() for c in df.columns]
+            data[sheet_name] = df.to_dict('records')
+        
+        return data
+    except Exception as e:
+        print(f"Erro ao processar Excel: {e}")
+        return {}
+
+def import_json_data(data):
+    """Importa dados no formato JSON para o banco"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Limpa tabelas
+        cursor.execute('DELETE FROM acompanhamento')
+        cursor.execute('DELETE FROM servicos')
+        cursor.execute('DELETE FROM projetos')
+        
+        # Importa projetos
+        cadastros = data.get('Tabela 00 - Cadastro', [])
+        for cadastro in cadastros:
+            cursor.execute('''
+                INSERT INTO projetos (
+                    zona_portuaria, uf, obj_concessao, tipo, capex_total,
+                    data_assinatura, descricao, latitude, longitude,
+                    coordenada_e_utm, coordenada_s_utm, fuso
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                cadastro.get('Zona portuária'),
+                cadastro.get('UF'),
+                cadastro.get('Obj. de Concessão'),
+                cadastro.get('Tipo'),
+                cadastro.get('CAPEX Total'),
+                cadastro.get('Data de assinatura do contrato'),
+                cadastro.get('Descrição'),
+                cadastro.get('Latitude'),
+                cadastro.get('Longitude'),
+                cadastro.get('Coordenada E (UTM)'),
+                cadastro.get('Coordenada S (UTM)'),
+                cadastro.get('Fuso')
+            ))
+            
+            projeto_id = cursor.lastrowid
+            
+            # Importa serviços e acompanhamentos (lógica similar)
+            # ... (código de importação de serviços e acompanhamentos)
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Erro na importação: {e}")
+        return False
+
+@app.route('/api/projects/<int:projeto_id>', methods=['DELETE'])
+def delete_project(projeto_id):
+    """Exclui um projeto"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Exclui acompanhamentos e serviços primeiro
+        cursor.execute('DELETE FROM acompanhamento WHERE projeto_id = ?', (projeto_id,))
+        cursor.execute('DELETE FROM servicos WHERE projeto_id = ?', (projeto_id,))
+        
+        # Exclui o projeto
+        cursor.execute('DELETE FROM projetos WHERE id = ?', (projeto_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Projeto excluído com sucesso!'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/projects/<int:projeto_id>', methods=['GET'])
+def get_project(projeto_id):
+    """Retorna um projeto específico"""
+    try:
+        conn = get_db_connection()
+        projeto = conn.execute('SELECT * FROM projetos WHERE id = ?', (projeto_id,)).fetchone()
+        
+        if not projeto:
+            return jsonify({'error': 'Projeto não encontrado'}), 404
+        
+        # Busca serviços e acompanhamentos
+        servicos = conn.execute('SELECT * FROM servicos WHERE projeto_id = ?', (projeto_id,)).fetchall()
+        acompanhamentos = conn.execute('SELECT * FROM acompanhamento WHERE projeto_id = ?', (projeto_id,)).fetchall()
+        
+        result = dict(projeto)
+        result['servicos'] = [dict(s) for s in servicos]
+        result['acompanhamentos'] = [dict(a) for a in acompanhamentos]
+        
+        conn.close()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- Páginas HTML ----------------------------------------------------------
+
+@app.route('/cadastro')
+def cadastro_page():
+    """Página de cadastro de projetos"""
+    return send_from_directory('.', 'cadastro.html')
+
+@app.route('/planilhas')
+def planilhas_page():
+    """Página de gestão de planilhas"""
+    return send_from_directory('.', 'planilhas.html')
+
+@app.route('/editar/<int:projeto_id>')
+def editar_page(projeto_id):
+    """Página de edição de projeto"""
+    return send_from_directory('.', 'editar.html')
+
+# --- Inicialização ----------------------------------------------------------
+
+if __name__ == '__main__':
+    # Inicializa banco de dados
+    init_db()
+    
+    # Importa dados do JSON se existir
+    if Path(JSON_FILE).exists():
+        print("Importando dados do JSON...")
+        import_from_json()
+        print("Importação concluída!")
+    
+    print("Servidor iniciado em http://localhost:5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Projetos - Sistema Portuário</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2E4E8C;
+            --primary-dark: #243B6B;
+            --primary-light: #3E5FA4;
+            --accent-green: #2E7D32;
+            --accent-yellow: #F7B500;
+            --accent-red: #C62828;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #4A4A4A;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .form-input {
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(46, 78, 140, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .coord-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 1rem;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: rgba(46, 78, 140, 0.05);
+        }
+
+        .file-upload.dragover {
+            border-color: var(--primary);
+            background: rgba(46, 78, 140, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 h-full shadow-xl">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-8">
+                    <i class="fas fa-ship text-2xl text-blue-600"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Sistema Portuário</h1>
+                </div>
+                
+                <nav class="space-y-2">
+                    <a href="/" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-dashboard"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/cadastro" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Cadastro</span>
+                    </a>
+                    <a href="/planilhas" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Planilhas</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-y-auto">
+            <div class="p-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white rounded-2xl shadow-xl p-8">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h2 class="text-3xl font-bold text-gray-800">Cadastro de Projeto</h2>
+                                <p class="text-gray-600 mt-2">Preencha as informações do novo projeto portuário</p>
+                            </div>
+                            <button onclick="showUploadModal()" class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                <i class="fas fa-upload"></i>
+                                Importar Planilha
+                            </button>
+                        </div>
+
+                        <!-- Formulário -->
+                        <form id="projectForm" class="space-y-6">
+                            <!-- Informações Básicas -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-blue-600"></i>
+                                    Informações Básicas
+                                </h3>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Zona Portuária</label>
+                                        <input type="text" id="zonaPortuaria" name="zona_portuaria" 
+                                               class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                               placeholder="Ex: Porto Organizado de Santos">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">UF</label>
+                                        <select id="uf" name="uf" 
+                                                class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none">
+                                            <option value="">Selecione...</option>
+                                            <option value="AC">Acre</option>
+                                            <option value="AL">Alagoas</option>
+                                            <option value="AP">Amapá</option>
+                                            <option value="AM">Amazonas</option>
+                                            <option value="BA">Bahia</option>
+                                            <option value="CE">Ceará</option>
+                                            <option value="DF">Distrito Federal</option>
+                                            <option value="ES">Espírito Santo</option>
+                                            <option value="GO">Goiás</option>
+                                            <option value="MA">Maranhão</option>
+                                            <option value="MT">Mato Grosso</option>
+                                            <option value="MS">Mato Grosso do Sul</option>
+                                            <option value="MG">Minas Gerais</option>
+                                            <option value="PA">Pará</option>
+                                            <option value="PB">Paraíba</option>
+                                            <option value="PR">Paraná</option>
+                                            <option value="PE">Pernambuco</option>
+                                            <option value="PI">Piauí</option>
+                                            <option value="RJ">Rio de Janeiro</option>
+                                            <option value="RN">Rio Grande do Norte</option>
+                                            <option value="RS">Rio Grande do Sul</option>
+                                            <option value="RO">Rondônia</option>
+                                            <option value="RR">Roraima</option>
+                                            <option value="SC">Santa Catarina</option>
+                                            <option value="SP">São Paulo</option>
+                                            <option value="SE">Sergipe</option>
+                                            <option value="TO">Tocantins</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Objeto de Concessão</label>
+                                        <input type="text" id="objConcessao" name="obj_concessao" 
+                                               class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                               placeholder="Ex: TECON 10">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                                        <select id="tipo" name="tipo" 
+                                                class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none">
+                                            <option value="">Selecione...</option>
+                                            <option value="Concessão">Concessão</option>
+                                            <option value="Arrendamento">Arrendamento</option>
+                                            <option value="Autorização">Autorização</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">CAPEX Total (R$)</label>
+                                        <input type="number" id="capexTotal" name="capex_total" 
+                                               class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                               placeholder="0.00" step="0.01">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Data de Assinatura</label>
+                                        <input type="date" id="dataAssinatura" name="data_assinatura" 
+                                               class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                                    <textarea id="descricao" name="descricao" rows="4"
+                                              class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                              placeholder="Descreva o projeto..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Coordenadas -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                    Coordenadas
+                                </h3>
+                                
+                                <div class="mb-4">
+                                    <label class="flex items-center gap-2">
+                                        <input type="radio" name="coordType" value="latlon" checked onchange="toggleCoordType()">
+                                        <span class="text-sm font-medium">Latitude/Longitude</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 ml-6">
+                                        <input type="radio" name="coordType" value="utm" onchange="toggleCoordType()">
+                                        <span class="text-sm font-medium">UTM</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- Latitude/Longitude -->
+                                <div id="latlonFields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Latitude</label>
+                                        <input type="number" id="latitude" name="latitude" 
+                                               class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                               placeholder="-23.926132" step="0.000001">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Longitude</label>
+                                        <input type="number" id="longitude" name="longitude" 
+                                               class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                               placeholder="-46.34027" step="0.000001">
+                                    </div>
+                                </div>
+                                
+                                <!-- UTM -->
+                                <div id="utmFields" class="hidden">
+                                    <div class="coord-inputs">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Coordenada E (UTM)</label>
+                                            <input type="number" id="coordE" name="coordenada_e_utm" 
+                                                   class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                                   placeholder="363506.31">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Coordenada S (UTM)</label>
+                                            <input type="number" id="coordS" name="coordenada_s_utm" 
+                                                   class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                                   placeholder="7353284.66">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Fuso</label>
+                                            <input type="number" id="fuso" name="fuso" 
+                                                   class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                                   placeholder="23" min="1" max="60">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botões -->
+                            <div class="flex gap-4 justify-end">
+                                <button type="button" onclick="resetForm()" 
+                                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                    Cancelar
+                                </button>
+                                <button type="submit" 
+                                        class="btn-primary text-white px-6 py-2 rounded-lg flex items-center gap-2">
+                                    <i class="fas fa-save"></i>
+                                    Salvar Projeto
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Upload -->
+    <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Importar Planilha</h3>
+                    <button onclick="closeUploadModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div id="dropZone" class="file-upload border-2 border-dashed rounded-xl p-8 text-center cursor-pointer">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 mb-2">Arraste uma planilha aqui ou clique para selecionar</p>
+                    <p class="text-sm text-gray-500">Formatos aceitos: .xlsx, .xls, .json</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.json">
+                </div>
+                
+                <div id="uploadProgress" class="hidden mt-4">
+                    <div class="bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="uploadStatus" class="text-sm text-gray-600 mt-2">Processando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-4 flex items-center gap-3 min-w-[300px]">
+            <div id="toastIcon"></div>
+            <div>
+                <p id="toastMessage" class="text-gray-800 font-medium"></p>
+                <p id="toastDescription" class="text-sm text-gray-600"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle entre Lat/Lon e UTM
+        function toggleCoordType() {
+            const latlonFields = document.getElementById('latlonFields');
+            const utmFields = document.getElementById('utmFields');
+            const coordType = document.querySelector('input[name="coordType"]:checked').value;
+            
+            if (coordType === 'latlon') {
+                latlonFields.classList.remove('hidden');
+                utmFields.classList.add('hidden');
+            } else {
+                latlonFields.classList.add('hidden');
+                utmFields.classList.remove('hidden');
+            }
+        }
+
+        // Modal de Upload
+        function showUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+            document.getElementById('uploadModal').classList.add('flex');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+            document.getElementById('uploadModal').classList.remove('flex');
+            resetUpload();
+        }
+
+        // Upload de arquivo
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Mostra progresso
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = '50%';
+            document.getElementById('uploadStatus').textContent = 'Enviando arquivo...';
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('uploadStatus').textContent = 'Importação concluída!';
+                    
+                    showToast('success', 'Sucesso!', result.message);
+                    
+                    setTimeout(() => {
+                        closeUploadModal();
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    showToast('error', 'Erro!', result.error);
+                }
+            } catch (error) {
+                showToast('error', 'Erro!', 'Falha na comunicação com o servidor');
+            }
+        }
+
+        function resetUpload() {
+            document.getElementById('uploadProgress').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('fileInput').value = '';
+        }
+
+        // Formulário
+        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Prepara dados para API
+            const projectData = {
+                zona_portuaria: data.zona_portuaria || 'Não se aplica',
+                uf: data.uf,
+                obj_concessao: data.obj_concessao,
+                tipo: data.tipo,
+                capex_total: parseFloat(data.capex_total) || 0,
+                data_assinatura: data.data_assinatura || null,
+                descricao: data.descricao,
+                latitude: data.coordType === 'latlon' ? parseFloat(data.latitude) || null : null,
+                longitude: data.coordType === 'latlon' ? parseFloat(data.longitude) || null : null,
+                coordenada_e_utm: data.coordType === 'utm' ? parseFloat(data.coordE) || null : null,
+                coordenada_s_utm: data.coordType === 'utm' ? parseFloat(data.coordS) || null : null,
+                fuso: data.coordType === 'utm' ? parseInt(data.fuso) || null : null
+            };
+            
+            try {
+                const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(projectData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('success', 'Sucesso!', 'Projeto cadastrado com sucesso!');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    showToast('error', 'Erro!', result.error);
+                }
+            } catch (error) {
+                showToast('error', 'Erro!', 'Falha na comunicação com o servidor');
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('projectForm').reset();
+        }
+
+        // Toast notifications
+        function showToast(type, title, message) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastDescription = document.getElementById('toastDescription');
+            
+            // Configura ícone e cor
+            if (type === 'success') {
+                toastIcon.innerHTML = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+            } else {
+                toastIcon.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>';
+            }
+            
+            toastMessage.textContent = title;
+            toastDescription.textContent = message;
+            
+            // Mostra toast
+            toast.classList.remove('hidden');
+            
+            // Esconde após 5 segundos
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
