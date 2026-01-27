@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Concessões Portuárias - Apresentação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2E4E8C;
+            --primary-dark: #243B6B;
+            --primary-light: #3E5FA4;
+            --accent-green: #2E7D32;
+            --accent-yellow: #F7B500;
+            --accent-red: #C62828;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #4A4A4A;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-enter {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .modal-leave {
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
+
+        .project-card {
+            border: 1px solid #E5E7EB;
+            transition: all 0.3s ease;
+        }
+        .project-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .modal-info-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        @media (min-width: 1024px) {
+            .modal-info-grid {
+                grid-template-areas:
+                    'descricao mapa'
+                    'etapa mapa';
+                grid-template-columns: 1fr 1fr;
+            }
+            .card--descricao { grid-area: descricao; }
+            .card--mapa { grid-area: mapa; }
+            .card--etapa { grid-area: etapa; }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen pb-12">
+        <!-- Header -->
+        <div class="bg-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <h1 class="text-3xl font-bold text-gray-800">Gestão de Concessões Portuárias</h1>
+                <p class="text-gray-600 mt-2">Acompanhamento de Projetos de Concessão</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Search and Filter -->
+            <div class="mb-6">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" id="search-input" 
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Buscar projetos...">
+                </div>
+            </div>
+
+            <!-- Projects Grid -->
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards serão inseridos aqui via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] overflow-y-auto relative transform transition-all duration-300">
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors z-10">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+            <div id="modal-body" class="p-8 md:p-12">
+                <!-- Conteúdo será inserido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let projetosData = [];
+        let projetosFiltrados = [];
+
+        // Função para converter UTM para Lat/Lon (WGS84)
+        // Baseado no algoritmo de Karney (2011) simplificado
+        function utmToLatLon(easting, northing, zone) {
+            try {
+                // Parâmetros do elipsoide WGS84
+                const a = 6378137.0; // semi-eixo maior (metros)
+                const e2 = 0.00669437999014; // primeira excentricidade ao quadrado
+                const k0 = 0.9996; // fator de escala
+                const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+                
+                // Remover falsa origem
+                // Hemisfério Sul: northing tem falsa origem de 10.000.000m
+                const x = easting - 500000; // falsa origem leste
+                const y = northing > 10000000 ? northing - 10000000 : northing; // hemisfério sul
+                
+                // Calcular longitude do meridiano central do fuso
+                const lon0 = (zone - 1) * 6 - 180 + 3;
+                
+                // Calcular M (distância ao longo do meridiano desde o equador)
+                const M = y / k0;
+                
+                // Calcular mu (parâmetro auxiliar)
+                const mu = M / (a * (1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256));
+                
+                // Calcular latitude de referência (footprint latitude)
+                const lat1 = mu + (3*e1/2 - 27*e1*e1*e1/32) * Math.sin(2*mu) +
+                            (21*e1*e1/16 - 55*e1*e1*e1*e1/32) * Math.sin(4*mu) +
+                            (151*e1*e1*e1/96) * Math.sin(6*mu) +
+                            (1097*e1*e1*e1*e1/512) * Math.sin(8*mu);
+                
+                // Calcular constantes auxiliares
+                const N1 = a / Math.sqrt(1 - e2 * Math.sin(lat1) * Math.sin(lat1));
+                const T1 = Math.tan(lat1) * Math.tan(lat1);
+                const C1 = e2 * Math.cos(lat1) * Math.cos(lat1) / (1 - e2);
+                const D = x / (N1 * k0);
+                
+                // Calcular latitude final
+                const lat = lat1 - (N1 * Math.tan(lat1) / (k0 * a)) * (
+                    D*D/2 - (5 + 3*T1 + 10*C1 - 4*C1*C1 - 9*e2) * D*D*D*D/24 +
+                    (61 + 90*T1 + 298*C1 + 45*T1*T1 - 252*e2 - 3*C1*C1) * D*D*D*D*D*D/720
+                );
+                
+                // Calcular longitude final
+                const lon = lon0 + (
+                    D - (1 + 2*T1 + C1) * D*D*D/6 +
+                    (5 - 2*C1 + 28*T1 - 3*C1*C1 + 8*e2 + 24*T1*T1) * D*D*D*D*D/120
+                ) / Math.cos(lat1);
+                
+                return {
+                    lat: lat * 180 / Math.PI,
+                    lon: lon * 180 / Math.PI
+                };
+            } catch (error) {
+                console.error('Erro na conversão UTM:', error);
+                return null;
+            }
+        }
+
+        // Carregar dados do JSON
+        async function loadData() {
+            try {
+                const response = await fetch('planilha_portos.json');
+                const data = await response.json();
+                
+                const cadastros = data['Tabela 00 - Cadastro'] || [];
+                const servicos = data['Tabela 01 - Serviços'] || [];
+                const acompanhamentos = data['Tabela 02 - Acompanhamento'] || [];
+
+                // Processar projetos
+                projetosData = cadastros.map((cadastro, index) => {
+                    const projetoId = `projeto-${index}`;
+                    const zona = cadastro['Zona portuária'] || 'Não informado';
+                    const obj = cadastro['Obj. de Concessão'] || '';
+                    const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+
+                    // Buscar serviços relacionados
+                    const servicosProjeto = servicos.filter(s => 
+                        s['Zona portuária'] === cadastro['Zona portuária'] &&
+                        s['UF'] === cadastro['UF'] &&
+                        s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                    );
+
+                    // Buscar acompanhamentos relacionados
+                    const acompanhamentosProjeto = acompanhamentos.filter(a => 
+                        a['Zona portuária'] === cadastro['Zona portuária'] &&
+                        a['UF'] === cadastro['UF'] &&
+                        a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                    );
+
+                    // Calcular progresso baseado no acompanhamento mais recente
+                    let progresso = 0;
+                    if (acompanhamentosProjeto.length > 0) {
+                        const maisRecente = acompanhamentosProjeto.sort((a, b) => {
+                            const dataA = new Date(a['Data da atualização'] || 0);
+                            const dataB = new Date(b['Data da atualização'] || 0);
+                            return dataB - dataA;
+                        })[0];
+                        progresso = (maisRecente['% executada'] || 0) * 100;
+                    }
+
+                    // ETAPA baseada no status dos serviços
+                    let etapa = 'Planejamento';
+                    const servicosEmExecucao = servicosProjeto.filter(s => {
+                        if (!s['Data de início'] || !s['Data final']) return false;
+                        const inicio = new Date(s['Data de início']);
+                        const fim = new Date(s['Data final']);
+                        const hoje = new Date();
+                        return hoje >= inicio && hoje <= fim;
+                    });
+                    if (servicosEmExecucao.length > 0) {
+                        etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
+                    } else if (progresso > 0) {
+                        etapa = 'Em execução';
+                    }
+
+                    // Mapa - converter UTM para lat/lon se disponível
+                    let mapaEmbed = null;
+                    if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
+                        const coordE = cadastro['Coordenada E (UTM)'];
+                        const coordS = cadastro['Coordenada S (UTM)'];
+                        const fuso = cadastro['Fuso'];
+                        const latLon = utmToLatLon(coordE, coordS, fuso);
+                        if (latLon) {
+                            mapaEmbed = `<iframe width="100%" height="100%" style="border:0" src="https://www.openstreetmap.org/export/embed.html?bbox=${latLon.lon-0.01},${latLon.lat-0.01},${latLon.lon+0.01},${latLon.lat+0.01}&layer=mapnik&marker=${latLon.lat},${latLon.lon}" frameborder="0"></iframe>`;
+                        }
+                    }
+
+                    return {
+                        id: projetoId,
+                        nome: nomeProjeto,
+                        zona: zona,
+                        uf: cadastro['UF'] || '',
+                        objConcessao: obj,
+                        tipo: cadastro['Tipo'] || '',
+                        capexTotal: cadastro['CAPEX Total'] || 0,
+                        dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
+                        descricao: cadastro['Descrição'] || 'Sem descrição disponível',
+                        progresso: progresso,
+                        etapa: etapa,
+                        servicos: servicosProjeto,
+                        acompanhamentos: acompanhamentosProjeto,
+                        mapaEmbed: mapaEmbed,
+                        coordenadas: {
+                            e: cadastro['Coordenada E (UTM)'],
+                            s: cadastro['Coordenada S (UTM)'],
+                            fuso: cadastro['Fuso']
+                        }
+                    };
+                });
+
+                projetosFiltrados = [...projetosData];
+                renderProjects();
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                document.getElementById('projects-grid').innerHTML = 
+                    '<div class="col-span-full text-center text-white p-8"><p>Erro ao carregar dados. Verifique se o arquivo planilha_portos.json está no mesmo diretório.</p></div>';
+            }
+        }
+
+        // Renderizar cards de projetos
+        function renderProjects() {
+            const grid = document.getElementById('projects-grid');
+            
+            if (projetosFiltrados.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center text-white p-8"><p>Nenhum projeto encontrado.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = projetosFiltrados.map(projeto => {
+                const statusColor = projeto.progresso === 0 ? 'bg-gray-400' : 
+                                   projeto.progresso < 50 ? 'bg-yellow-500' : 
+                                   projeto.progresso < 100 ? 'bg-blue-500' : 'bg-green-500';
+                
+                return `
+                    <div data-id="${projeto.id}" class="project-card bg-white rounded-xl shadow-md p-6 cursor-pointer">
+                        <div>
+                            <p class="text-sm text-gray-500">${projeto.uf} • ${projeto.tipo || 'N/A'}</p>
+                            <h3 class="text-lg font-bold mt-1 text-gray-800">${projeto.nome}</h3>
+                            <p class="text-sm text-gray-600 mt-2 line-clamp-2">${projeto.descricao}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full ${statusColor} mr-2"></span>
+                                <span class="text-sm font-medium text-gray-600">${projeto.etapa}</span>
+                            </div>
+                            ${projeto.capexTotal > 0 ? `
+                                <span class="text-xs text-gray-500">
+                                    R$ ${(projeto.capexTotal / 1000000).toFixed(1)}M
+                                </span>
+                            ` : ''}
+                        </div>
+                        ${projeto.progresso > 0 ? `
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: ${projeto.progresso}%"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">${projeto.progresso.toFixed(1)}% concluído</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Renderizar detalhes do projeto no modal
+        function renderProjectDetails(projectId) {
+            const projeto = projetosData.find(p => p.id === projectId);
+            if (!projeto) return;
+
+            const modal = document.getElementById('project-modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalBody = document.getElementById('modal-body');
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'modal-enter');
+            modalContent.classList.remove('modal-leave');
+
+            modalBody.innerHTML = `
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">${projeto.uf} • ${projeto.tipo || 'N/A'}</p>
+                <h2 class="text-4xl font-extrabold text-gray-800 mt-2 mb-6">${projeto.nome}</h2>
+                
+                <div class="modal-info-grid items-stretch">
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--descricao">
+                        <h3 class="text-lg font-bold mb-2 text-gray-700">Descrição do Projeto</h3>
+                        <p class="text-gray-600 leading-relaxed">${projeto.descricao}</p>
+                        <div class="mt-4 text-sm text-gray-600 space-y-1">
+                            <p><span class="font-semibold">Zona Portuária:</span> ${projeto.zona}</p>
+                            <p><span class="font-semibold">UF:</span> ${projeto.uf}</p>
+                            <p><span class="font-semibold">Tipo:</span> ${projeto.tipo || 'Não informado'}</p>
+                            ${projeto.capexTotal > 0 ? `
+                                <p><span class="font-semibold">CAPEX Total:</span> R$ ${projeto.capexTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            ` : ''}
+                            ${projeto.dataAssinatura ? `
+                                <p><span class="font-semibold">Data de Assinatura:</span> ${new Date(projeto.dataAssinatura).toLocaleDateString('pt-BR')}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--mapa">
+                        <h3 class="text-lg font-bold mb-2 text-gray-700">Mapa do Projeto</h3>
+                        ${projeto.mapaEmbed
+                            ? `<div class="w-full h-48 md:h-full rounded-lg overflow-hidden border border-gray-200">${projeto.mapaEmbed}</div>`
+                            : '<div class="w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500">Mapa (pequena escala)<br><span class="text-xs">Coordenadas não disponíveis</span></div>'
+                        }
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--etapa">
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">ETAPA:</h3>
+                        <p class="text-gray-600 font-semibold text-lg">${projeto.etapa}</p>
+                        ${projeto.servicos.length > 0 ? `
+                            <div class="mt-3 text-sm text-gray-600">
+                                <p class="font-semibold mb-2">Serviços por Fase:</p>
+                                ${Object.entries(
+                                    projeto.servicos.reduce((acc, s) => {
+                                        const fase = s['Fase'] || 'Sem fase';
+                                        acc[fase] = (acc[fase] || 0) + 1;
+                                        return acc;
+                                    }, {})
+                                ).map(([fase, count]) => `<p>• ${fase}: ${count} serviço(s)</p>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            projetosFiltrados = projetosData.filter(projeto => 
+                projeto.nome.toLowerCase().includes(searchTerm) ||
+                projeto.descricao.toLowerCase().includes(searchTerm) ||
+                projeto.uf.toLowerCase().includes(searchTerm) ||
+                projeto.zona.toLowerCase().includes(searchTerm)
+            );
+            renderProjects();
+        });
+
+        document.getElementById('projects-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.project-card');
+            if (card && card.dataset.id) {
+                renderProjectDetails(card.dataset.id);
+            }
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            const modal = document.getElementById('project-modal');
+            const modalContent = document.getElementById('modal-content');
+            modalContent.classList.add('modal-leave');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex', 'modal-enter', 'modal-leave');
+            }, 300);
+        });
+
+        document.getElementById('project-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'project-modal') {
+                const modal = document.getElementById('project-modal');
+                const modalContent = document.getElementById('modal-content');
+                modalContent.classList.add('modal-leave');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex', 'modal-enter', 'modal-leave');
+                }, 300);
+            }
+        });
+
+        // Carregar dados ao iniciar
+        loadData();
+    </script>
+</body>
+</html>
