@@ -67,11 +67,12 @@ def init_db():
             obj_concessao TEXT NOT NULL,
             tipo TEXT CHECK(tipo IN ('Concessão', 'Arrendamento', 'Autorização') OR tipo IS NULL),
             capex_total REAL,
+            capex_executado REAL,
+            perc_capex_executado REAL CHECK(perc_capex_executado IS NULL OR (perc_capex_executado >= 0 AND perc_capex_executado <= 1)),
             data_ass_contrato TEXT,
             descricao TEXT,
-            coord_e_utm REAL,
-            coord_s_utm REAL,
-            fuso INTEGER,
+            latitude REAL,
+            longitude REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(zona_portuaria, obj_concessao)
@@ -104,7 +105,9 @@ def init_db():
             data_final TEXT,
             fonte_prazo TEXT,
             perc_capex REAL CHECK(perc_capex IS NULL OR (perc_capex >= 0 AND perc_capex <= 1)),
-            capex_servico REAL,
+            capex_servico_total REAL,
+            capex_servico_exec REAL,
+            perc_capex_exec REAL CHECK(perc_capex_exec IS NULL OR (perc_capex_exec >= 0 AND perc_capex_exec <= 1)),
             fonte_perc_capex TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -152,11 +155,12 @@ def init_db():
             c.obj_concessao AS "Obj. de Concessão",
             c.tipo AS "Tipo",
             c.capex_total AS "CAPEX Total",
+            c.capex_executado AS "CAPEX Executado",
+            c.perc_capex_executado AS "% CAPEX Executado",
             c.data_ass_contrato AS "Data de assinatura do contrato",
             c.descricao AS "Descrição",
-            c.coord_e_utm AS "Coordenada E (UTM)",
-            c.coord_s_utm AS "Coordenada S (UTM)",
-            c.fuso AS "Fuso"
+            c.latitude AS "Latitude",
+            c.longitude AS "Longitude"
         FROM cadastro c
     ''')
     
@@ -177,7 +181,9 @@ def init_db():
             s.data_final AS "Data final",
             s.fonte_prazo AS "Fonte (Prazo)",
             s.perc_capex AS "% de CAPEX para o serviço",
-            s.capex_servico AS "CAPEX do Serviço",
+            s.capex_servico_total AS "CAPEX do Serviço (total)",
+            s.capex_servico_exec AS "CAPEX do Serviço (exec.)",
+            s.perc_capex_exec AS "% CAPEX exec.",
             s.fonte_perc_capex AS "Fonte (% do CAPEX)"
         FROM servico s
         JOIN cadastro c ON c.id = s.cadastro_id
@@ -262,11 +268,12 @@ def _df_to_db_cadastro(df: pd.DataFrame) -> list:
             str(row.get('Obj. de Concessão', '')),
             str(row.get('Tipo', '')) if pd.notna(row.get('Tipo')) else None,
             float(row.get('CAPEX Total')) if pd.notna(row.get('CAPEX Total')) else None,
+            float(row.get('CAPEX Executado')) if pd.notna(row.get('CAPEX Executado')) else None,
+            svc.normalize_percentage(row.get('% CAPEX Executado')) if pd.notna(row.get('% CAPEX Executado')) else None,
             _parse_date(row.get('Data de assinatura do contrato')),
             str(row.get('Descrição', '')) if pd.notna(row.get('Descrição')) else None,
-            float(row.get('Coordenada E (UTM)')) if pd.notna(row.get('Coordenada E (UTM)')) else None,
-            float(row.get('Coordenada S (UTM)')) if pd.notna(row.get('Coordenada S (UTM)')) else None,
-            int(row.get('Fuso')) if pd.notna(row.get('Fuso')) else None,
+            float(row.get('Latitude')) if pd.notna(row.get('Latitude')) else None,
+            float(row.get('Longitude')) if pd.notna(row.get('Longitude')) else None,
         ))
     return rows
 
@@ -299,8 +306,8 @@ def save_cadastro(df: pd.DataFrame) -> bool:
             cursor.execute('''
                 INSERT INTO cadastro 
                 (zona_portuaria, uf_texto, obj_concessao, tipo, capex_total, 
-                 data_ass_contrato, descricao, coord_e_utm, coord_s_utm, fuso)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 capex_executado, perc_capex_executado, data_ass_contrato, descricao, latitude, longitude)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', row)
             cadastro_id = cursor.lastrowid
             # Salvar relacionamento com UFs
@@ -329,11 +336,12 @@ def _db_to_df_cadastro(rows: list) -> pd.DataFrame:
             'Obj. de Concessão': row[3],
             'Tipo': row[4] if row[4] else None,
             'CAPEX Total': row[5] if row[5] is not None else None,
-            'Data de assinatura do contrato': _format_date(row[6]) if row[6] else None,
-            'Descrição': row[7] if row[7] else None,
-            'Coordenada E (UTM)': row[8] if row[8] is not None else None,
-            'Coordenada S (UTM)': row[9] if row[9] is not None else None,
-            'Fuso': row[10] if row[10] is not None else None,
+            'CAPEX Executado': row[6] if row[6] is not None else None,
+            '% CAPEX Executado': row[7] if row[7] is not None else None,
+            'Data de assinatura do contrato': _format_date(row[8]) if row[8] else None,
+            'Descrição': row[9] if row[9] else None,
+            'Latitude': row[10] if row[10] is not None else None,
+            'Longitude': row[11] if row[11] is not None else None,
         })
     df = pd.DataFrame(data)
     # Garantir todas as colunas
@@ -408,7 +416,9 @@ def _df_to_db_servicos(df: pd.DataFrame) -> list:
                 _parse_date(row.get('Data final')),
                 str(row.get('Fonte (Prazo)', '')) if pd.notna(row.get('Fonte (Prazo)')) else None,
                 svc.normalize_percentage(row.get('% de CAPEX para o serviço')) if pd.notna(row.get('% de CAPEX para o serviço')) else None,
-                float(row.get('CAPEX do Serviço')) if pd.notna(row.get('CAPEX do Serviço')) else None,
+                float(row.get('CAPEX do Serviço (total)')) if pd.notna(row.get('CAPEX do Serviço (total)')) else None,
+                float(row.get('CAPEX do Serviço (exec.)')) if pd.notna(row.get('CAPEX do Serviço (exec.)')) else None,
+                svc.normalize_percentage(row.get('% CAPEX exec.')) if pd.notna(row.get('% CAPEX exec.')) else None,
                 str(row.get('Fonte (% do CAPEX)', '')) if pd.notna(row.get('Fonte (% do CAPEX)')) else None,
             ))
         
@@ -438,8 +448,8 @@ def save_servicos(df: pd.DataFrame) -> bool:
                 INSERT INTO servico 
                 (cadastro_id, tipo_servico, fase, servico, descricao_servico,
                  prazo_inicio_anos, data_inicio, prazo_final_anos, data_final,
-                 fonte_prazo, perc_capex, capex_servico, fonte_perc_capex)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 fonte_prazo, perc_capex, capex_servico_total, capex_servico_exec, perc_capex_exec, fonte_perc_capex)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', rows)
         
         conn.commit()

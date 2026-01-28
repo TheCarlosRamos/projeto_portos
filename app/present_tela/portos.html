@@ -603,30 +603,48 @@
                             <div class="bg-gray-50 rounded-xl p-6">
                                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                                     <i class="fas fa-cogs text-blue-600"></i>
-                                     Serviços
+                                    Serviços
                                 </h3>
                                 <div class="overflow-x-auto">
                                     <table class="w-full border-collapse border border-gray-300 text-sm">
                                         <thead class="bg-gray-100">
                                             <tr>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Classe</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Tipo de Serviço</th>
                                                 <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição do serviço</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data de início</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data final</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">CAPEX do Serviço (total)</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">CAPEX do Serviço (exec.)</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">% CAPEX exec.</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             ${currentProject.servicos && currentProject.servicos.length > 0 ? 
-                                                currentProject.servicos.map(servico => `
-                                                    <tr class="hover:bg-gray-50">
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.tipo_servico || '-'}</td>
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.classe || '-'}</td>
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.fase || '-'}</td>
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.descricao || '-'}</td>
-                                                    </tr>
-                                                `).join('') : 
+                                                currentProject.servicos.map(servico => {
+                                                    let percCapexExec = 0;
+                                                    if (servico.perc_capex_exec) {
+                                                        percCapexExec = servico.perc_capex_exec < 1 ? servico.perc_capex_exec * 100 : servico.perc_capex_exec;
+                                                    }
+                                                    return `
+                                                        <tr class="hover:bg-gray-50">
+                                                            <td class="border border-gray-300 px-2 py-1">${servico.tipo_servico || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${servico.fase || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${servico.servico || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${servico.descricao_servico || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(servico.data_inicio) || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(servico.data_final) || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(servico.capex_servico_total || 0)}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(servico.capex_servico_exec || 0)}</td>
+                                                            <td class="border border-gray-300 px-2 py-1 text-center">
+                                                                ${generateDonutChart(Math.round(percCapexExec))}
+                                                            </td>
+                                                        </tr>
+                                                    `;
+                                                }).join('') : 
                                                 `<tr>
-                                                    <td colspan="4" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                                                    <td colspan="9" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
                                                         Nenhum serviço cadastrado
                                                     </td>
                                                 </tr>`
@@ -959,13 +977,15 @@
                                         <table class="w-full border-collapse border border-gray-300">
                                             <thead class="bg-gray-100">
                                                 <tr>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Zona Portuária</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">UF</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Obj. Concessão</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Tipo Serviço</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Classe</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Tipo de Serviço</th>
                                                     <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Descrição do serviço</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Data de início</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Data final</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">CAPEX do Serviço (total)</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">CAPEX do Serviço (exec.)</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">% CAPEX exec.</th>
                                                     <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
                                                 </tr>
                                             </thead>
@@ -1200,7 +1220,7 @@
             if (!currentProject.servicos || currentProject.servicos.length === 0) {
                 return `
                     <tr>
-                        <td colspan="8" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                        <td colspan="10" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
                             Nenhum serviço cadastrado
                         </td>
                     </tr>
@@ -1210,46 +1230,56 @@
             return currentProject.servicos.map((servico, index) => `
                 <tr>
                     <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.zona_portuaria || currentProject.zona || ''}" 
-                               id="servico-zona-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Zona Portuária">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.uf || currentProject.uf || ''}" 
-                               id="servico-uf-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="UF">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.obj_concessao || currentProject.objConcessao || ''}" 
-                               id="servico-obj-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Obj. Concessão">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
                         <input type="text" value="${servico.tipo_servico || ''}" 
-                               id="servico-nome-${index}"
+                               id="tipo-servico-${index}"
                                class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Nome do serviço">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.classe || ''}" 
-                               id="servico-classe-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Classe">
+                               placeholder="Tipo de Serviço">
                     </td>
                     <td class="border border-gray-300 px-2 py-1">
                         <input type="text" value="${servico.fase || ''}" 
-                               id="servico-fase-${index}"
+                               id="fase-${index}"
                                class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
                                placeholder="Fase">
                     </td>
                     <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.descricao || ''}" 
-                               id="servico-descricao-${index}"
+                        <input type="text" value="${servico.servico || ''}" 
+                               id="servico-${index}"
                                class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Descrição">
+                               placeholder="Serviço">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.descricao_servico || ''}" 
+                               id="descricao-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Descrição do serviço">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="date" value="${servico.data_inicio || ''}" 
+                               id="data-inicio-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="date" value="${servico.data_final || ''}" 
+                               id="data-final-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${servico.capex_servico_total || 0}" 
+                               id="capex-total-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               step="0.01">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${servico.capex_servico_exec || 0}" 
+                               id="capex-exec-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               step="0.01">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${servico.perc_capex_exec || 0}" 
+                               id="perc-capex-exec-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               step="0.01" min="0" max="1">
                     </td>
                     <td class="border border-gray-300 px-2 py-1 text-center">
                         <button onclick="removeServicoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
@@ -1268,13 +1298,15 @@
             const novoServico = {
                 id: Date.now(),
                 projeto_id: currentProject.id.replace('projeto-', ''),
-                zona_portuaria: currentProject.zona,
-                uf: currentProject.uf,
-                obj_concessao: currentProject.objConcessao,
                 tipo_servico: '',
-                classe: '',
                 fase: '',
-                descricao: ''
+                servico: '',
+                descricao_servico: '',
+                data_inicio: '',
+                data_final: '',
+                capex_servico_total: 0,
+                capex_servico_exec: 0,
+                perc_capex_exec: 0
             };
             
             currentProject.servicos.push(novoServico);
@@ -1321,24 +1353,28 @@
                 
                 if (currentProject.servicos && currentProject.servicos.length > 0) {
                     currentProject.servicos.forEach((servico, index) => {
-                        const zonaInput = document.getElementById(`servico-zona-${index}`);
-                        const ufInput = document.getElementById(`servico-uf-${index}`);
-                        const objInput = document.getElementById(`servico-obj-${index}`);
-                        const nomeInput = document.getElementById(`servico-nome-${index}`);
-                        const classeInput = document.getElementById(`servico-classe-${index}`);
-                        const faseInput = document.getElementById(`servico-fase-${index}`);
-                        const descricaoInput = document.getElementById(`servico-descricao-${index}`);
+                        const tipoServicoInput = document.getElementById(`tipo-servico-${index}`);
+                        const faseInput = document.getElementById(`fase-${index}`);
+                        const servicoInput = document.getElementById(`servico-${index}`);
+                        const descricaoInput = document.getElementById(`descricao-${index}`);
+                        const dataInicioInput = document.getElementById(`data-inicio-${index}`);
+                        const dataFinalInput = document.getElementById(`data-final-${index}`);
+                        const capexTotalInput = document.getElementById(`capex-total-${index}`);
+                        const capexExecInput = document.getElementById(`capex-exec-${index}`);
+                        const percCapexExecInput = document.getElementById(`perc-capex-exec-${index}`);
                         
-                        if (nomeInput) {
+                        if (tipoServicoInput) {
                             servicosAtualizados.push({
                                 ...servico,
-                                zona_portuaria: zonaInput ? zonaInput.value : currentProject.zona,
-                                uf: ufInput ? ufInput.value : currentProject.uf,
-                                obj_concessao: objInput ? objInput.value : currentProject.objConcessao,
-                                tipo_servico: nomeInput.value,
-                                classe: classeInput ? classeInput.value : '',
+                                tipo_servico: tipoServicoInput.value,
                                 fase: faseInput ? faseInput.value : '',
-                                descricao: descricaoInput ? descricaoInput.value : ''
+                                servico: servicoInput ? servicoInput.value : '',
+                                descricao_servico: descricaoInput ? descricaoInput.value : '',
+                                data_inicio: dataInicioInput ? dataInicioInput.value : '',
+                                data_final: dataFinalInput ? dataFinalInput.value : '',
+                                capex_servico_total: capexTotalInput ? parseFloat(capexTotalInput.value) : 0,
+                                capex_servico_exec: capexExecInput ? parseFloat(capexExecInput.value) : 0,
+                                perc_capex_exec: percCapexExecInput ? parseFloat(percCapexExecInput.value) : 0
                             });
                         }
                     });

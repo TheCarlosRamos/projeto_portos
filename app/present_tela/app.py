@@ -47,6 +47,8 @@ def init_db():
             obj_concessao TEXT,
             tipo TEXT,
             capex_total REAL,
+            capex_executado REAL,
+            perc_capex_executado REAL,
             data_assinatura TEXT,
             descricao TEXT,
             latitude REAL,
@@ -77,7 +79,9 @@ def init_db():
             data_final TEXT,
             fonte_prazo TEXT,
             percentual_capex REAL,
-            capex_servico REAL,
+            capex_servico_total REAL,
+            capex_servico_exec REAL,
+            perc_capex_exec REAL,
             fonte_percentual TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (projeto_id) REFERENCES projetos (id)
@@ -577,8 +581,8 @@ def create_servico():
                 projeto_id, zona_portuaria, uf, obj_concessao,
                 tipo_servico, fase, servico, descricao_servico,
                 prazo_inicio_anos, data_inicio, prazo_final_anos, data_final,
-                fonte_prazo, percentual_capex, capex_servico, fonte_percentual
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                fonte_prazo, percentual_capex, capex_servico_total, capex_servico_exec, perc_capex_exec, fonte_percentual
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('projeto_id'),
             data.get('zona_portuaria'),
@@ -594,7 +598,9 @@ def create_servico():
             data.get('data_final'),
             data.get('fonte_prazo'),
             data.get('percentual_capex'),
-            data.get('capex_servico'),
+            data.get('capex_servico_total'),
+            data.get('capex_servico_exec'),
+            data.get('perc_capex_exec'),
             data.get('fonte_percentual')
         ))
         

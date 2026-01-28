@@ -7,24 +7,21 @@ SHEET_NAMES_SRV = ["Tabela 01 - Serviços", "Planilha 01", "Serviços", "01"]
 SHEET_NAMES_MON = ["Tabela 02 - Acompanhamento", "Planilha 02", "Acompanhamento", "02"]
 
 COLS_00 = [
-    "Zona portuária","UF","Obj. de Concessão","Tipo","CAPEX Total",
-    "Data de assinatura do contrato","Descrição",
-    "Coordenada E (UTM)","Coordenada S (UTM)","Fuso"
+    "Zona portuária","UF","Obj. de Concessão","Tipo","CAPEX Total","CAPEX Executado","% CAPEX Executado",
+    "Data de assinatura do contrato","Descrição","Latitude","Longitude"
 ]
 
 COLS_01 = [
-    "Zona portuária","UF","Obj. de Concessão",
-    "Tipo de Serviço","Fase","Serviço","Descrição do serviço",
-    "Prazo início (anos)","Data de início","Prazo final (anos)","Data final",
-    "Fonte (Prazo)","% de CAPEX para o serviço","CAPEX do Serviço","Fonte (% do CAPEX)"
+    "Zona portuária","UF","Obj. de Concessão","Tipo de Serviço","Fase","Serviço","Descrição do serviço",
+    "Prazo início (anos)","Data de início","Prazo final (anos)","Data final","Fonte (Prazo)",
+    "% de CAPEX para o serviço","CAPEX do Serviço (total)","CAPEX do Serviço (exec.)","% CAPEX exec.",
+    "Fonte (% do CAPEX)"
 ]
 
 COLS_02 = [
-    "Zona portuária","UF","Obj. de Concessão",
-    "Tipo de Serviço","Fase","Serviço","Descrição",
+    "Zona portuária","UF","Obj. de Concessão","Tipo de Serviço","Fase","Serviço","Descrição",
     "% executada","CAPEX (Reaj.)","Valor executado","Data da atualização",
-    "Responsável","Cargo","Setor",
-    "Riscos Relacionados (Tipo)","Riscos Relacionados (Descrição)"
+    "Responsável","Cargo","Setor","Riscos Relacionados (Tipo)","Riscos Relacionados (Descrição)"
 ]
 
 def _find_sheet_name(book: pd.ExcelFile, candidates: List[str]) -> str | None:
