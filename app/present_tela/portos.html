@@ -151,11 +151,16 @@
 
     <!-- Modal -->
     <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-y-auto">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h2 id="modal-title" class="text-2xl font-bold text-gray-800"></h2>
                     <div class="flex items-center gap-3">
+                        <button id="edit-services-btn" onclick="toggleServicesMode()" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300">
+                            <i class="fas fa-tools"></i>
+                            <span id="edit-services-btn-text">Editar Serviços</span>
+                        </button>
                         <button id="edit-project-btn" onclick="toggleEditMode()" 
                                 class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300">
                             <i class="fas fa-exclamation-triangle"></i>
@@ -166,8 +171,7 @@
                         </button>
                     </div>
                 </div>
-                <div id="modal-body" class="p-8 md:p-12">
-                <!-- Conteúdo será inserido via JavaScript -->
+                <div id="modal-body" class="flex flex-wrap justify-center"></div>
             </div>
         </div>
     </div>
@@ -514,7 +518,7 @@
                 // Limpa classes de animação anteriores
                 modalContent.classList.remove('modal-leave');
                 
-                // Reseta botão de edição
+                // Reseta botão de edição de acompanhamento
                 const editBtn = document.getElementById('edit-project-btn');
                 const editBtnText = document.getElementById('edit-btn-text');
                 if (editBtn) {
@@ -523,69 +527,167 @@
                     editBtnText.textContent = 'Editar Acompanhamento';
                 }
                 
+                // Reseta botão de edição de serviços
+                const servicesBtn = document.getElementById('edit-services-btn');
+                const servicesBtnText = document.getElementById('edit-services-btn-text');
+                if (servicesBtn) {
+                    servicesBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    servicesBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    servicesBtnText.textContent = 'Editar Serviços';
+                }
+                
                 // Configura título
                 const zona = currentProject.zona || 'Não informado';
                 const obj = currentProject.objConcessao || '';
                 const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
                 modalTitle.textContent = nomeProjeto;
                 
-                // Renderiza modo visualização
+                // Renderiza modo visualização com layout horizontal
                 modalBody.innerHTML = `
-                    <div class="modal-info-grid">
-                        <!-- Informações Básicas -->
-                        <div class="bg-gray-50 rounded-xl p-6 card--descricao">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-info-circle text-blue-600"></i>
-                                Informações do Projeto
-                            </h3>
-                            <div class="space-y-3">
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
-                                    <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <!-- Coluna Esquerda: Informações Básicas e Mapa -->
+                        <div class="flex-1 space-y-6">
+                            <!-- Informações Básicas -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-blue-600"></i>
+                                    Informações do Projeto
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">UF:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
+                                        <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
+                                        <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">UF:</span>
-                                    <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
-                                    <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">Tipo:</span>
-                                    <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
-                                    <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
-                                    <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-600">Descrição:</span>
-                                    <p class="text-gray-800 mt-1">${currentProject.descricao || 'Não informada'}</p>
-                                </div>
+                                ${currentProject.descricao ? `
+                                    <div class="mt-4">
+                                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
+                                        <p class="text-gray-800 mt-1">${currentProject.descricao}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <!-- Mapa -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                    Localização
+                                </h3>
+                                ${generateMapEmbed(currentProject)}
                             </div>
                         </div>
 
-                        <!-- Mapa -->
-                        <div class="bg-gray-50 rounded-xl p-6 card--mapa">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-map-marker-alt text-blue-600"></i>
-                                Localização
-                            </h3>
-                            ${generateMapEmbed(currentProject)}
-                        </div>
+                        <!-- Coluna Direita: Tabelas -->
+                        <div class="flex-1 space-y-6">
+                            <!-- Tabela 01 - Serviços -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-cogs text-blue-600"></i>
+                                    Tabela 01 - Serviços
+                                </h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full border-collapse border border-gray-300 text-sm">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Classe</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${currentProject.servicos && currentProject.servicos.length > 0 ? 
+                                                currentProject.servicos.map(servico => `
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.tipo_servico || '-'}</td>
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.classe || '-'}</td>
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.fase || '-'}</td>
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.descricao || '-'}</td>
+                                                    </tr>
+                                                `).join('') : 
+                                                `<tr>
+                                                    <td colspan="4" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                                                        Nenhum serviço cadastrado
+                                                    </td>
+                                                </tr>`
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
 
-                        <!-- Acompanhamento -->
-                        <div class="bg-gray-50 rounded-xl p-6 card--etapa">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-chart-line text-blue-600"></i>
-                                Tabela 02 - Acompanhamento
-                            </h3>
-                            ${renderAcompanhamentos()}
+                            <!-- Tabela 02 - Acompanhamento -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-chart-line text-blue-600"></i>
+                                    Tabela 02 - Acompanhamento
+                                </h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full border-collapse border border-gray-300 text-sm">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0 ? 
+                                                currentProject.acompanhamentos.map(acompanhamento => {
+                                                    let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
+                                                    if (percentual < 1) {
+                                                        percentual = percentual * 100;
+                                                    }
+                                                    percentual = Math.round(percentual);
+                                                    
+                                                    return `
+                                                        <tr class="hover:bg-gray-50">
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.fase || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.servico || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1 text-center">
+                                                                ${generateDonutChart(percentual)}
+                                                            </td>
+                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(acompanhamento.data_atualizacao) || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.responsavel || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.descricao || '-'}</td>
+                                                        </tr>
+                                                    `;
+                                                }).join('') : 
+                                                `<tr>
+                                                    <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                                                        Nenhum acompanhamento cadastrado
+                                                    </td>
+                                                </tr>`
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -607,53 +709,1006 @@
             }
         }
 
+        function renderServicos() {
+            if (!currentProject.servicos || currentProject.servicos.length === 0) {
+                return '<p class="text-gray-500 text-center py-4">Nenhum serviço cadastrado</p>';
+            }
+            
+            return currentProject.servicos.map((servico, index) => {
+                // Calcula percentual baseado nos acompanhamentos deste serviço
+                const percentual = calculateServiceProgress(servico);
+                
+                return `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                ${generateDonutChart(percentual)}
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">${servico.tipo_servico || 'Serviço sem nome'}</h4>
+                                    <p class="text-sm text-gray-600">${servico.fase || 'Sem fase'}</p>
+                                </div>
+                            </div>
+                            <button onclick="editService(${index})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
+                                <i class="fas fa-edit mr-1"></i>Editar
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <span class="font-medium text-gray-600">Classe:</span>
+                                <span class="text-gray-800 ml-1">${servico.classe || '-'}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-gray-600">Fase:</span>
+                                <span class="text-gray-800 ml-1">${servico.fase || '-'}</span>
+                            </div>
+                        </div>
+                        
+                        ${servico.descricao ? `
+                            <div class="mt-2">
+                                <span class="font-medium text-gray-600 text-sm">Descrição:</span>
+                                <p class="text-gray-800 text-sm mt-1">${servico.descricao}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculateServiceProgress(servico) {
+            // Se o serviço tiver acompanhamentos, calcula o progresso baseado na Tabela 02
+            if (currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0) {
+                const serviceAccompanhamentos = currentProject.acompanhamentos.filter(
+                    a => a.servico === servico.tipo_servico || 
+                         a.servico === servico.descricao ||
+                         servico.tipo_servico?.includes(a.servico) ||
+                         a.servico?.includes(servico.tipo_servico)
+                );
+                
+                if (serviceAccompanhamentos.length > 0) {
+                    // Pega o maior percentual executado entre os acompanhamentos deste serviço
+                    const maxPercentual = Math.max(...serviceAccompanhamentos.map(a => {
+                        let percentual = parseFloat(a.percentual_executada) || 0;
+                        // Se for decimal (ex: 0.5), multiplica por 100
+                        if (percentual < 1) {
+                            percentual = percentual * 100;
+                        }
+                        return percentual;
+                    }));
+                    
+                    // Arredonda para número inteiro
+                    return Math.round(maxPercentual);
+                }
+            }
+            
+            // Se não tiver acompanhamentos, retorna 0
+            return 0;
+        }
+
+        function generateDonutChart(percentual) {
+            const size = 48; // Tamanho do SVG
+            const strokeWidth = 6; // Espessura da linha
+            const radius = (size - strokeWidth) / 2;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - (percentual / 100) * circumference;
+            
+            // Determina a cor baseada no percentual
+            let color;
+            if (percentual === 0) {
+                color = '#9CA3AF'; // gray-400
+            } else if (percentual < 50) {
+                color = '#EAB308'; // yellow-500
+            } else if (percentual < 100) {
+                color = '#3B82F6'; // blue-500
+            } else {
+                color = '#10B981'; // green-500
+            }
+            
+            return `
+                <div class="relative inline-flex items-center justify-center">
+                    <svg width="${size}" height="${size}" class="transform -rotate-90">
+                        <!-- Círculo de fundo -->
+                        <circle
+                            cx="${size/2}"
+                            cy="${size/2}"
+                            r="${radius}"
+                            stroke="#E5E7EB"
+                            stroke-width="${strokeWidth}"
+                            fill="none"
+                        />
+                        <!-- Círculo de progresso -->
+                        <circle
+                            cx="${size/2}"
+                            cy="${size/2}"
+                            r="${radius}"
+                            stroke="${color}"
+                            stroke-width="${strokeWidth}"
+                            fill="none"
+                            stroke-dasharray="${circumference}"
+                            stroke-dashoffset="${offset}"
+                            stroke-linecap="round"
+                            class="transition-all duration-500 ease-out"
+                        />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-xs font-bold text-gray-700">${percentual}%</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Variável para controlar modo de edição de serviços
+        let isServicesEditMode = false;
+        let currentEditingServiceIndex = null;
+
+        function toggleServicesMode() {
+            isServicesEditMode = !isServicesEditMode;
+            const editBtn = document.getElementById('edit-services-btn');
+            const editBtnText = document.getElementById('edit-services-btn-text');
+            
+            if (isServicesEditMode) {
+                editBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                editBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                editBtnText.textContent = 'Salvar Serviços';
+                renderServicesEditMode();
+            } else {
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                editBtnText.textContent = 'Editar Serviços';
+                saveServicesChanges();
+            }
+        }
+
+        function renderServicesEditMode() {
+            if (!currentProject) return;
+            
+            // Abordagem mais direta: recria todo o modal com as tabelas editáveis
+            renderProjectDetailsEditMode('servicos');
+        }
+
+        function renderAcompanhamentoEditMode() {
+            if (!currentProject) return;
+            
+            // Abordagem mais direta: recria todo o modal com as tabelas editáveis
+            renderProjectDetailsEditMode('acompanhamento');
+        }
+
+        function renderProjectDetailsEditMode(editMode) {
+            const modal = document.getElementById('project-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            
+            // Configura título
+            const zona = currentProject.zona || 'Não informado';
+            const obj = currentProject.objConcessao || '';
+            const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+            modalTitle.textContent = nomeProjeto;
+            
+            if (editMode === 'servicos') {
+                // Renderiza modo de edição de serviços
+                modalBody.innerHTML = `
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <!-- Coluna Esquerda: Informações Básicas e Mapa -->
+                        <div class="flex-1 space-y-6">
+                            <!-- Informações Básicas -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-blue-600"></i>
+                                    Informações do Projeto
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">UF:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
+                                        <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
+                                        <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
+                                    </div>
+                                </div>
+                                ${currentProject.descricao ? `
+                                    <div class="mt-4">
+                                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
+                                        <p class="text-gray-800 mt-1">${currentProject.descricao}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <!-- Mapa -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                    Localização
+                                </h3>
+                                ${generateMapEmbed(currentProject)}
+                            </div>
+                        </div>
+
+                        <!-- Coluna Direita: Tabela de Serviços Editável -->
+                        <div class="flex-1 space-y-6">
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-edit text-blue-500"></i>
+                                    Editar Tabela 01 - Serviços
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                        <p class="text-sm text-blue-800">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Edite diretamente os dados da Tabela 01 - Serviços do projeto
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full border-collapse border border-gray-300">
+                                            <thead class="bg-gray-100">
+                                                <tr>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Zona Portuária</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">UF</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Obj. Concessão</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Tipo Serviço</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Classe</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="servicos-tbody">
+                                                ${renderServicosRows()}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="flex gap-3">
+                                        <button onclick="addServicoRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
+                                            <i class="fas fa-plus mr-1"></i> Adicionar Serviço
+                                        </button>
+                                        <button onclick="cancelServicesEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                            Cancelar
+                                        </button>
+                                        <button onclick="toggleServicesMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                                            <i class="fas fa-save mr-2"></i>Salvar Alterações
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabela 02 - Acompanhamento (somente visualização) -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-chart-line text-blue-600"></i>
+                                    Tabela 02 - Acompanhamento
+                                </h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full border-collapse border border-gray-300 text-sm">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0 ? 
+                                                currentProject.acompanhamentos.map(acompanhamento => {
+                                                    let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
+                                                    if (percentual < 1) {
+                                                        percentual = percentual * 100;
+                                                    }
+                                                    percentual = Math.round(percentual);
+                                                    
+                                                    return `
+                                                        <tr class="hover:bg-gray-50">
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.fase || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.servico || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1 text-center">
+                                                                ${generateDonutChart(percentual)}
+                                                            </td>
+                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(acompanhamento.data_atualizacao) || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.responsavel || '-'}</td>
+                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.descricao || '-'}</td>
+                                                        </tr>
+                                                    `;
+                                                }).join('') : 
+                                                `<tr>
+                                                    <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                                                        Nenhum acompanhamento cadastrado
+                                                    </td>
+                                                </tr>`
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (editMode === 'acompanhamento') {
+                // Renderiza modo de edição de acompanhamento
+                modalBody.innerHTML = `
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <!-- Coluna Esquerda: Informações Básicas e Mapa -->
+                        <div class="flex-1 space-y-6">
+                            <!-- Informações Básicas -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-blue-600"></i>
+                                    Informações do Projeto
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">UF:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
+                                        <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
+                                        <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
+                                    </div>
+                                </div>
+                                ${currentProject.descricao ? `
+                                    <div class="mt-4">
+                                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
+                                        <p class="text-gray-800 mt-1">${currentProject.descricao}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <!-- Mapa -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                    Localização
+                                </h3>
+                                ${generateMapEmbed(currentProject)}
+                            </div>
+                        </div>
+
+                        <!-- Coluna Direita: Tabelas -->
+                        <div class="flex-1 space-y-6">
+                            <!-- Tabela 01 - Serviços (somente visualização) -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-cogs text-blue-600"></i>
+                                    Tabela 01 - Serviços
+                                </h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full border-collapse border border-gray-300 text-sm">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Classe</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${currentProject.servicos && currentProject.servicos.length > 0 ? 
+                                                currentProject.servicos.map(servico => `
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.tipo_servico || '-'}</td>
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.classe || '-'}</td>
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.fase || '-'}</td>
+                                                        <td class="border border-gray-300 px-2 py-1">${servico.descricao || '-'}</td>
+                                                    </tr>
+                                                `).join('') : 
+                                                `<tr>
+                                                    <td colspan="4" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                                                        Nenhum serviço cadastrado
+                                                    </td>
+                                                </tr>`
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Tabela 02 - Acompanhamento Editável -->
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-edit text-yellow-500"></i>
+                                    Editar Tabela 02 - Acompanhamento
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                        <p class="text-sm text-yellow-800">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Edite diretamente os dados da Tabela 02 - Acompanhamento do projeto
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full border-collapse border border-gray-300">
+                                            <thead class="bg-gray-100">
+                                                <tr>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Data Atualização</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Cargo</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Setor</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Riscos Tipo</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Riscos Descrição</th>
+                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="acompanhamento-tbody">
+                                                ${renderAcompanhamentoRows()}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="flex gap-3">
+                                        <button onclick="addAcompanhamentoRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
+                                            <i class="fas fa-plus mr-1"></i> Adicionar Acompanhamento
+                                        </button>
+                                        <button onclick="cancelAcompanhamentoEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                            Cancelar
+                                        </button>
+                                        <button onclick="toggleEditMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                                            <i class="fas fa-save mr-2"></i>Salvar Alterações
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderServicosRows() {
+            if (!currentProject.servicos || currentProject.servicos.length === 0) {
+                return `
+                    <tr>
+                        <td colspan="8" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                            Nenhum serviço cadastrado
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            return currentProject.servicos.map((servico, index) => `
+                <tr>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.zona_portuaria || currentProject.zona || ''}" 
+                               id="servico-zona-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Zona Portuária">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.uf || currentProject.uf || ''}" 
+                               id="servico-uf-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="UF">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.obj_concessao || currentProject.objConcessao || ''}" 
+                               id="servico-obj-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Obj. Concessão">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.tipo_servico || ''}" 
+                               id="servico-nome-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Nome do serviço">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.classe || ''}" 
+                               id="servico-classe-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Classe">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.fase || ''}" 
+                               id="servico-fase-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Fase">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${servico.descricao || ''}" 
+                               id="servico-descricao-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
+                               placeholder="Descrição">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1 text-center">
+                        <button onclick="removeServicoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addServicoRow() {
+            if (!currentProject.servicos) {
+                currentProject.servicos = [];
+            }
+            
+            const novoServico = {
+                id: Date.now(),
+                projeto_id: currentProject.id.replace('projeto-', ''),
+                zona_portuaria: currentProject.zona,
+                uf: currentProject.uf,
+                obj_concessao: currentProject.objConcessao,
+                tipo_servico: '',
+                classe: '',
+                fase: '',
+                descricao: ''
+            };
+            
+            currentProject.servicos.push(novoServico);
+            
+            // Atualiza a tabela
+            const tbody = document.getElementById('servicos-tbody');
+            if (tbody) {
+                tbody.innerHTML = renderServicosRows();
+            }
+        }
+
+        function removeServicoRow(index) {
+            if (!currentProject.servicos) return;
+            
+            currentProject.servicos.splice(index, 1);
+            
+            // Atualiza a tabela
+            const tbody = document.getElementById('servicos-tbody');
+            if (tbody) {
+                tbody.innerHTML = renderServicosRows();
+            }
+        }
+
+        function cancelServicesEdit() {
+            isServicesEditMode = false;
+            const editBtn = document.getElementById('edit-services-btn');
+            const editBtnText = document.getElementById('edit-services-btn-text');
+            if (editBtn) {
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                editBtnText.textContent = 'Editar Serviços';
+            }
+            
+            // Recarrega o modal no modo visualização
+            renderProjectDetails(currentProject.id);
+        }
+
+        async function saveServicesChanges() {
+            if (!currentProject) return;
+            
+            try {
+                // Coleta os dados da tabela
+                const servicosAtualizados = [];
+                
+                if (currentProject.servicos && currentProject.servicos.length > 0) {
+                    currentProject.servicos.forEach((servico, index) => {
+                        const zonaInput = document.getElementById(`servico-zona-${index}`);
+                        const ufInput = document.getElementById(`servico-uf-${index}`);
+                        const objInput = document.getElementById(`servico-obj-${index}`);
+                        const nomeInput = document.getElementById(`servico-nome-${index}`);
+                        const classeInput = document.getElementById(`servico-classe-${index}`);
+                        const faseInput = document.getElementById(`servico-fase-${index}`);
+                        const descricaoInput = document.getElementById(`servico-descricao-${index}`);
+                        
+                        if (nomeInput) {
+                            servicosAtualizados.push({
+                                ...servico,
+                                zona_portuaria: zonaInput ? zonaInput.value : currentProject.zona,
+                                uf: ufInput ? ufInput.value : currentProject.uf,
+                                obj_concessao: objInput ? objInput.value : currentProject.objConcessao,
+                                tipo_servico: nomeInput.value,
+                                classe: classeInput ? classeInput.value : '',
+                                fase: faseInput ? faseInput.value : '',
+                                descricao: descricaoInput ? descricaoInput.value : ''
+                            });
+                        }
+                    });
+                }
+                
+                // Salva cada serviço
+                for (const servico of servicosAtualizados) {
+                    if (servico.id && servico.id.toString().length < 13) {
+                        // ID temporário, criar novo
+                        await fetch('/api/servicos', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ...servico,
+                                projeto_id: currentProject.id.replace('projeto-', '')
+                            })
+                        });
+                    } else {
+                        // ID existente, atualizar
+                        await fetch(`/api/servicos/${servico.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(servico)
+                        });
+                    }
+                }
+                
+                // Mostra sucesso
+                showToast('success', 'Sucesso!', 'Serviços atualizados com sucesso!');
+                
+                // Recarrega dados
+                await loadData();
+                
+                // Volta para modo visualização
+                isServicesEditMode = false;
+                const editBtn = document.getElementById('edit-services-btn');
+                const editBtnText = document.getElementById('edit-services-btn-text');
+                if (editBtn) {
+                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    editBtnText.textContent = 'Editar Serviços';
+                }
+                
+                // Renderiza modo visualização
+                renderProjectDetails(currentProject.id);
+                
+            } catch (error) {
+                console.error('Erro ao salvar serviços:', error);
+                showToast('error', 'Erro!', 'Falha ao salvar alterações dos serviços');
+            }
+        }
+
+        function editService(index) {
+            currentEditingServiceIndex = index;
+            const servico = currentProject.servicos[index];
+            
+            // Abre modal de edição do serviço específico
+            const modal = document.getElementById('project-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            
+            modalTitle.textContent = `Editar Serviço: ${servico.tipo_servico || 'Serviço'}`;
+            
+            modalBody.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-edit text-yellow-500"></i>
+                            Editar Tabela 02 - Acompanhamento deste Serviço
+                        </h3>
+                        <p class="text-sm text-yellow-800 mb-4">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Edite os acompanhamentos específicos para o serviço: <strong>${servico.tipo_servico || 'Serviço'}</strong>
+                        </p>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-300">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="service-acompanhamento-tbody">
+                                    ${renderServiceAcompanhamentoRows(servico.tipo_servico)}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="flex gap-3 mt-4">
+                            <button onclick="addServiceAcompanhamentoRow('${servico.tipo_servico}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
+                                <i class="fas fa-plus mr-1"></i> Adicionar Acompanhamento
+                            </button>
+                            <button onclick="backToProjectDetails()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                Voltar
+                            </button>
+                            <button onclick="saveServiceAcompanhamentoChanges('${servico.tipo_servico}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-save mr-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderServiceAcompanhamentoRows(servicoNome) {
+            // Filtra acompanhamentos deste serviço
+            const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
+                a => a.servico === servicoNome
+            );
+            
+            if (serviceAcompanhamentos.length === 0) {
+                return `
+                    <tr>
+                        <td colspan="8" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                            Nenhum acompanhamento cadastrado para este serviço
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            return serviceAcompanhamentos.map((acompanhamento, index) => `
+                <tr>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.fase || ''}" 
+                               id="service-fase-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Fase">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.servico || ''}" 
+                               id="service-servico-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Serviço">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${acompanhamento.percentual_executada || 0}" 
+                               id="service-percentual-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               step="0.01" min="0" max="100">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${acompanhamento.valor_executado || 0}" 
+                               id="service-valor-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               step="0.01">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="date" value="${acompanhamento.data_atualizacao || ''}" 
+                               id="service-data-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.responsavel || ''}" 
+                               id="service-responsavel-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Responsável">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.descricao || ''}" 
+                               id="service-descricao-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Descrição">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1 text-center">
+                        <button onclick="removeServiceAcompanhamentoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addServiceAcompanhamentoRow(servicoNome) {
+            if (!currentProject.acompanhamentos) {
+                currentProject.acompanhamentos = [];
+            }
+            
+            const novoAcompanhamento = {
+                id: Date.now(),
+                projeto_id: currentProject.id.replace('projeto-', ''),
+                fase: '',
+                servico: servicoNome,
+                descricao: '',
+                percentual_executada: 0,
+                valor_executado: 0,
+                data_atualizacao: new Date().toISOString().split('T')[0],
+                responsavel: '',
+                cargo: '',
+                setor: '',
+                riscos_tipo: '',
+                riscos_descricao: ''
+            };
+            
+            currentProject.acompanhamentos.push(novoAcompanhamento);
+            
+            // Atualiza a tabela
+            const tbody = document.getElementById('service-acompanhamento-tbody');
+            if (tbody) {
+                tbody.innerHTML = renderServiceAcompanhamentoRows(servicoNome);
+            }
+        }
+
+        function removeServiceAcompanhamentoRow(index) {
+            if (!currentProject.acompanhamentos) return;
+            
+            const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
+                a => a.servico === currentProject.servicos[currentEditingServiceIndex].tipo_servico
+            );
+            
+            const acompanhamentoToRemove = serviceAcompanhamentos[index];
+            const globalIndex = currentProject.acompanhamentos.indexOf(acompanhamentoToRemove);
+            
+            if (globalIndex !== -1) {
+                currentProject.acompanhamentos.splice(globalIndex, 1);
+            }
+            
+            // Atualiza a tabela
+            const tbody = document.getElementById('service-acompanhamento-tbody');
+            if (tbody) {
+                tbody.innerHTML = renderServiceAcompanhamentoRows(currentProject.servicos[currentEditingServiceIndex].tipo_servico);
+            }
+        }
+
+        async function saveServiceAcompanhamentoChanges(servicoNome) {
+            try {
+                // Coleta os dados da tabela
+                const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
+                    a => a.servico === servicoNome
+                );
+                
+                const acompanhamentosAtualizados = [];
+                
+                serviceAcompanhamentos.forEach((acompanhamento, index) => {
+                    const faseInput = document.getElementById(`service-fase-${index}`);
+                    const servicoInput = document.getElementById(`service-servico-${index}`);
+                    const percentualInput = document.getElementById(`service-percentual-${index}`);
+                    const valorInput = document.getElementById(`service-valor-${index}`);
+                    const dataInput = document.getElementById(`service-data-${index}`);
+                    const responsavelInput = document.getElementById(`service-responsavel-${index}`);
+                    const descricaoInput = document.getElementById(`service-descricao-${index}`);
+                    
+                    if (faseInput) {
+                        acompanhamentosAtualizados.push({
+                            ...acompanhamento,
+                            fase: faseInput.value,
+                            servico: servicoInput ? servicoInput.value : '',
+                            percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
+                            valor_executado: parseFloat(valorInput ? valorInput.value : 0),
+                            data_atualizacao: dataInput ? dataInput.value : '',
+                            responsavel: responsavelInput ? responsavelInput.value : '',
+                            descricao: descricaoInput ? descricaoInput.value : ''
+                        });
+                    }
+                });
+                
+                // Salva cada acompanhamento
+                for (const acompanhamento of acompanhamentosAtualizados) {
+                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
+                        // ID temporário, criar novo
+                        await fetch('/api/acompanhamento', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ...acompanhamento,
+                                projeto_id: currentProject.id.replace('projeto-', '')
+                            })
+                        });
+                    } else {
+                        // ID existente, atualizar
+                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(acompanhamento)
+                        });
+                    }
+                }
+                
+                // Mostra sucesso
+                showToast('success', 'Sucesso!', 'Acompanhamento do serviço atualizado com sucesso!');
+                
+                // Recarrega dados
+                await loadData();
+                
+                // Volta para detalhes do projeto
+                backToProjectDetails();
+                
+            } catch (error) {
+                console.error('Erro ao salvar acompanhamento do serviço:', error);
+                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
+            }
+        }
+
+        function backToProjectDetails() {
+            currentEditingServiceIndex = null;
+            renderProjectDetails(currentProject.id);
+        }
+
         function renderAcompanhamentos() {
             if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
                 return '<p class="text-gray-500 text-center py-4">Nenhum acompanhamento cadastrado</p>';
             }
             
-            return currentProject.acompanhamentos.map((acompanhamento, index) => `
-                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-gray-800">Acompanhamento ${index + 1}</h4>
-                        <span class="text-xs text-gray-500">${formatDate(acompanhamento.data_atualizacao)}</span>
+            return currentProject.acompanhamentos.map((acompanhamento, index) => {
+                // Calcula percentual corretamente (multiplica por 100 se for decimal)
+                let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
+                if (percentual < 1) {
+                    percentual = percentual * 100;
+                }
+                percentual = Math.round(percentual);
+                
+                return `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-gray-800">Acompanhamento ${index + 1}</h4>
+                            <span class="text-xs text-gray-500">${formatDate(acompanhamento.data_atualizacao)}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <span class="font-medium text-gray-600">Fase:</span>
+                                <span class="text-gray-800 ml-1">${acompanhamento.fase || '-'}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-gray-600">Serviço:</span>
+                                <span class="text-gray-800 ml-1">${acompanhamento.servico || '-'}</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-gray-600">Executada:</span>
+                                <div class="inline-block ml-1">
+                                    ${generateDonutChart(percentual)}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="font-medium text-gray-600">Valor Executado:</span>
+                                <span class="text-gray-800 ml-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</span>
+                            </div>
+                        </div>
+                        
+                        ${acompanhamento.descricao ? `
+                            <div class="mt-2">
+                                <span class="font-medium text-gray-600 text-sm">Descrição:</span>
+                                <p class="text-gray-800 text-sm mt-1">${acompanhamento.descricao}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${acompanhamento.responsavel ? `
+                            <div class="mt-2">
+                                <span class="font-medium text-gray-600 text-sm">Responsável:</span>
+                                <span class="text-gray-800 text-sm ml-1">${acompanhamento.responsavel}</span>
+                                ${acompanhamento.cargo ? `(${acompanhamento.cargo})` : ''}
+                            </div>
+                        ` : ''}
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                            <span class="font-medium text-gray-600">Fase:</span>
-                            <span class="text-gray-800 ml-1">${acompanhamento.fase || '-'}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Serviço:</span>
-                            <span class="text-gray-800 ml-1">${acompanhamento.servico || '-'}</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">% Executada:</span>
-                            <span class="text-gray-800 ml-1">${acompanhamento.percentual_executada || 0}%</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-600">Valor Executado:</span>
-                            <span class="text-gray-800 ml-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</span>
-                        </div>
-                    </div>
-                    
-                    ${acompanhamento.descricao ? `
-                        <div class="mt-2">
-                            <span class="font-medium text-gray-600 text-sm">Descrição:</span>
-                            <p class="text-gray-800 text-sm mt-1">${acompanhamento.descricao}</p>
-                        </div>
-                    ` : ''}
-                    
-                    ${acompanhamento.responsavel ? `
-                        <div class="mt-2">
-                            <span class="font-medium text-gray-600 text-sm">Responsável:</span>
-                            <span class="text-gray-800 text-sm ml-1">${acompanhamento.responsavel}</span>
-                            ${acompanhamento.cargo ? `(${acompanhamento.cargo})` : ''}
-                        </div>
-                    ` : ''}
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function generateMapEmbed(projeto) {
@@ -772,14 +1827,25 @@
             // Limpa estado
             currentProject = null;
             isEditMode = false;
+            isServicesEditMode = false;
+            currentEditingServiceIndex = null;
             
-            // Reseta botão de edição
+            // Reseta botão de edição de acompanhamento
             const editBtn = document.getElementById('edit-project-btn');
             const editBtnText = document.getElementById('edit-btn-text');
             if (editBtn) {
                 editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
                 editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
                 editBtnText.textContent = 'Editar Acompanhamento';
+            }
+            
+            // Reseta botão de edição de serviços
+            const servicesBtn = document.getElementById('edit-services-btn');
+            const servicesBtnText = document.getElementById('edit-services-btn-text');
+            if (servicesBtn) {
+                servicesBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                servicesBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                servicesBtnText.textContent = 'Editar Serviços';
             }
             
             // Fecha modal após animação
@@ -816,67 +1882,11 @@
             }
         }
 
-        function renderAcompanhamentoEditMode() {
-            if (!currentProject) return;
-            
-            const modalBody = document.getElementById('modal-body');
-            
-            // Encontra a seção de acompanhamento e substitui por tabela editável
-            const acompanhamentoSection = modalBody.querySelector('.card--etapa');
-            if (acompanhamentoSection) {
-                acompanhamentoSection.innerHTML = `
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-edit text-yellow-500"></i>
-                        Editar Tabela 02 - Acompanhamento
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <p class="text-sm text-yellow-800">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Edite diretamente os dados da Tabela 02 - Acompanhamento do projeto
-                            </p>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse border border-gray-300">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="acompanhamento-tbody">
-                                    ${renderAcompanhamentoRows()}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="flex gap-3">
-                            <button onclick="addAcompanhamentoRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                                <i class="fas fa-plus mr-1"></i> Adicionar Linha
-                            </button>
-                            <button onclick="cancelAcompanhamentoEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                                Cancelar
-                            </button>
-                            <button onclick="toggleEditMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                                <i class="fas fa-save mr-2"></i>Salvar Alterações
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
         function renderAcompanhamentoRows() {
             if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
                 return `
                     <tr>
-                        <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                        <td colspan="12" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
                             Nenhum acompanhamento cadastrado
                         </td>
                     </tr>
@@ -896,6 +1906,12 @@
                                id="servico-${index}"
                                class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
                                placeholder="Serviço">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.descricao || ''}" 
+                               id="descricao-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Descrição">
                     </td>
                     <td class="border border-gray-300 px-2 py-1">
                         <input type="number" value="${acompanhamento.percentual_executada || 0}" 
@@ -919,6 +1935,30 @@
                                id="responsavel-${index}"
                                class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
                                placeholder="Responsável">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.cargo || ''}" 
+                               id="cargo-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Cargo">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.setor || ''}" 
+                               id="setor-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Setor">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.riscos_tipo || ''}" 
+                               id="riscos-tipo-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Riscos Tipo">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.riscos_descricao || ''}" 
+                               id="riscos-descricao-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Riscos Descrição">
                     </td>
                     <td class="border border-gray-300 px-2 py-1 text-center">
                         <button onclick="removeAcompanhamentoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
@@ -1001,20 +2041,30 @@
                     currentProject.acompanhamentos.forEach((acompanhamento, index) => {
                         const faseInput = document.getElementById(`fase-${index}`);
                         const servicoInput = document.getElementById(`servico-${index}`);
+                        const descricaoInput = document.getElementById(`descricao-${index}`);
                         const percentualInput = document.getElementById(`percentual-${index}`);
                         const valorInput = document.getElementById(`valor-${index}`);
                         const dataInput = document.getElementById(`data-${index}`);
                         const responsavelInput = document.getElementById(`responsavel-${index}`);
+                        const cargoInput = document.getElementById(`cargo-${index}`);
+                        const setorInput = document.getElementById(`setor-${index}`);
+                        const riscosTipoInput = document.getElementById(`riscos-tipo-${index}`);
+                        const riscosDescricaoInput = document.getElementById(`riscos-descricao-${index}`);
                         
                         if (faseInput) {
                             acompanhamentosAtualizados.push({
                                 ...acompanhamento,
                                 fase: faseInput.value,
                                 servico: servicoInput ? servicoInput.value : '',
+                                descricao: descricaoInput ? descricaoInput.value : '',
                                 percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
                                 valor_executado: parseFloat(valorInput ? valorInput.value : 0),
                                 data_atualizacao: dataInput ? dataInput.value : '',
-                                responsavel: responsavelInput ? responsavelInput.value : ''
+                                responsavel: responsavelInput ? responsavelInput.value : '',
+                                cargo: cargoInput ? cargoInput.value : '',
+                                setor: setorInput ? setorInput.value : '',
+                                riscos_tipo: riscosTipoInput ? riscosTipoInput.value : '',
+                                riscos_descricao: riscosDescricaoInput ? riscosDescricaoInput.value : ''
                             });
                         }
                     });
@@ -1031,7 +2081,7 @@
                             },
                             body: JSON.stringify({
                                 ...acompanhamento,
-                                projeto_id: currentProject.id
+                                projeto_id: currentProject.id.replace('projeto-', '')
                             })
                         });
                     } else {
@@ -1172,7 +2222,7 @@
                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">% Executada</label>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Executada</label>
                             <input type="number" value="${acompanhamento.percentual_executada || 0}" 
                                    onchange="updateAcompanhamento(${acompanhamento.id}, 'percentual_executada', this.value)"
                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500" step="0.01" min="0" max="100">
