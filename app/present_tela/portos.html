@@ -483,6 +483,10 @@
         // Renderizar detalhes do projeto no modal
         async function renderProjectDetails(projectId) {
             try {
+                // Limpa estado anterior
+                currentProject = null;
+                isEditMode = false;
+                
                 // Extrai ID numérico do ID do frontend (ex: "projeto-541" -> 541)
                 const numericId = projectId.replace('projeto-', '');
                 
@@ -493,23 +497,31 @@
                 }
                 
                 const allProjects = await response.json();
-                currentProject = allProjects.find(p => p.id === projectId);
+                const project = allProjects.find(p => p.id === projectId);
                 
-                if (!currentProject) {
+                if (!project) {
                     throw new Error('Projeto não encontrado');
                 }
+                
+                // Define currentProject
+                currentProject = project;
                 
                 const modal = document.getElementById('project-modal');
                 const modalTitle = document.getElementById('modal-title');
                 const modalBody = document.getElementById('modal-body');
+                const modalContent = document.getElementById('modal-content');
                 
-                // Reset modo de edição
-                isEditMode = false;
+                // Limpa classes de animação anteriores
+                modalContent.classList.remove('modal-leave');
+                
+                // Reseta botão de edição
                 const editBtn = document.getElementById('edit-project-btn');
                 const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
+                if (editBtn) {
+                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                    editBtnText.textContent = 'Editar Acompanhamento';
+                }
                 
                 // Configura título
                 const zona = currentProject.zona || 'Não informado';
@@ -581,8 +593,12 @@
                 // Mostra modal
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
+                
+                // Força reflow antes de adicionar classe de animação
+                void modal.offsetWidth;
+                
                 setTimeout(() => {
-                    document.getElementById('modal-content').classList.add('modal-enter');
+                    modalContent.classList.add('modal-enter');
                 }, 10);
                 
             } catch (error) {
@@ -736,26 +752,47 @@
         });
 
         document.getElementById('close-modal').addEventListener('click', () => {
-            const modal = document.getElementById('project-modal');
-            const modalContent = document.getElementById('modal-content');
-            modalContent.classList.add('modal-leave');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex', 'modal-enter', 'modal-leave');
-            }, 300);
+            closeModal();
         });
 
         document.getElementById('project-modal').addEventListener('click', (e) => {
             if (e.target.id === 'project-modal') {
-                const modal = document.getElementById('project-modal');
-                const modalContent = document.getElementById('modal-content');
-                modalContent.classList.add('modal-leave');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex', 'modal-enter', 'modal-leave');
-                }, 300);
+                closeModal();
             }
         });
+
+        function closeModal() {
+            const modal = document.getElementById('project-modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            // Remove classes de animação
+            modalContent.classList.remove('modal-enter');
+            modalContent.classList.add('modal-leave');
+            
+            // Limpa estado
+            currentProject = null;
+            isEditMode = false;
+            
+            // Reseta botão de edição
+            const editBtn = document.getElementById('edit-project-btn');
+            const editBtnText = document.getElementById('edit-btn-text');
+            if (editBtn) {
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtnText.textContent = 'Editar Acompanhamento';
+            }
+            
+            // Fecha modal após animação
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex', 'modal-enter', 'modal-leave');
+                // Limpa conteúdo do modal
+                const modalBody = document.getElementById('modal-body');
+                if (modalBody) {
+                    modalBody.innerHTML = '';
+                }
+            }, 300);
+        }
 
         // Carregar dados ao iniciar
         loadData();
@@ -935,15 +972,22 @@
         }
 
         function cancelAcompanhamentoEdit() {
+            // Limpa estado de edição
             isEditMode = false;
+            
+            // Reseta botão de edição
             const editBtn = document.getElementById('edit-project-btn');
             const editBtnText = document.getElementById('edit-btn-text');
-            editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-            editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-            editBtnText.textContent = 'Editar Acompanhamento';
+            if (editBtn) {
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtnText.textContent = 'Editar Acompanhamento';
+            }
             
             // Recarrega o modal no modo visualização
-            renderProjectDetails(currentProject.id);
+            if (currentProject) {
+                renderProjectDetails(currentProject.id);
+            }
         }
 
         async function saveAcompanhamentoChanges() {
