@@ -151,11 +151,22 @@
 
     <!-- Modal -->
     <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] overflow-y-auto relative transform transition-all duration-300">
-            <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors z-10">
-                <i class="fas fa-times text-2xl"></i>
-            </button>
-            <div id="modal-body" class="p-8 md:p-12">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 id="modal-title" class="text-2xl font-bold text-gray-800"></h2>
+                    <div class="flex items-center gap-3">
+                        <button id="edit-project-btn" onclick="toggleEditMode()" 
+                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="edit-btn-text">Editar Acompanhamento</span>
+                        </button>
+                        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="modal-body" class="p-8 md:p-12">
                 <!-- Conteúdo será inserido via JavaScript -->
             </div>
         </div>
@@ -164,6 +175,8 @@
     <script>
         let projetosData = [];
         let projetosFiltrados = [];
+        let currentProject = null;
+        let isEditMode = false;
 
         // Função para converter UTM para Lat/Lon (WGS84)
         function utmToLatLon(easting, northing, zone) {
@@ -468,91 +481,222 @@
         }
 
         // Renderizar detalhes do projeto no modal
-        function renderProjectDetails(projectId) {
-            const projeto = projetosData.find(p => p.id === projectId);
-            if (!projeto) return;
-
-            const modal = document.getElementById('project-modal');
-            const modalContent = document.getElementById('modal-content');
-            const modalBody = document.getElementById('modal-body');
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex', 'modal-enter');
-            modalContent.classList.remove('modal-leave');
-
-            modalBody.innerHTML = `
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">${projeto.uf} • ${projeto.tipo || 'N/A'}</p>
-                <h2 class="text-4xl font-extrabold text-gray-800 mt-2 mb-6">${projeto.nome}</h2>
+        async function renderProjectDetails(projectId) {
+            try {
+                // Extrai ID numérico do ID do frontend (ex: "projeto-541" -> 541)
+                const numericId = projectId.replace('projeto-', '');
                 
-                <div class="modal-info-grid items-stretch">
-                    <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--descricao">
-                        <h3 class="text-lg font-bold mb-2 text-gray-700">Descrição do Projeto</h3>
-                        <p class="text-gray-600 leading-relaxed">${projeto.descricao}</p>
-                        <div class="mt-4 text-sm text-gray-600 space-y-1">
-                            <p><span class="font-semibold">Zona Portuária:</span> ${projeto.zona}</p>
-                            <p><span class="font-semibold">UF:</span> ${projeto.uf}</p>
-                            <p><span class="font-semibold">Tipo:</span> ${projeto.tipo || 'Não informado'}</p>
-                            ${projeto.capexTotal > 0 ? `
-                                <p><span class="font-semibold">CAPEX Total:</span> R$ ${projeto.capexTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                            ` : ''}
-                            ${projeto.dataAssinatura ? `
-                                <p><span class="font-semibold">Data de Assinatura:</span> ${new Date(projeto.dataAssinatura).toLocaleDateString('pt-BR')}</p>
-                            ` : ''}
+                // Carrega dados completos do projeto
+                const response = await fetch(`/api/projects`);
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar detalhes do projeto');
+                }
+                
+                const allProjects = await response.json();
+                currentProject = allProjects.find(p => p.id === projectId);
+                
+                if (!currentProject) {
+                    throw new Error('Projeto não encontrado');
+                }
+                
+                const modal = document.getElementById('project-modal');
+                const modalTitle = document.getElementById('modal-title');
+                const modalBody = document.getElementById('modal-body');
+                
+                // Reset modo de edição
+                isEditMode = false;
+                const editBtn = document.getElementById('edit-project-btn');
+                const editBtnText = document.getElementById('edit-btn-text');
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtnText.textContent = 'Editar Acompanhamento';
+                
+                // Configura título
+                const zona = currentProject.zona || 'Não informado';
+                const obj = currentProject.objConcessao || '';
+                const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+                modalTitle.textContent = nomeProjeto;
+                
+                // Renderiza modo visualização
+                modalBody.innerHTML = `
+                    <div class="modal-info-grid">
+                        <!-- Informações Básicas -->
+                        <div class="bg-gray-50 rounded-xl p-6 card--descricao">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-info-circle text-blue-600"></i>
+                                Informações do Projeto
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
+                                    <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">UF:</span>
+                                    <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
+                                    <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">Tipo:</span>
+                                    <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
+                                    <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
+                                    <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-600">Descrição:</span>
+                                    <p class="text-gray-800 mt-1">${currentProject.descricao || 'Não informada'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mapa -->
+                        <div class="bg-gray-50 rounded-xl p-6 card--mapa">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-map-marker-alt text-blue-600"></i>
+                                Localização
+                            </h3>
+                            ${generateMapEmbed(currentProject)}
+                        </div>
+
+                        <!-- Acompanhamento -->
+                        <div class="bg-gray-50 rounded-xl p-6 card--etapa">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-chart-line text-blue-600"></i>
+                                Tabela 02 - Acompanhamento
+                            </h3>
+                            ${renderAcompanhamentos()}
                         </div>
                     </div>
+                `;
+                
+                // Mostra modal
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    document.getElementById('modal-content').classList.add('modal-enter');
+                }, 10);
+                
+            } catch (error) {
+                console.error('Erro ao renderizar detalhes do projeto:', error);
+                showToast('error', 'Erro!', 'Falha ao carregar detalhes do projeto');
+            }
+        }
 
-                    <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--mapa">
-                        <h3 class="text-lg font-bold mb-2 text-gray-700">Localização</h3>
-                        ${projeto.mapaEmbed
-                            ? `
-                                <div class="w-full h-48 md:h-full rounded-lg overflow-hidden border border-gray-200 relative">
-                                    ${projeto.mapaEmbed}
-                                </div>
-                                ${projeto.coordenadasLatLon ? `
-                                    <div class="mt-3 text-xs text-gray-600 space-y-1">
-                                        ${projeto.coordenadas.latitude && projeto.coordenadas.longitude ? `
-                                            <p><span class="font-semibold">Coordenadas:</span> ${projeto.coordenadas.latitude.toFixed(6)}°, ${projeto.coordenadas.longitude.toFixed(6)}°</p>
-                                        ` : projeto.coordenadas.e && projeto.coordenadas.s ? `
-                                            <p><span class="font-semibold">UTM:</span> E=${projeto.coordenadas.e}, S=${projeto.coordenadas.s}, Fuso=${projeto.coordenadas.fuso}</p>
-                                            <p><span class="font-semibold">Lat/Lon:</span> ${projeto.coordenadasLatLon.lat.toFixed(6)}°, ${projeto.coordenadasLatLon.lon.toFixed(6)}°</p>
-                                        ` : ''}
-                                    </div>
-                                ` : ''}
-                            `
-                            : `
-                                <div class="w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500">
-                                    <div class="text-center">
-                                        <i class="fas fa-map-marked-alt text-3xl mb-2"></i>
-                                        <p class="text-sm">Coordenadas não disponíveis</p>
-                                        ${projeto.coordenadas.latitude && projeto.coordenadas.longitude ? `
-                                            <p class="text-xs mt-1">Lat/Lon: ${projeto.coordenadas.latitude.toFixed(6)}°, ${projeto.coordenadas.longitude.toFixed(6)}°</p>
-                                        ` : projeto.coordenadas.e ? `
-                                            <p class="text-xs mt-1">UTM: ${projeto.coordenadas.e}, ${projeto.coordenadas.s}</p>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `
-                        }
+        function renderAcompanhamentos() {
+            if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
+                return '<p class="text-gray-500 text-center py-4">Nenhum acompanhamento cadastrado</p>';
+            }
+            
+            return currentProject.acompanhamentos.map((acompanhamento, index) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-gray-800">Acompanhamento ${index + 1}</h4>
+                        <span class="text-xs text-gray-500">${formatDate(acompanhamento.data_atualizacao)}</span>
                     </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <span class="font-medium text-gray-600">Fase:</span>
+                            <span class="text-gray-800 ml-1">${acompanhamento.fase || '-'}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600">Serviço:</span>
+                            <span class="text-gray-800 ml-1">${acompanhamento.servico || '-'}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600">% Executada:</span>
+                            <span class="text-gray-800 ml-1">${acompanhamento.percentual_executada || 0}%</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-600">Valor Executado:</span>
+                            <span class="text-gray-800 ml-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</span>
+                        </div>
+                    </div>
+                    
+                    ${acompanhamento.descricao ? `
+                        <div class="mt-2">
+                            <span class="font-medium text-gray-600 text-sm">Descrição:</span>
+                            <p class="text-gray-800 text-sm mt-1">${acompanhamento.descricao}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${acompanhamento.responsavel ? `
+                        <div class="mt-2">
+                            <span class="font-medium text-gray-600 text-sm">Responsável:</span>
+                            <span class="text-gray-800 text-sm ml-1">${acompanhamento.responsavel}</span>
+                            ${acompanhamento.cargo ? `(${acompanhamento.cargo})` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
 
-                    <div class="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col card--etapa">
-                        <h3 class="text-lg font-bold text-gray-700 mb-2">ETAPA:</h3>
-                        <p class="text-gray-600 font-semibold text-lg">${projeto.etapa}</p>
-                        ${projeto.servicos.length > 0 ? `
-                            <div class="mt-3 text-sm text-gray-600">
-                                <p class="font-semibold mb-2">Serviços por Fase:</p>
-                                ${Object.entries(
-                                    projeto.servicos.reduce((acc, s) => {
-                                        const fase = s['Fase'] || 'Sem fase';
-                                        acc[fase] = (acc[fase] || 0) + 1;
-                                        return acc;
-                                    }, {})
-                                ).map(([fase, count]) => `<p>• ${fase}: ${count} serviço(s)</p>`).join('')}
-                            </div>
+        function generateMapEmbed(projeto) {
+            if (!projeto.coordenadas || !projeto.coordenadas.latitude || !projeto.coordenadas.longitude) {
+                return `
+                    <div class="text-center py-8">
+                        <i class="fas fa-map-marked-alt text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Coordenadas não disponíveis</p>
+                        ${projeto.coordenadas && projeto.coordenadas.e && projeto.coordenadas.s ? `
+                            <p class="text-sm text-gray-400 mt-2">
+                                UTM: E=${projeto.coordenadas.e}, S=${projeto.coordenadas.s}, Fuso=${projeto.coordenadas.fuso}
+                            </p>
                         ` : ''}
                     </div>
+                `;
+            }
+            
+            const lat = projeto.coordenadas.latitude;
+            const lon = projeto.coordenadas.longitude;
+            const bboxSize = 0.02;
+            
+            return `
+                <div class="space-y-3">
+                    <div class="bg-blue-50 rounded-lg p-3">
+                        <p class="text-sm font-medium text-blue-800">
+                            <i class="fas fa-location-dot mr-1"></i>
+                            Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                        </p>
+                    </div>
+                    <iframe 
+                        width="100%" 
+                        height="300" 
+                        frameborder="0" 
+                        scrolling="no" 
+                        marginheight="0" 
+                        marginwidth="0" 
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=${lon-bboxSize},${lat-bboxSize},${lon+bboxSize},${lat+bboxSize}&layer=mapnik&marker=${lat},${lon}">
+                    </iframe>
+                    <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}" 
+                       target="_blank" 
+                       class="text-blue-600 hover:text-blue-800 text-sm underline">
+                        <i class="fas fa-external-link-alt mr-1"></i>
+                        Ver no OpenStreetMap
+                    </a>
                 </div>
             `;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return null;
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
         }
 
         // Event listeners
@@ -615,6 +759,567 @@
 
         // Carregar dados ao iniciar
         loadData();
+
+        // Funções de Edição Inline
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editBtn = document.getElementById('edit-project-btn');
+            const editBtnText = document.getElementById('edit-btn-text');
+            
+            if (isEditMode) {
+                editBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                editBtnText.textContent = 'Salvar Acompanhamento';
+                renderAcompanhamentoEditMode();
+            } else {
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtnText.textContent = 'Editar Acompanhamento';
+                saveAcompanhamentoChanges();
+            }
+        }
+
+        function renderAcompanhamentoEditMode() {
+            if (!currentProject) return;
+            
+            const modalBody = document.getElementById('modal-body');
+            
+            // Encontra a seção de acompanhamento e substitui por tabela editável
+            const acompanhamentoSection = modalBody.querySelector('.card--etapa');
+            if (acompanhamentoSection) {
+                acompanhamentoSection.innerHTML = `
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-edit text-yellow-500"></i>
+                        Editar Tabela 02 - Acompanhamento
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p class="text-sm text-yellow-800">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Edite diretamente os dados da Tabela 02 - Acompanhamento do projeto
+                            </p>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-300">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
+                                        <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="acompanhamento-tbody">
+                                    ${renderAcompanhamentoRows()}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="addAcompanhamentoRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
+                                <i class="fas fa-plus mr-1"></i> Adicionar Linha
+                            </button>
+                            <button onclick="cancelAcompanhamentoEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                Cancelar
+                            </button>
+                            <button onclick="toggleEditMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-save mr-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderAcompanhamentoRows() {
+            if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
+                return `
+                    <tr>
+                        <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
+                            Nenhum acompanhamento cadastrado
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            return currentProject.acompanhamentos.map((acompanhamento, index) => `
+                <tr>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.fase || ''}" 
+                               id="fase-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Fase">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.servico || ''}" 
+                               id="servico-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Serviço">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${acompanhamento.percentual_executada || 0}" 
+                               id="percentual-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               step="0.01" min="0" max="100">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="number" value="${acompanhamento.valor_executado || 0}" 
+                               id="valor-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               step="0.01">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="date" value="${acompanhamento.data_atualizacao || ''}" 
+                               id="data-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1">
+                        <input type="text" value="${acompanhamento.responsavel || ''}" 
+                               id="responsavel-${index}"
+                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
+                               placeholder="Responsável">
+                    </td>
+                    <td class="border border-gray-300 px-2 py-1 text-center">
+                        <button onclick="removeAcompanhamentoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addAcompanhamentoRow() {
+            if (!currentProject.acompanhamentos) {
+                currentProject.acompanhamentos = [];
+            }
+            
+            const novoAcompanhamento = {
+                id: Date.now(),
+                projeto_id: currentProject.id,
+                fase: '',
+                servico: '',
+                descricao: '',
+                percentual_executada: 0,
+                valor_executado: 0,
+                data_atualizacao: new Date().toISOString().split('T')[0],
+                responsavel: '',
+                cargo: '',
+                setor: '',
+                riscos_tipo: '',
+                riscos_descricao: ''
+            };
+            
+            currentProject.acompanhamentos.push(novoAcompanhamento);
+            
+            // Atualiza a tabela
+            const tbody = document.getElementById('acompanhamento-tbody');
+            if (tbody) {
+                tbody.innerHTML = renderAcompanhamentoRows();
+            }
+        }
+
+        function removeAcompanhamentoRow(index) {
+            if (!currentProject.acompanhamentos) return;
+            
+            currentProject.acompanhamentos.splice(index, 1);
+            
+            // Atualiza a tabela
+            const tbody = document.getElementById('acompanhamento-tbody');
+            if (tbody) {
+                tbody.innerHTML = renderAcompanhamentoRows();
+            }
+        }
+
+        function cancelAcompanhamentoEdit() {
+            isEditMode = false;
+            const editBtn = document.getElementById('edit-project-btn');
+            const editBtnText = document.getElementById('edit-btn-text');
+            editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+            editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            editBtnText.textContent = 'Editar Acompanhamento';
+            
+            // Recarrega o modal no modo visualização
+            renderProjectDetails(currentProject.id);
+        }
+
+        async function saveAcompanhamentoChanges() {
+            if (!currentProject) return;
+            
+            try {
+                // Coleta os dados da tabela
+                const acompanhamentosAtualizados = [];
+                
+                if (currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0) {
+                    currentProject.acompanhamentos.forEach((acompanhamento, index) => {
+                        const faseInput = document.getElementById(`fase-${index}`);
+                        const servicoInput = document.getElementById(`servico-${index}`);
+                        const percentualInput = document.getElementById(`percentual-${index}`);
+                        const valorInput = document.getElementById(`valor-${index}`);
+                        const dataInput = document.getElementById(`data-${index}`);
+                        const responsavelInput = document.getElementById(`responsavel-${index}`);
+                        
+                        if (faseInput) {
+                            acompanhamentosAtualizados.push({
+                                ...acompanhamento,
+                                fase: faseInput.value,
+                                servico: servicoInput ? servicoInput.value : '',
+                                percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
+                                valor_executado: parseFloat(valorInput ? valorInput.value : 0),
+                                data_atualizacao: dataInput ? dataInput.value : '',
+                                responsavel: responsavelInput ? responsavelInput.value : ''
+                            });
+                        }
+                    });
+                }
+                
+                // Salva cada acompanhamento
+                for (const acompanhamento of acompanhamentosAtualizados) {
+                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
+                        // ID temporário, criar novo
+                        await fetch('/api/acompanhamento', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ...acompanhamento,
+                                projeto_id: currentProject.id
+                            })
+                        });
+                    } else {
+                        // ID existente, atualizar
+                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(acompanhamento)
+                        });
+                    }
+                }
+                
+                // Mostra sucesso
+                showToast('success', 'Sucesso!', 'Acompanhamento atualizado com sucesso!');
+                
+                // Recarrega dados
+                await loadData();
+                
+                // Volta para modo visualização
+                isEditMode = false;
+                const editBtn = document.getElementById('edit-project-btn');
+                const editBtnText = document.getElementById('edit-btn-text');
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtnText.textContent = 'Editar Acompanhamento';
+                
+                // Renderiza modo visualização
+                renderProjectDetails(currentProject.id);
+                
+            } catch (error) {
+                console.error('Erro ao salvar acompanhamento:', error);
+                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
+            }
+        }
+
+        function renderEditMode() {
+            if (!currentProject) return;
+            
+            const modalBody = document.getElementById('modal-body');
+            
+            // Renderiza formulário de edição
+            modalBody.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Informações Básicas -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-edit text-yellow-500"></i>
+                            Editar Informações do Projeto
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Zona Portuária</label>
+                                <input type="text" id="edit-zona" value="${currentProject.zona_portuaria || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">UF</label>
+                                <input type="text" id="edit-uf" value="${currentProject.uf || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Objeto de Concessão</label>
+                                <input type="text" id="edit-obj" value="${currentProject.obj_concessao || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">CAPEX Total</label>
+                                <input type="number" id="edit-capex" value="${currentProject.capex_total || 0}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                            <textarea id="edit-descricao" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">${currentProject.descricao || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Acompanhamentos -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-chart-line text-yellow-500"></i>
+                                Acompanhamento do Projeto
+                            </h3>
+                            <button onclick="addAcompanhamento()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
+                                <i class="fas fa-plus mr-1"></i> Adicionar
+                            </button>
+                        </div>
+                        
+                        <div id="acompanhamentos-list" class="space-y-3">
+                            ${renderAcompanhamentosEdit()}
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex gap-3 justify-end">
+                        <button onclick="cancelEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button onclick="toggleEditMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-save mr-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAcompanhamentosEdit() {
+            if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
+                return '<p class="text-gray-500 text-center py-4">Nenhum acompanhamento cadastrado</p>';
+            }
+            
+            return currentProject.acompanhamentos.map((acompanhamento, index) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-800">Acompanhamento ${index + 1}</h4>
+                        <button onclick="removeAcompanhamento(${acompanhamento.id})" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Fase</label>
+                            <input type="text" value="${acompanhamento.fase || ''}" 
+                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'fase', this.value)"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Serviço</label>
+                            <input type="text" value="${acompanhamento.servico || ''}" 
+                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'servico', this.value)"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">% Executada</label>
+                            <input type="number" value="${acompanhamento.percentual_executada || 0}" 
+                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'percentual_executada', this.value)"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500" step="0.01" min="0" max="100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Valor Executado</label>
+                            <input type="number" value="${acompanhamento.valor_executado || 0}" 
+                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'valor_executado', this.value)"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Data Atualização</label>
+                            <input type="date" value="${acompanhamento.data_atualizacao || ''}" 
+                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'data_atualizacao', this.value)"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Responsável</label>
+                            <input type="text" value="${acompanhamento.responsavel || ''}" 
+                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'responsavel', this.value)"
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Descrição</label>
+                        <textarea rows="2" onchange="updateAcompanhamento(${acompanhamento.id}, 'descricao', this.value)"
+                                  class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">${acompanhamento.descricao || ''}</textarea>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateAcompanhamento(id, field, value) {
+            if (!currentProject.acompanhamentos) return;
+            
+            const acompanhamento = currentProject.acompanhamentos.find(a => a.id === id);
+            if (acompanhamento) {
+                acompanhamento[field] = value;
+            }
+        }
+
+        function addAcompanhamento() {
+            if (!currentProject.acompanhamentos) {
+                currentProject.acompanhamentos = [];
+            }
+            
+            const novoAcompanhamento = {
+                id: Date.now(), // ID temporário
+                projeto_id: currentProject.id,
+                fase: '',
+                servico: '',
+                descricao: '',
+                percentual_executada: 0,
+                valor_executado: 0,
+                data_atualizacao: new Date().toISOString().split('T')[0],
+                responsavel: '',
+                cargo: '',
+                setor: '',
+                riscos_tipo: '',
+                riscos_descricao: ''
+            };
+            
+            currentProject.acompanhamentos.push(novoAcompanhamento);
+            
+            // Atualiza a lista
+            const acompanhamentosList = document.getElementById('acompanhamentos-list');
+            if (acompanhamentosList) {
+                acompanhamentosList.innerHTML = renderAcompanhamentosEdit();
+            }
+        }
+
+        function removeAcompanhamento(id) {
+            if (!currentProject.acompanhamentos) return;
+            
+            currentProject.acompanhamentos = currentProject.acompanhamentos.filter(a => a.id !== id);
+            
+            // Atualiza a lista
+            const acompanhamentosList = document.getElementById('acompanhamentos-list');
+            if (acompanhamentosList) {
+                acompanhamentosList.innerHTML = renderAcompanhamentosEdit();
+            }
+        }
+
+        async function saveChanges() {
+            if (!currentProject) return;
+            
+            try {
+                // Prepara dados do projeto
+                const projectData = {
+                    zona_portuaria: document.getElementById('edit-zona').value,
+                    uf: document.getElementById('edit-uf').value,
+                    obj_concessao: document.getElementById('edit-obj').value,
+                    capex_total: parseFloat(document.getElementById('edit-capex').value) || 0,
+                    descricao: document.getElementById('edit-descricao').value
+                };
+                
+                // Atualiza projeto
+                const projectResponse = await fetch(`/api/projects/${currentProject.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(projectData)
+                });
+                
+                if (!projectResponse.ok) {
+                    throw new Error('Erro ao atualizar projeto');
+                }
+                
+                // Salva acompanhamentos
+                for (const acompanhamento of currentProject.acompanhamentos) {
+                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
+                        // ID temporário, criar novo
+                        await fetch('/api/acompanhamento', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ...acompanhamento,
+                                projeto_id: currentProject.id
+                            })
+                        });
+                    } else {
+                        // ID existente, atualizar
+                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(acompanhamento)
+                        });
+                    }
+                }
+                
+                // Mostra sucesso
+                showToast('success', 'Sucesso!', 'Projeto atualizado com sucesso!');
+                
+                // Recarrega dados
+                await loadData();
+                
+                // Volta para modo visualização
+                isEditMode = false;
+                const editBtn = document.getElementById('edit-project-btn');
+                const editBtnText = document.getElementById('edit-btn-text');
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                editBtnText.textContent = 'Alterar Andamento';
+                
+                // Renderiza modo visualização
+                renderProjectDetails(currentProject.id);
+                
+            } catch (error) {
+                console.error('Erro ao salvar alterações:', error);
+                showToast('error', 'Erro!', 'Falha ao salvar alterações');
+            }
+        }
+
+        function cancelEdit() {
+            isEditMode = false;
+            const editBtn = document.getElementById('edit-project-btn');
+            const editBtnText = document.getElementById('edit-btn-text');
+            editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+            editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            editBtnText.textContent = 'Alterar Andamento';
+            
+            // Renderiza modo visualização
+            renderProjectDetails(currentProject.id);
+        }
+
+        function showToast(type, title, message) {
+            // Cria toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-xl p-4 flex items-center gap-3 min-w-[300px]';
+            toast.innerHTML = `
+                <div class="${type === 'success' ? 'text-green-500' : 'text-red-500'}">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-gray-800 font-medium">${title}</p>
+                    <p class="text-sm text-gray-600">${message}</p>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
     </script>
                 </div>
             </div>

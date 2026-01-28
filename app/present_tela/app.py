@@ -258,37 +258,43 @@ def get_projects():
     result = []
     
     for projeto in projetos:
+        # Converte Row para dict
+        projeto_dict = dict(projeto)
+        
         # Busca serviços do projeto
         servicos = conn.execute('''
             SELECT * FROM servicos WHERE projeto_id = ?
-        ''', (projeto['id'],)).fetchall()
+        ''', (projeto_dict['id'],)).fetchall()
         
         # Busca acompanhamentos do projeto
         acompanhamentos = conn.execute('''
             SELECT * FROM acompanhamento WHERE projeto_id = ?
-        ''', (projeto['id'],)).fetchall()
+        ''', (projeto_dict['id'],)).fetchall()
         
-        # Calcula progresso
+        # Converte para dict
+        acompanhamentos_dict = [dict(a) for a in acompanhamentos] if acompanhamentos else []
+        servicos_dict = [dict(s) for s in servicos] if servicos else []
+        
+        # Calcula progresso baseado nos acompanhamentos
         progresso = 0
-        if acompanhamentos:
-            mais_recente = max(acompanhamentos, 
-                             key=lambda x: x['data_atualizacao'] or '')
-            progresso = (mais_recente['percentual_executada'] or 0) * 100
+        if acompanhamentos_dict:
+            progresso = max([a.get('percentual_executada', 0) or 0 for a in acompanhamentos_dict])
         
-        # Determina etapa
+        # Determina etapa baseada nos acompanhamentos
         etapa = 'Planejamento'
-        servicos_em_execucao = [
-            s for s in servicos
-            if s['data_inicio'] and s['data_final']
-        ]
-        if servicos_em_execucao:
-            etapa = f'Execução - {len(servicos_em_execucao)} serviço(s) em andamento'
-        elif progresso > 0:
-            etapa = 'Em execução'
+        if acompanhamentos_dict:
+            # Pega o acompanhamento mais recente
+            mais_recente = max(acompanhamentos_dict, key=lambda x: x.get('data_atualizacao', ''))
+            if mais_recente.get('fase'):
+                etapa = mais_recente['fase']
+            elif progresso > 0:
+                etapa = 'Em execução'
+            else:
+                etapa = 'Em andamento'
         
         # Prepara coordenadas
-        latitude = projeto['latitude']
-        longitude = projeto['longitude']
+        latitude = projeto_dict['latitude']
+        longitude = projeto_dict['longitude']
         
         # Gera mapa se tiver coordenadas
         mapa_embed = None
@@ -320,29 +326,29 @@ def get_projects():
             '''
         
         # Nome do projeto
-        zona = projeto['zona_portuaria'] or 'Não informado'
-        obj = projeto['obj_concessao'] or ''
+        zona = projeto_dict['zona_portuaria'] or 'Não informado'
+        obj = projeto_dict['obj_concessao'] or ''
         nome_projeto = zona if zona == 'Não se aplica' else f"{zona} - {obj}"
         
         result.append({
-            'id': f"projeto-{projeto['id']}",
+            'id': f"projeto-{projeto_dict['id']}",
             'nome': nome_projeto,
             'zona': zona,
-            'uf': projeto['uf'] or '',
+            'uf': projeto_dict['uf'] or '',
             'objConcessao': obj,
-            'tipo': projeto['tipo'] or '',
-            'capexTotal': projeto['capex_total'] or 0,
-            'dataAssinatura': projeto['data_assinatura'],
-            'descricao': projeto['descricao'] or 'Sem descrição disponível',
+            'tipo': projeto_dict['tipo'] or '',
+            'capexTotal': projeto_dict['capex_total'] or 0,
+            'dataAssinatura': projeto_dict['data_assinatura'],
+            'descricao': projeto_dict['descricao'] or 'Sem descrição disponível',
             'progresso': progresso,
             'etapa': etapa,
-            'servicos': [dict(s) for s in servicos],
-            'acompanhamentos': [dict(a) for a in acompanhamentos],
+            'servicos': servicos_dict,
+            'acompanhamentos': acompanhamentos_dict,
             'mapaEmbed': mapa_embed,
             'coordenadas': {
-                'e': projeto['coordenada_e_utm'],
-                's': projeto['coordenada_s_utm'],
-                'fuso': projeto['fuso'],
+                'e': projeto_dict['coordenada_e_utm'],
+                's': projeto_dict['coordenada_s_utm'],
+                'fuso': projeto_dict['fuso'],
                 'latitude': latitude,
                 'longitude': longitude
             },
@@ -404,12 +410,130 @@ def create_project():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/project/<int:projeto_id>')
+def get_project(projeto_id):
+    """Retorna um projeto específico no formato esperado pelo frontend"""
+    conn = get_db_connection()
+    
+    # Busca o projeto
+    projeto = conn.execute('SELECT * FROM projetos WHERE id = ?', (projeto_id,)).fetchone()
+    
+    if not projeto:
+        return jsonify({'error': 'Projeto não encontrado'}), 404
+    
+    # Converte para dict
+    projeto_dict = dict(projeto)
+    
+    # Busca serviços do projeto
+    servicos = conn.execute('''
+        SELECT * FROM servicos WHERE projeto_id = ?
+    ''', (projeto_dict['id'],)).fetchall()
+    
+    # Busca acompanhamentos do projeto
+    acompanhamentos = conn.execute('''
+        SELECT * FROM acompanhamento WHERE projeto_id = ?
+    ''', (projeto_dict['id'],)).fetchall()
+    
+    # Converte para dict
+    acompanhamentos_dict = [dict(a) for a in acompanhamentos] if acompanhamentos else []
+    servicos_dict = [dict(s) for s in servicos] if servicos else []
+    
+    # Calcula progresso baseado nos acompanhamentos
+    progresso = 0
+    if acompanhamentos_dict:
+        progresso = max([a.get('percentual_executada', 0) or 0 for a in acompanhamentos_dict])
+    
+    # Determina etapa baseada nos acompanhamentos
+    etapa = 'Planejamento'
+    if acompanhamentos_dict:
+        # Pega o acompanhamento mais recente
+        mais_recente = max(acompanhamentos_dict, key=lambda x: x.get('data_atualizacao', ''))
+        if mais_recente.get('fase'):
+            etapa = mais_recente['fase']
+        elif progresso > 0:
+            etapa = 'Em execução'
+        else:
+            etapa = 'Em andamento'
+    
+    # Prepara coordenadas
+    latitude = projeto_dict['latitude']
+    longitude = projeto_dict['longitude']
+    
+    # Gera mapa se tiver coordenadas
+    mapa_embed = None
+    coordenadas_lat_lon = None
+    
+    if latitude and longitude:
+        coordenadas_lat_lon = {
+            'lat': latitude,
+            'lon': longitude
+        }
+        
+        bbox_size = 0.02
+        bbox = f"{longitude-bbox_size},{latitude-bbox_size},{longitude+bbox_size},{latitude+bbox_size}"
+        
+        mapa_embed = f'''
+            <div class="w-full h-full relative">
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    style="border:0; border-radius: 8px;" 
+                    src="https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latitude},{longitude}" 
+                    frameborder="0"
+                    allowfullscreen>
+                </iframe>
+                <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
+                    📍 {latitude:.6f}, {longitude:.6f}
+                </div>
+            </div>
+        '''
+    
+    # Nome do projeto
+    zona = projeto_dict['zona_portuaria'] or 'Não informado'
+    obj = projeto_dict['obj_concessao'] or ''
+    nome_projeto = zona if zona == 'Não se aplica' else f"{zona} - {obj}"
+    
+    result = {
+        'id': f"projeto-{projeto_dict['id']}",
+        'nome': nome_projeto,
+        'zona': zona,
+        'uf': projeto_dict['uf'] or '',
+        'objConcessao': obj,
+        'tipo': projeto_dict['tipo'] or '',
+        'capexTotal': projeto_dict['capex_total'] or 0,
+        'dataAssinatura': projeto_dict['data_assinatura'],
+        'descricao': projeto_dict['descricao'] or 'Sem descrição disponível',
+        'progresso': progresso,
+        'etapa': etapa,
+        'servicos': servicos_dict,
+        'acompanhamentos': acompanhamentos_dict,
+        'mapaEmbed': mapa_embed,
+        'coordenadas': {
+            'e': projeto_dict['coordenada_e_utm'],
+            's': projeto_dict['coordenada_s_utm'],
+            'fuso': projeto_dict['fuso'],
+            'latitude': latitude,
+            'longitude': longitude
+        },
+        'coordenadasLatLon': coordenadas_lat_lon
+    }
+    
+    conn.close()
+    
+    return jsonify(result)
+
 @app.route('/api/projects/<int:projeto_id>', methods=['PUT'])
 def update_project(projeto_id):
     """Atualiza um projeto"""
     try:
         data = request.get_json()
         conn = get_db_connection()
+        
+        # Busca o projeto atual
+        projeto = conn.execute('SELECT * FROM projetos WHERE id = ?', (projeto_id,)).fetchone()
+        
+        if not projeto:
+            return jsonify({'error': 'Projeto não encontrado'}), 404
         
         cursor = conn.execute('''
             UPDATE projetos SET
@@ -419,18 +543,18 @@ def update_project(projeto_id):
                 coordenada_s_utm = ?, fuso = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ''', (
-            data.get('zona_portuaria'),
-            data.get('uf'),
-            data.get('obj_concessao'),
-            data.get('tipo'),
-            data.get('capex_total'),
-            data.get('data_assinatura'),
-            data.get('descricao'),
-            data.get('latitude'),
-            data.get('longitude'),
-            data.get('coordenada_e_utm'),
-            data.get('coordenada_s_utm'),
-            data.get('fuso'),
+            data.get('zona_portuaria', projeto['zona_portuaria']),
+            data.get('uf', projeto['uf']),
+            data.get('obj_concessao', projeto['obj_concessao']),
+            data.get('tipo', projeto['tipo']),
+            data.get('capex_total', projeto['capex_total']),
+            data.get('data_assinatura', projeto['data_assinatura']),
+            data.get('descricao', projeto['descricao']),
+            data.get('latitude', projeto['latitude']),
+            data.get('longitude', projeto['longitude']),
+            data.get('coordenada_e_utm', projeto['coordenada_e_utm']),
+            data.get('coordenada_s_utm', projeto['coordenada_s_utm']),
+            data.get('fuso', projeto['fuso']),
             projeto_id
         ))
         
@@ -654,26 +778,52 @@ def delete_project(projeto_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/projects/<int:projeto_id>', methods=['GET'])
-def get_project(projeto_id):
-    """Retorna um projeto específico"""
+@app.route('/api/acompanhamento/<int:acompanhamento_id>', methods=['PUT'])
+def update_acompanhamento(acompanhamento_id):
+    """Atualiza um acompanhamento específico"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        
+        conn.execute('''
+            UPDATE acompanhamento SET
+                fase = ?, servico = ?, descricao = ?,
+                percentual_executada = ?, valor_executado = ?,
+                data_atualizacao = ?, responsavel = ?, cargo = ?,
+                setor = ?, riscos_tipo = ?, riscos_descricao = ?
+            WHERE id = ?
+        ''', (
+            data.get('fase'),
+            data.get('servico'),
+            data.get('descricao'),
+            data.get('percentual_executada'),
+            data.get('valor_executado'),
+            data.get('data_atualizacao'),
+            data.get('responsavel'),
+            data.get('cargo'),
+            data.get('setor'),
+            data.get('riscos_tipo'),
+            data.get('riscos_descricao'),
+            acompanhamento_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Acompanhamento atualizado com sucesso!'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/acompanhamento/<int:acompanhamento_id>', methods=['DELETE'])
+def delete_acompanhamento(acompanhamento_id):
+    """Exclui um acompanhamento específico"""
     try:
         conn = get_db_connection()
-        projeto = conn.execute('SELECT * FROM projetos WHERE id = ?', (projeto_id,)).fetchone()
-        
-        if not projeto:
-            return jsonify({'error': 'Projeto não encontrado'}), 404
-        
-        # Busca serviços e acompanhamentos
-        servicos = conn.execute('SELECT * FROM servicos WHERE projeto_id = ?', (projeto_id,)).fetchall()
-        acompanhamentos = conn.execute('SELECT * FROM acompanhamento WHERE projeto_id = ?', (projeto_id,)).fetchall()
-        
-        result = dict(projeto)
-        result['servicos'] = [dict(s) for s in servicos]
-        result['acompanhamentos'] = [dict(a) for a in acompanhamentos]
-        
+        conn.execute('DELETE FROM acompanhamento WHERE id = ?', (acompanhamento_id,))
+        conn.commit()
         conn.close()
-        return jsonify(result)
+        
+        return jsonify({'message': 'Acompanhamento excluído com sucesso!'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
