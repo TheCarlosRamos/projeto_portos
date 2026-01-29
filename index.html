@@ -310,142 +310,142 @@
                 const servicos = jsonData['Tabela 01 - Serviços'] || [];
                 const acompanhamentos = jsonData['Tabela 02 - Acompanhamento'] || [];
 
-                    // Processar projetos (mantém lógica original)
-                    projetosData = cadastros.map((cadastro, index) => {
-                        const projetoId = `projeto-${index}`;
-                        const zona = cadastro['Zona portuária'] || 'Não informado';
-                        const obj = cadastro['Obj. de Concessão'] || '';
-                        const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+                // Processar projetos (mantém lógica original)
+                projetosData = cadastros.map((cadastro, index) => {
+                    const projetoId = `projeto-${index}`;
+                    const zona = cadastro['Zona portuária'] || 'Não informado';
+                    const obj = cadastro['Obj. de Concessão'] || '';
+                    const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
 
-                        // Buscar serviços relacionados
-                        const servicosProjeto = servicos.filter(s => 
-                            s['Zona portuária'] === cadastro['Zona portuária'] &&
-                            s['UF'] === cadastro['UF'] &&
-                            s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                        );
+                    // Buscar serviços relacionados
+                    const servicosProjeto = servicos.filter(s => 
+                        s['Zona portuária'] === cadastro['Zona portuária'] &&
+                        s['UF'] === cadastro['UF'] &&
+                        s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                    );
 
-                        // Buscar acompanhamentos relacionados
-                        const acompanhamentosProjeto = acompanhamentos.filter(a => 
-                            a['Zona portuária'] === cadastro['Zona portuária'] &&
-                            a['UF'] === cadastro['UF'] &&
-                            a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                        );
+                    // Buscar acompanhamentos relacionados
+                    const acompanhamentosProjeto = acompanhamentos.filter(a => 
+                        a['Zona portuária'] === cadastro['Zona portuária'] &&
+                        a['UF'] === cadastro['UF'] &&
+                        a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                    );
 
-                        // Calcular progresso baseado no acompanhamento mais recente
-                        let progresso = 0;
-                        if (acompanhamentosProjeto.length > 0) {
-                            const maisRecente = acompanhamentosProjeto.sort((a, b) => {
-                                const dataA = new Date(a['Data da atualização'] || 0);
-                                const dataB = new Date(b['Data da atualização'] || 0);
-                                return dataB - dataA;
-                            })[0];
-                            progresso = (maisRecente['% executada'] || 0) * 100;
-                        }
+                    // Calcular progresso baseado no acompanhamento mais recente
+                    let progresso = 0;
+                    if (acompanhamentosProjeto.length > 0) {
+                        const maisRecente = acompanhamentosProjeto.sort((a, b) => {
+                            const dataA = new Date(a['Data da atualização'] || 0);
+                            const dataB = new Date(b['Data da atualização'] || 0);
+                            return dataB - dataA;
+                        })[0];
+                        progresso = (maisRecente['% executada'] || 0) * 100;
+                    }
 
-                        // ETAPA baseada no status dos serviços
-                        let etapa = 'Planejamento';
-                        const servicosEmExecucao = servicosProjeto.filter(s => {
-                            if (!s['Data de início'] || !s['Data final']) return false;
-                            const inicio = new Date(s['Data de início']);
-                            const fim = new Date(s['Data final']);
-                            const hoje = new Date();
-                            return hoje >= inicio && hoje <= fim;
-                        });
-                        if (servicosEmExecucao.length > 0) {
-                            etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
-                        } else if (progresso > 0) {
-                            etapa = 'Em execução';
-                        }
-
-                        // Mapa - converter coordenadas se disponível
-                        let mapaEmbed = null;
-                        let coordenadasLatLon = null;
-                        
-                        // Verifica se já tem Lat/Lon direto ou precisa converter UTM
-                        if (cadastro['Latitude'] && cadastro['Longitude']) {
-                            // Usa coordenadas diretas (Lat/Lon)
-                            coordenadasLatLon = {
-                                lat: parseFloat(cadastro['Latitude']),
-                                lon: parseFloat(cadastro['Longitude'])
-                            };
-                            console.log(`Usando coordenadas diretas para ${nomeProjeto}:`, coordenadasLatLon);
-                        } else if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
-                            // Converte de UTM para Lat/Lon
-                            const coordE = parseFloat(cadastro['Coordenada E (UTM)']);
-                            const coordS = parseFloat(cadastro['Coordenada S (UTM)']);
-                            const fuso = parseInt(cadastro['Fuso']);
-                            
-                            console.log(`Convertendo coordenadas UTM para ${nomeProjeto}:`, {coordE, coordS, fuso});
-                            
-                            const latLon = utmToLatLon(coordE, coordS, fuso);
-                            if (latLon && !isNaN(latLon.lat) && !isNaN(latLon.lon)) {
-                                coordenadasLatLon = latLon;
-                                console.log(`Coordenadas convertidas para ${nomeProjeto}:`, latLon);
-                            } else {
-                                console.warn(`Falha na conversão de coordenadas UTM para ${nomeProjeto}:`, latLon);
-                            }
-                        } else {
-                            console.log(`Coordenadas não disponíveis para ${nomeProjeto}:`, {
-                                latitude: cadastro['Latitude'],
-                                longitude: cadastro['Longitude'],
-                                easting: cadastro['Coordenada E (UTM)'],
-                                northing: cadastro['Coordenada S (UTM)'],
-                                zone: cadastro['Fuso']
-                            });
-                        }
-                        
-                        // Gera o mapa se tiver coordenadas válidas
-                        if (coordenadasLatLon && !isNaN(coordenadasLatLon.lat) && !isNaN(coordenadasLatLon.lon)) {
-                            // Usar OpenStreetMap com bounding box adequada
-                            const bboxSize = 0.02; // ~2km de bbox
-                            const bbox = `${coordenadasLatLon.lon-bboxSize},${coordenadasLatLon.lat-bboxSize},${coordenadasLatLon.lon+bboxSize},${coordenadasLatLon.lat+bboxSize}`;
-                            
-                            mapaEmbed = `
-                                <div class="w-full h-full relative">
-                                    <iframe 
-                                        width="100%" 
-                                        height="100%" 
-                                        style="border:0; border-radius: 8px;" 
-                                        src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordenadasLatLon.lat},${coordenadasLatLon.lon}" 
-                                        frameborder="0"
-                                        allowfullscreen>
-                                    </iframe>
-                                    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
-                                        📍 ${coordenadasLatLon.lat.toFixed(6)}, ${coordenadasLatLon.lon.toFixed(6)}
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        return {
-                            id: projetoId,
-                            nome: nomeProjeto,
-                            zona: zona,
-                            uf: cadastro['UF'] || '',
-                            objConcessao: obj,
-                            tipo: cadastro['Tipo'] || '',
-                            capexTotal: cadastro['CAPEX Total'] || 0,
-                            dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
-                            descricao: cadastro['Descrição'] || 'Sem descrição disponível',
-                            progresso: progresso,
-                            etapa: etapa,
-                            servicos: servicosProjeto,
-                            acompanhamentos: acompanhamentosProjeto,
-                            mapaEmbed: mapaEmbed,
-                            coordenadas: {
-                                e: cadastro['Coordenada E (UTM)'],
-                                s: cadastro['Coordenada S (UTM)'],
-                                fuso: cadastro['Fuso'],
-                                latitude: cadastro['Latitude'],
-                                longitude: cadastro['Longitude']
-                            },
-                            coordenadasLatLon: coordenadasLatLon
-                        };
+                    // ETAPA baseada no status dos serviços
+                    let etapa = 'Planejamento';
+                    const servicosEmExecucao = servicosProjeto.filter(s => {
+                        if (!s['Data de início'] || !s['Data final']) return false;
+                        const inicio = new Date(s['Data de início']);
+                        const fim = new Date(s['Data final']);
+                        const hoje = new Date();
+                        return hoje >= inicio && hoje <= fim;
                     });
+                    if (servicosEmExecucao.length > 0) {
+                        etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
+                    } else if (progresso > 0) {
+                        etapa = 'Em execução';
+                    }
 
-                    projetosFiltrados = [...projetosData];
-                    renderProjects();
-                    console.log('Dados carregados do JSON com sucesso!');
+                    // Mapa - converter coordenadas se disponível
+                    let mapaEmbed = null;
+                    let coordenadasLatLon = null;
+                    
+                    // Verifica se já tem Lat/Lon direto ou precisa converter UTM
+                    if (cadastro['Latitude'] && cadastro['Longitude']) {
+                        // Usa coordenadas diretas (Lat/Lon)
+                        coordenadasLatLon = {
+                            lat: parseFloat(cadastro['Latitude']),
+                            lon: parseFloat(cadastro['Longitude'])
+                        };
+                        console.log(`Usando coordenadas diretas para ${nomeProjeto}:`, coordenadasLatLon);
+                    } else if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
+                        // Converte de UTM para Lat/Lon
+                        const coordE = parseFloat(cadastro['Coordenada E (UTM)']);
+                        const coordS = parseFloat(cadastro['Coordenada S (UTM)']);
+                        const fuso = parseInt(cadastro['Fuso']);
+                        
+                        console.log(`Convertendo coordenadas UTM para ${nomeProjeto}:`, {coordE, coordS, fuso});
+                        
+                        const latLon = utmToLatLon(coordE, coordS, fuso);
+                        if (latLon && !isNaN(latLon.lat) && !isNaN(latLon.lon)) {
+                            coordenadasLatLon = latLon;
+                            console.log(`Coordenadas convertidas para ${nomeProjeto}:`, latLon);
+                        } else {
+                            console.warn(`Falha na conversão de coordenadas UTM para ${nomeProjeto}:`, latLon);
+                        }
+                    } else {
+                        console.log(`Coordenadas não disponíveis para ${nomeProjeto}:`, {
+                            latitude: cadastro['Latitude'],
+                            longitude: cadastro['Longitude'],
+                            easting: cadastro['Coordenada E (UTM)'],
+                            northing: cadastro['Coordenada S (UTM)'],
+                            zone: cadastro['Fuso']
+                        });
+                    }
+                    
+                    // Gera o mapa se tiver coordenadas válidas
+                    if (coordenadasLatLon && !isNaN(coordenadasLatLon.lat) && !isNaN(coordenadasLatLon.lon)) {
+                        // Usar OpenStreetMap com bounding box adequada
+                        const bboxSize = 0.02; // ~2km de bbox
+                        const bbox = `${coordenadasLatLon.lon-bboxSize},${coordenadasLatLon.lat-bboxSize},${coordenadasLatLon.lon+bboxSize},${coordenadasLatLon.lat+bboxSize}`;
+                        
+                        mapaEmbed = `
+                            <div class="w-full h-full relative">
+                                <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    style="border:0; border-radius: 8px;" 
+                                    src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordenadasLatLon.lat},${coordenadasLatLon.lon}" 
+                                    frameborder="0"
+                                    allowfullscreen>
+                                </iframe>
+                                <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
+                                    📍 ${coordenadasLatLon.lat.toFixed(6)}, ${coordenadasLatLon.lon.toFixed(6)}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    return {
+                        id: projetoId,
+                        nome: nomeProjeto,
+                        zona: zona,
+                        uf: cadastro['UF'] || '',
+                        objConcessao: obj,
+                        tipo: cadastro['Tipo'] || '',
+                        capexTotal: cadastro['CAPEX Total'] || 0,
+                        dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
+                        descricao: cadastro['Descrição'] || 'Sem descrição disponível',
+                        progresso: progresso,
+                        etapa: etapa,
+                        servicos: servicosProjeto,
+                        acompanhamentos: acompanhamentosProjeto,
+                        mapaEmbed: mapaEmbed,
+                        coordenadas: {
+                            e: cadastro['Coordenada E (UTM)'],
+                            s: cadastro['Coordenada S (UTM)'],
+                            fuso: cadastro['Fuso'],
+                            latitude: cadastro['Latitude'],
+                            longitude: cadastro['Longitude']
+                        },
+                        coordenadasLatLon: coordenadasLatLon
+                    };
+                });
+
+                projetosFiltrados = [...projetosData];
+                renderProjects();
+                console.log('Dados carregados com sucesso! Total de projetos:', projetosData.length);
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 const errorMsg = error.message || 'Erro ao carregar dados';
