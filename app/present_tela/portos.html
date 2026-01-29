@@ -6,6 +6,7 @@
     <title>Gestão de Concessões Portuárias - Apresentação</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #2E4E8C;
@@ -125,6 +126,24 @@
 
                 <!-- Main Content -->
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Mapa de Projetos -->
+            <div class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-map-marked-alt text-blue-600"></i>
+                        Mapa de Projetos Portuários
+                    </h2>
+                    <div class="mb-4">
+                        <div id="projects-map" class="w-full h-96 min-h-[400px] rounded-lg overflow-hidden">
+                            <!-- Mapa será inserido aqui -->
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2" id="map-legend">
+                        <!-- Legendas serão inseridas aqui -->
+                    </div>
+                </div>
+            </div>
+            
             <!-- Search and Filter -->
             <div class="mb-6 flex gap-4">
                 <div class="relative flex-1">
@@ -836,6 +855,154 @@
             }).join('');
         }
 
+        function calculateAccumulatedProgress(acompanhamentos) {
+            if (!acompanhamentos || acompanhamentos.length === 0) {
+                return { labels: [], data: [] };
+            }
+            
+            // Ordena acompanhamentos por data
+            const sortedAcompanhamentos = acompanhamentos
+                .filter(a => a.data_atualizacao)
+                .sort((a, b) => new Date(a.data_atualizacao) - new Date(b.data_atualizacao));
+            
+            if (sortedAcompanhamentos.length === 0) {
+                return { labels: [], data: [] };
+            }
+            
+            let accumulated = 0;
+            const labels = [];
+            const data = [];
+            
+            sortedAcompanhamentos.forEach(acompanhamento => {
+                let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
+                if (percentual < 1) {
+                    percentual = percentual * 100;
+                }
+                
+                accumulated += percentual;
+                const date = new Date(acompanhamento.data_atualizacao);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                
+                labels.push(`${month}/${year}`);
+                data.push(Math.round(accumulated));
+            });
+            
+            return { labels, data };
+        }
+        
+        function createProgressChart(canvasId, acompanhamentos) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return null;
+            
+            const { labels, data } = calculateAccumulatedProgress(acompanhamentos);
+            
+            if (labels.length === 0) {
+                ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+                ctx.style.display = 'none';
+                return null;
+            }
+            
+            ctx.style.display = 'block';
+            
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Progresso Acumulado (%)',
+                        data: data,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3B82F6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                color: '#374151'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#3B82F6',
+                            borderWidth: 1,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Progresso: ${context.parsed.y}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Período',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#374151'
+                            },
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6B7280'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Progresso Acumulado (%)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#374151'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6B7280',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            min: 0
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+        
         function showServiceDetails(serviceIndex) {
             if (!currentProject || !currentProject.servicos) return;
             
@@ -843,12 +1010,28 @@
             
             // Encontra acompanhamentos relacionados a este serviço
             const servicoAcompanhamentos = currentProject.acompanhamentos ? 
-                currentProject.acompanhamentos.filter(a => 
-                    a.servico === servico.servico || 
-                    a.servico === servico.tipo_servico ||
-                    servico.servico?.includes(a.servico) ||
-                    a.servico?.includes(servico.servico)
-                ) : [];
+                currentProject.acompanhamentos.filter(a => {
+                    const servicoNome = (servico.servico || '').toLowerCase().trim();
+                    const acompanhamentoServico = (a.servico || '').toLowerCase().trim();
+                    const servicoTipo = (servico.tipo_servico || '').toLowerCase().trim();
+                    const acompanhamentoTipo = (a.tipo_servico || '').toLowerCase().trim();
+                    
+                    // Verifica correspondência exata
+                    if (acompanhamentoServico === servicoNome) return true;
+                    
+                    // Verifica se o nome do acompanhamento contém o nome do serviço (vice-versa)
+                    if (acompanhamentoServico.includes(servicoNome) && servicoNome.length > 3) return true;
+                    if (servicoNome.includes(acompanhamentoServico) && acompanhamentoServico.length > 3) return true;
+                    
+                    // Verifica correspondência por tipo
+                    if (acompanhamentoTipo === servicoTipo) return true;
+                    
+                    // Verifica se o tipo contém palavras-chave em comum
+                    if (acompanhamentoTipo.includes(servicoTipo) && servicoTipo.length > 3) return true;
+                    if (servicoTipo.includes(acompanhamentoTipo) && acompanhamentoTipo.length > 3) return true;
+                    
+                    return false;
+                }) : [];
             
             // Calcula percentuais para exibição
             let percCapexExec = 0;
@@ -962,6 +1145,28 @@
                             </div>
                         </div>
                         
+                        <!-- Gráfico de Progresso Acumulado -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <h3 class="font-semibold text-gray-700 mb-4">
+                                <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                                Evolução do Progresso Acumulado
+                            </h3>
+                            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                <div style="height: 300px; position: relative;">
+                                    <canvas id="progress-chart-${serviceIndex}"></canvas>
+                                    ${servicoAcompanhamentos.length === 0 ? `
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="text-center text-gray-500">
+                                                <i class="fas fa-chart-line text-4xl mb-3 text-gray-300"></i>
+                                                <p>Sem dados de acompanhamento para gerar gráfico</p>
+                                                <p class="text-xs text-gray-400 mt-2">Adicione acompanhamentos com datas para visualizar o progresso</p>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Acompanhamentos -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="font-semibold text-gray-700 mb-4">
@@ -1047,6 +1252,11 @@
             // Adiciona o modal ao body
             document.body.appendChild(modal);
             
+            // Cria o gráfico de progresso após o modal ser adicionado ao DOM
+            setTimeout(() => {
+                createProgressChart(`progress-chart-${serviceIndex}`, servicoAcompanhamentos);
+            }, 100);
+            
             // Fecha o modal ao clicar fora
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
@@ -1058,6 +1268,15 @@
         function closeServiceModal() {
             const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
             if (modal) {
+                // Destroi todos os gráficos Chart.js no modal antes de remover
+                const canvases = modal.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    const chart = Chart.getChart(canvas);
+                    if (chart) {
+                        chart.destroy();
+                    }
+                });
+                
                 modal.remove();
             }
         }
@@ -2036,6 +2255,116 @@
             }).join('');
         }
 
+        function generateProjectsMap(projects) {
+            console.log('generateProjectsMap chamado com projetos:', projects);
+            
+            const mapContainer = document.getElementById('projects-map');
+            const legendContainer = document.getElementById('map-legend');
+            
+            console.log('Elementos encontrados:', {
+                mapContainer: !!mapContainer,
+                legendContainer: !!legendContainer
+            });
+            
+            if (!mapContainer) {
+                console.error('Elemento #projects-map não encontrado!');
+                return;
+            }
+            
+            // Filtra projetos com coordenadas válidas
+            const projectsWithCoords = projects.filter(p => 
+                p.coordenadasLatLon && p.coordenadasLatLon.lat && p.coordenadasLatLon.lon
+            );
+            
+            console.log('Projetos com coordenadas:', projectsWithCoords.length);
+            
+            if (projectsWithCoords.length === 0) {
+                // Se não houver coordenadas, mostra o mapa padrão
+                mapContainer.innerHTML = `
+                    <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 0.5rem;">
+                        <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center; max-width: 500px; z-index: 1;">
+                            <div style="font-size: 80px; margin-bottom: 20px;">🗺️</div>
+                            <h3 style="color: #333; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">Mapa de Projetos Portuários</h3>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                                <div style="font-size: 36px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
+                                    ${projects.length}
+                                </div>
+                                <div style="color: #666; font-size: 16px;">
+                                    Projetos Cadastrados
+                                </div>
+                            </div>
+                            <div style="color: #999; font-size: 14px; line-height: 1.5;">
+                                Nenhum projeto com coordenadas geográficas<br>
+                                Adicione latitude e longitude para visualizar no mapa
+                            </div>
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <div style="font-size: 12px; color: #999;">
+                                    Status: <span style="color: #28a745; font-weight: bold;">✓ Funcionando</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Testa o mapa do Brasil sem marcadores primeiro
+                const brasilBbox = "-75.0,-34.0,-33.0,6.0";
+                
+                console.log('Testando mapa do Brasil sem marcadores...');
+                
+                // Cria o mapa sem marcadores para garantir que o Brasil apareça
+                mapContainer.innerHTML = `
+                    <div style="width: 100%; height: 100%; position: relative; border-radius: 0.5rem; overflow: hidden;">
+                        <iframe 
+                            width="100%" 
+                            height="100%" 
+                            frameborder="0" 
+                            style="border: 0; border-radius: 0.5rem;" 
+                            src="https://www.openstreetmap.org/export/embed.html?bbox=${brasilBbox}&layer=mapnik">
+                        </iframe>
+                        <div style="position: relative; top: 15px; left: 15px; background: rgba(255, 255, 255, 0.95); padding: 12px 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 13px; z-index: 10; backdrop-filter: blur(4px);">
+                            <div style="font-weight: bold; color: #333; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 16px;">🗺️</span>
+                                <span>${projectsWithCoords.length} Projetos com Localização</span>
+                            </div>
+                            <div style="color: #666; font-size: 12px;">
+                                ${projects.length - projectsWithCoords.length} projetos sem coordenadas geográficas
+                            </div>
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+                                <div style="color: #999; font-size: 11px;">
+                                    Mapa do Brasil - Teste Sem Marcadores
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Cria legendas simples
+            if (projects && projects.length > 0) {
+                const tipos = [...new Set(projects.map(p => p.tipo || 'Não definido'))];
+                const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+                
+                let legendHTML = '<div class="text-sm text-gray-600 mb-2">Tipos de Projetos:</div>';
+                tipos.forEach((tipo, index) => {
+                    const count = projects.filter(p => (p.tipo || 'Não definido') === tipo).length;
+                    const color = colors[index % colors.length];
+                    legendHTML += `
+                        <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300">
+                            <div class="w-3 h-3 rounded-full" style="background-color: ${color}"></div>
+                            <span class="text-xs font-medium">${tipo} (${count})</span>
+                        </div>
+                    `;
+                });
+                if (legendContainer) {
+                    legendContainer.innerHTML = legendHTML;
+                }
+            } else {
+                if (legendContainer) {
+                    legendContainer.innerHTML = '';
+                }
+            }
+        }
+
         function generateMapEmbed(projeto) {
             if (!projeto.coordenadas || !projeto.coordenadas.latitude || !projeto.coordenadas.longitude) {
                 return `
@@ -2186,7 +2515,43 @@
         }
 
         // Carregar dados ao iniciar
-        loadData();
+        async function loadData() {
+            try {
+                const response = await fetch('/api/projects');
+                projetosData = await response.json();
+                projetosFiltrados = [...projetosData];
+                
+                // Gera o mapa de projetos
+                generateProjectsMap(projetosData);
+                
+                renderProjects();
+                console.log('Dados carregados:', projetosData.length, 'projetos');
+                
+                // Atualizar contador do mapa
+                updateMapCounter(projetosData);
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                // Mostra mensagem de erro
+                document.getElementById('projects-grid').innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Erro ao carregar dados</h3>
+                        <p class="text-gray-600">Não foi possível carregar os projetos. Tente novamente mais tarde.</p>
+                        <button onclick="loadData()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-sync-alt mr-2"></i>Tentar Novamente
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Atualizar contador do mapa quando os dados carregarem
+        function updateMapCounter(projects) {
+            const countElement = document.getElementById('project-count');
+            if (countElement) {
+                countElement.textContent = projects ? projects.length : '0';
+            }
+        }
 
         // Funções de Edição Inline
         function toggleEditMode() {
@@ -2739,6 +3104,9 @@
                 toast.remove();
             }, 5000);
         }
+        
+        // Carregar dados ao iniciar a página
+        loadData();
     </script>
                 </div>
             </div>
