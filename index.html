@@ -513,13 +513,8 @@
                 // Extrai ID numérico do ID do frontend (ex: "projeto-541" -> 541)
                 const numericId = projectId.replace('projeto-', '');
                 
-                // Carrega dados completos do projeto
-                const response = await fetch(`/api/projects`);
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar detalhes do projeto');
-                }
-                
-                const allProjects = await response.json();
+                // Carrega dados completos do projeto usando dados já carregados
+                const allProjects = projetosData;
                 const project = allProjects.find(p => p.id === projectId);
                 
                 if (!project) {
@@ -1853,9 +1848,9 @@
         }
 
         async function saveServicesChanges() {
-            if (!currentProject) return;
-            
-            try {
+            // Funcionalidade desabilitada - página estática sem backend
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
                 // Coleta os dados da tabela
                 const servicosAtualizados = [];
                 
@@ -2558,34 +2553,10 @@
         }
 
         // Carregar dados ao iniciar
-        async function loadData() {
-            try {
-                const response = await fetch('/api/projects');
-                projetosData = await response.json();
-                projetosFiltrados = [...projetosData];
-                
-                // Gera o mapa de projetos
-                generateProjectsMap(projetosData);
-                
-                renderProjects();
-                console.log('Dados carregados:', projetosData.length, 'projetos');
-                
-                // Atualizar contador do mapa
-                updateMapCounter(projetosData);
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                // Mostra mensagem de erro
-                document.getElementById('projects-grid').innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Erro ao carregar dados</h3>
-                        <p class="text-gray-600">Não foi possível carregar os projetos. Tente novamente mais tarde.</p>
-                        <button onclick="loadData()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                            <i class="fas fa-sync-alt mr-2"></i>Tentar Novamente
-                        </button>
-                    </div>
-                `;
-            }
+        async function loadDataOld() {
+            // FUNÇÃO DESCONTINUADA - use loadData() que carrega de dadosPortos
+            showToast('error', 'Erro', 'Função descontinuada');
+            return;
         }
         
         // Atualizar contador do mapa quando os dados carregarem
@@ -2764,9 +2735,9 @@
         }
 
         async function saveAcompanhamentoChanges() {
-            if (!currentProject) return;
-            
-            try {
+            // Funcionalidade desabilitada - página estática sem backend
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
                 // Coleta os dados da tabela
                 const acompanhamentosAtualizados = [];
                 
