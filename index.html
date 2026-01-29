@@ -1852,25 +1852,6 @@
             showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
             return;
         }
-                
-                // Volta para modo visualização
-                isServicesEditMode = false;
-                const editBtn = document.getElementById('edit-services-btn');
-                const editBtnText = document.getElementById('edit-services-btn-text');
-                if (editBtn) {
-                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    editBtnText.textContent = 'Editar Serviços';
-                }
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar serviços:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações dos serviços');
-            }
-        }
 
         function editService(index) {
             currentEditingServiceIndex = index;
