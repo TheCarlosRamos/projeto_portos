@@ -146,15 +146,17 @@ def import_from_json():
         cursor.execute('''
             INSERT INTO projetos (
                 zona_portuaria, uf, obj_concessao, tipo, capex_total,
-                data_assinatura, descricao, latitude, longitude,
+                capex_executado, perc_capex_executado, data_assinatura, descricao, latitude, longitude,
                 coordenada_e_utm, coordenada_s_utm, fuso
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             cadastro.get('Zona portuária'),
             cadastro.get('UF'),
             cadastro.get('Obj. de Concessão'),
             cadastro.get('Tipo'),
             cadastro.get('CAPEX Total'),
+            cadastro.get('CAPEX Executado'),
+            cadastro.get('% CAPEX Executado'),
             cadastro.get('Data de assinatura do contrato'),
             cadastro.get('Descrição'),
             cadastro.get('Latitude'),
@@ -181,8 +183,8 @@ def import_from_json():
                     projeto_id, zona_portuaria, uf, obj_concessao,
                     tipo_servico, fase, servico, descricao_servico,
                     prazo_inicio_anos, data_inicio, prazo_final_anos, data_final,
-                    fonte_prazo, percentual_capex, capex_servico, fonte_percentual
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    fonte_prazo, percentual_capex, capex_servico_total, capex_servico_exec, perc_capex_exec, fonte_percentual
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 projeto_id,
                 servico.get('Zona portuária'),
@@ -198,7 +200,9 @@ def import_from_json():
                 servico.get('Data final'),
                 servico.get('Fonte (Prazo)'),
                 servico.get('% de CAPEX para o serviço'),
-                servico.get('CAPEX do Serviço'),
+                servico.get('CAPEX do Serviço (total)'),
+                servico.get('CAPEX do Serviço (exec.)'),
+                servico.get('% CAPEX exec.'),
                 servico.get('Fonte (% do CAPEX)')
             ))
         
@@ -386,15 +390,17 @@ def create_project():
         cursor = conn.execute('''
             INSERT INTO projetos (
                 zona_portuaria, uf, obj_concessao, tipo, capex_total,
-                data_assinatura, descricao, latitude, longitude,
+                capex_executado, perc_capex_executado, data_assinatura, descricao, latitude, longitude,
                 coordenada_e_utm, coordenada_s_utm, fuso
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('zona_portuaria'),
             data.get('uf'),
             data.get('obj_concessao'),
             data.get('tipo'),
             data.get('capex_total'),
+            data.get('capex_executado'),
+            data.get('perc_capex_executado'),
             data.get('data_assinatura'),
             data.get('descricao'),
             data.get('latitude'),

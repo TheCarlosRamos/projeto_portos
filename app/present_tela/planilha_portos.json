@@ -6,6 +6,8 @@
       "Obj. de Concessão": "TECON 10",
       "Tipo": "Arrendamento",
       "CAPEX Total": 6454903000,
+      "CAPEX Executado": 40473675.0,
+      "% CAPEX Executado": 0.006270222031221848,
       "Data de assinatura do contrato": null,
       "Descrição": "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.",
       "Latitude": -23.926132,
@@ -17,6 +19,8 @@
       "Obj. de Concessão": "Hidrovia do Paraguai",
       "Tipo": "Concessão",
       "CAPEX Total": 63796000,
+      "CAPEX Executado": null,
+      "% CAPEX Executado": 0.0,
       "Data de assinatura do contrato": null,
       "Descrição": "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.",
       "Latitude": null,
@@ -28,6 +32,8 @@
       "Obj. de Concessão": "TPM Macéio",
       "Tipo": "Arrendamento",
       "CAPEX Total": 1978000,
+      "CAPEX Executado": null,
+      "% CAPEX Executado": 0.0,
       "Data de assinatura do contrato": null,
       "Descrição": "Terminal destinado a movimentação de passageiros.",
       "Latitude": null,
@@ -39,6 +45,8 @@
       "Obj. de Concessão": "RDJ07",
       "Tipo": "Arrendamento",
       "CAPEX Total": 101741000,
+      "CAPEX Executado": null,
+      "% CAPEX Executado": 0.0,
       "Data de assinatura do contrato": null,
       "Descrição": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
       "Latitude": -22.896621,
@@ -50,6 +58,8 @@
       "Obj. de Concessão": "Canal de Paranaguá",
       "Tipo": "Concessão",
       "CAPEX Total": 1226475000,
+      "CAPEX Executado": null,
+      "% CAPEX Executado": 0.0,
       "Data de assinatura do contrato": "2026-02-20",
       "Descrição": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
       "Latitude": -25.492142,
@@ -61,6 +71,8 @@
       "Obj. de Concessão": "SSB01",
       "Tipo": "Arrendamento",
       "CAPEX Total": 656085000,
+      "CAPEX Executado": null,
+      "% CAPEX Executado": 0.0,
       "Data de assinatura do contrato": null,
       "Descrição": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
       "Latitude": -23.812704,
@@ -82,7 +94,9 @@
       "Data final": "2029-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.1,
-      "CAPEX do Serviço": 122647500,
+      "CAPEX do Serviço (total)": 122647500,
+      "CAPEX do Serviço (exec.)": 40473675.0,
+      "% CAPEX exec.": 0.33,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -99,7 +113,9 @@
       "Data final": "2031-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.1,
-      "CAPEX do Serviço": 122647500,
+      "CAPEX do Serviço (total)": 122647500,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -116,7 +132,9 @@
       "Data final": "2029-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.1,
-      "CAPEX do Serviço": 122647500,
+      "CAPEX do Serviço (total)": 122647500,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -133,7 +151,9 @@
       "Data final": "2031-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.25,
-      "CAPEX do Serviço": 306618750,
+      "CAPEX do Serviço (total)": 306618750,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -150,7 +170,9 @@
       "Data final": "2031-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.1,
-      "CAPEX do Serviço": 122647500,
+      "CAPEX do Serviço (total)": 122647500,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -167,7 +189,9 @@
       "Data final": "2031-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.1,
-      "CAPEX do Serviço": 122647500,
+      "CAPEX do Serviço (total)": 122647500,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -184,7 +208,9 @@
       "Data final": "2031-02-19",
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.24,
-      "CAPEX do Serviço": 294354000,
+      "CAPEX do Serviço (total)": 294354000,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     },
     {
@@ -201,7 +227,9 @@
       "Data final": null,
       "Fonte (Prazo)": "EVTEA - Plano de Exploração",
       "% de CAPEX para o serviço": 0.01,
-      "CAPEX do Serviço": 12264750,
+      "CAPEX do Serviço (total)": 12264750,
+      "CAPEX do Serviço (exec.)": null,
+      "% CAPEX exec.": 0.0,
       "Fonte (% do CAPEX)": "Estimado"
     }
   ],
@@ -231,8 +259,8 @@
       "Fase": "1ª",
       "Serviço": "Dragagem de Implantação de canal",
       "Descrição": "Evolução para  13,3m",
-      "% executada": 0.5,
-      "Valor executado": 61323750,
+      "% executada": 0.15,
+      "Valor executado": 18397125,
       "Data da atualização": "2030-06-10",
       "Responsável": "Mateus",
       "Cargo": "Analista",
@@ -248,8 +276,8 @@
       "Fase": "1ª",
       "Serviço": "Dragagem de Implantação de canal",
       "Descrição": "Evolução para  13,3m",
-      "% executada": 1.0,
-      "Valor executado": 122647500,
+      "% executada": 0.08,
+      "Valor executado": 9811800,
       "Data da atualização": "2031-10-08",
       "Responsável": "Mateus",
       "Cargo": "Analista",
