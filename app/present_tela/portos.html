@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --primary: #2E4E8C;
@@ -57,6 +59,7 @@
         .sidebar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
+            z-index: 40;
         }
 
         .nav-item {
@@ -71,6 +74,23 @@
         .nav-item.active {
             background: var(--primary);
             color: white;
+        }
+
+        /* Ajuste do z-index para o mapa */
+        #projects-map {
+            z-index: 1;
+        }
+        
+        #leaflet-map {
+            z-index: 1 !important;
+        }
+        
+        .leaflet-container {
+            z-index: 1 !important;
+        }
+        
+        .leaflet-popup-pane {
+            z-index: 1000 !important;
         }
 
         @media (min-width: 1024px) {
@@ -475,9 +495,9 @@
                 return `
                     <div data-id="${projeto.id}" class="project-card bg-white rounded-xl shadow-md p-6 cursor-pointer">
                         <div>
-                            <p class="text-sm text-gray-500">${projeto.uf} • ${projeto.tipo || 'N/A'}</p>
-                            <h3 class="text-lg font-bold mt-1 text-gray-800">${projeto.nome}</h3>
-                            <p class="text-sm text-gray-600 mt-2 line-clamp-2">${projeto.descricao}</p>
+                            <p class="text-sm text-gray-500">${projeto.uf}</p>
+                            <h3 class="text-lg font-bold mt-1 text-gray-800">${projeto.objConcessao || 'Obj. de concessão não informado'}</h3>
+                            <p class="text-sm text-gray-600 mt-2 line-clamp-3">${projeto.descricao || 'Descrição não disponível'}</p>
                         </div>
                         <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                             <div class="flex items-center">
@@ -2306,37 +2326,80 @@
                     </div>
                 `;
             } else {
-                // Testa o mapa do Brasil sem marcadores primeiro
-                const brasilBbox = "-75.0,-34.0,-33.0,6.0";
+                // Cria mapa interativo com Leaflet
+                console.log('Criando mapa Leaflet com marcadores para', projectsWithCoords.length, 'projetos');
                 
-                console.log('Testando mapa do Brasil sem marcadores...');
+                // Limpa o container
+                mapContainer.innerHTML = '<div id="leaflet-map" style="width: 100%; height: 100%; border-radius: 0.5rem;"></div>';
                 
-                // Cria o mapa sem marcadores para garantir que o Brasil apareça
-                mapContainer.innerHTML = `
-                    <div style="width: 100%; height: 100%; position: relative; border-radius: 0.5rem; overflow: hidden;">
-                        <iframe 
-                            width="100%" 
-                            height="100%" 
-                            frameborder="0" 
-                            style="border: 0; border-radius: 0.5rem;" 
-                            src="https://www.openstreetmap.org/export/embed.html?bbox=${brasilBbox}&layer=mapnik">
-                        </iframe>
-                        <div style="position: relative; top: 15px; left: 15px; background: rgba(255, 255, 255, 0.95); padding: 12px 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 13px; z-index: 10; backdrop-filter: blur(4px);">
-                            <div style="font-weight: bold; color: #333; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 16px;">🗺️</span>
-                                <span>${projectsWithCoords.length} Projetos com Localização</span>
-                            </div>
-                            <div style="color: #666; font-size: 12px;">
-                                ${projects.length - projectsWithCoords.length} projetos sem coordenadas geográficas
-                            </div>
-                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
-                                <div style="color: #999; font-size: 11px;">
-                                    Mapa do Brasil - Teste Sem Marcadores
-                                </div>
+                // Inicializa o mapa do Brasil
+                const map = L.map('leaflet-map').setView([-14.235, -51.925], 4);
+                
+                // Adiciona camada do OpenStreetMap
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                // Array para armazenar todos os marcadores
+                const markers = [];
+                
+                // Adiciona marcadores para cada projeto
+                projectsWithCoords.forEach(p => {
+                    const lat = p.coordenadasLatLon.lat;
+                    const lon = p.coordenadasLatLon.lon;
+                    const nome = p.objConcessao || p.nome || 'Projeto';
+                    const uf = p.uf || '';
+                    const descricao = p.descricao || '';
+                    
+                    // Cria popup com informações do projeto
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <h4 style="margin: 0 0 8px 0; color: #2E4E8C; font-weight: bold;">${nome}</h4>
+                            ${uf ? `<p style="margin: 4px 0; color: #666;"><strong>UF:</strong> ${uf}</p>` : ''}
+                            ${descricao ? `<p style="margin: 4px 0; color: #666; font-size: 12px;">${descricao.substring(0, 100)}${descricao.length > 100 ? '...' : ''}</p>` : ''}
+                            <p style="margin: 8px 0 0 0; color: #999; font-size: 11px;">Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}</p>
+                        </div>
+                    `;
+                    
+                    // Cria marcador personalizado
+                    const marker = L.marker([lat, lon]).addTo(map);
+                    marker.bindPopup(popupContent);
+                    markers.push(marker);
+                });
+                
+                // Ajusta o mapa para mostrar todos os marcadores
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+                
+                // Adiciona controle de informações
+                const infoControl = L.control({position: 'topleft'});
+                infoControl.onAdd = function(map) {
+                    const div = L.DomUtil.create('div', 'info-control');
+                    div.style.background = 'rgba(255, 255, 255, 0.95)';
+                    div.style.padding = '12px 16px';
+                    div.style.borderRadius = '12px';
+                    div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                    div.style.fontSize = '13px';
+                    div.style.backdropFilter = 'blur(4px)';
+                    div.innerHTML = `
+                        <div style="font-weight: bold; color: #333; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">🗺️</span>
+                            <span>${projectsWithCoords.length} Projetos com Localização</span>
+                        </div>
+                        <div style="color: #666; font-size: 12px;">
+                            ${projects.length - projectsWithCoords.length} projetos sem coordenadas
+                        </div>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+                            <div style="color: #999; font-size: 11px;">
+                                Clique nos marcadores para ver detalhes
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                    return div;
+                };
+                infoControl.addTo(map);
             }
             
             // Cria legendas simples
