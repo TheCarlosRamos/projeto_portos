@@ -298,6 +298,11 @@
                 // Adiciona timestamp para evitar cache
                 const timestamp = new Date().getTime();
                 const response = await fetch(`planilha_portos.json?t=${timestamp}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+                
                 const jsonData = await response.json();
                 
                 console.log('Dados carregados do JSON em:', new Date().toLocaleString());
@@ -445,8 +450,13 @@
                     console.log('Dados carregados do JSON com sucesso!');
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
+                const errorMsg = error.message || 'Erro ao carregar dados';
                 document.getElementById('projects-grid').innerHTML = 
-                    '<div class="col-span-full text-center text-white p-8"><p>Erro ao carregar dados. Verifique se o arquivo JSON está disponível.</p></div>';
+                    `<div class="col-span-full text-center text-white p-8">
+                        <p class="mb-4">Não foi possível carregar os projetos.</p>
+                        <p class="text-sm text-gray-300 mb-4">Erro: ${errorMsg}</p>
+                        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Tente novamente</button>
+                    </div>`;
             }
         }
 
