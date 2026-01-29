@@ -1851,69 +1851,7 @@
             // Funcionalidade desabilitada - página estática sem backend
             showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
             return;
-                // Coleta os dados da tabela
-                const servicosAtualizados = [];
-                
-                if (currentProject.servicos && currentProject.servicos.length > 0) {
-                    currentProject.servicos.forEach((servico, index) => {
-                        const tipoServicoInput = document.getElementById(`tipo-servico-${index}`);
-                        const faseInput = document.getElementById(`fase-${index}`);
-                        const servicoInput = document.getElementById(`servico-${index}`);
-                        const descricaoInput = document.getElementById(`descricao-${index}`);
-                        const dataInicioInput = document.getElementById(`data-inicio-${index}`);
-                        const dataFinalInput = document.getElementById(`data-final-${index}`);
-                        const capexTotalInput = document.getElementById(`capex-total-${index}`);
-                        const capexExecInput = document.getElementById(`capex-exec-${index}`);
-                        const percCapexExecInput = document.getElementById(`perc-capex-exec-${index}`);
-                        
-                        if (tipoServicoInput) {
-                            servicosAtualizados.push({
-                                ...servico,
-                                tipo_servico: tipoServicoInput.value,
-                                fase: faseInput ? faseInput.value : '',
-                                servico: servicoInput ? servicoInput.value : '',
-                                descricao_servico: descricaoInput ? descricaoInput.value : '',
-                                data_inicio: dataInicioInput ? dataInicioInput.value : '',
-                                data_final: dataFinalInput ? dataFinalInput.value : '',
-                                capex_servico_total: capexTotalInput ? parseFloat(capexTotalInput.value) : 0,
-                                capex_servico_exec: capexExecInput ? parseFloat(capexExecInput.value) : 0,
-                                perc_capex_exec: percCapexExecInput ? parseFloat(percCapexExecInput.value) : 0
-                            });
-                        }
-                    });
-                }
-                
-                // Salva cada serviço
-                for (const servico of servicosAtualizados) {
-                    if (servico.id && servico.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/servicos', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...servico,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/servicos/${servico.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(servico)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Serviços atualizados com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
+        }
                 
                 // Volta para modo visualização
                 isServicesEditMode = false;
@@ -2113,76 +2051,8 @@
         }
 
         async function saveServiceAcompanhamentoChanges(servicoNome) {
-            try {
-                // Coleta os dados da tabela
-                const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
-                    a => a.servico === servicoNome
-                );
-                
-                const acompanhamentosAtualizados = [];
-                
-                serviceAcompanhamentos.forEach((acompanhamento, index) => {
-                    const faseInput = document.getElementById(`service-fase-${index}`);
-                    const servicoInput = document.getElementById(`service-servico-${index}`);
-                    const percentualInput = document.getElementById(`service-percentual-${index}`);
-                    const valorInput = document.getElementById(`service-valor-${index}`);
-                    const dataInput = document.getElementById(`service-data-${index}`);
-                    const responsavelInput = document.getElementById(`service-responsavel-${index}`);
-                    const descricaoInput = document.getElementById(`service-descricao-${index}`);
-                    
-                    if (faseInput) {
-                        acompanhamentosAtualizados.push({
-                            ...acompanhamento,
-                            fase: faseInput.value,
-                            servico: servicoInput ? servicoInput.value : '',
-                            percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
-                            valor_executado: parseFloat(valorInput ? valorInput.value : 0),
-                            data_atualizacao: dataInput ? dataInput.value : '',
-                            responsavel: responsavelInput ? responsavelInput.value : '',
-                            descricao: descricaoInput ? descricaoInput.value : ''
-                        });
-                    }
-                });
-                
-                // Salva cada acompanhamento
-                for (const acompanhamento of acompanhamentosAtualizados) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Acompanhamento do serviço atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para detalhes do projeto
-                backToProjectDetails();
-                
-            } catch (error) {
-                console.error('Erro ao salvar acompanhamento do serviço:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
-            }
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
         }
 
         function backToProjectDetails() {
@@ -2738,89 +2608,7 @@
             // Funcionalidade desabilitada - página estática sem backend
             showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
             return;
-                // Coleta os dados da tabela
-                const acompanhamentosAtualizados = [];
-                
-                if (currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0) {
-                    currentProject.acompanhamentos.forEach((acompanhamento, index) => {
-                        const faseInput = document.getElementById(`fase-${index}`);
-                        const servicoInput = document.getElementById(`servico-${index}`);
-                        const descricaoInput = document.getElementById(`descricao-${index}`);
-                        const percentualInput = document.getElementById(`percentual-${index}`);
-                        const valorInput = document.getElementById(`valor-${index}`);
-                        const dataInput = document.getElementById(`data-${index}`);
-                        const responsavelInput = document.getElementById(`responsavel-${index}`);
-                        const cargoInput = document.getElementById(`cargo-${index}`);
-                        const setorInput = document.getElementById(`setor-${index}`);
-                        const riscosTipoInput = document.getElementById(`riscos-tipo-${index}`);
-                        const riscosDescricaoInput = document.getElementById(`riscos-descricao-${index}`);
-                        
-                        if (faseInput) {
-                            acompanhamentosAtualizados.push({
-                                ...acompanhamento,
-                                fase: faseInput.value,
-                                servico: servicoInput ? servicoInput.value : '',
-                                descricao: descricaoInput ? descricaoInput.value : '',
-                                percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
-                                valor_executado: parseFloat(valorInput ? valorInput.value : 0),
-                                data_atualizacao: dataInput ? dataInput.value : '',
-                                responsavel: responsavelInput ? responsavelInput.value : '',
-                                cargo: cargoInput ? cargoInput.value : '',
-                                setor: setorInput ? setorInput.value : '',
-                                riscos_tipo: riscosTipoInput ? riscosTipoInput.value : '',
-                                riscos_descricao: riscosDescricaoInput ? riscosDescricaoInput.value : ''
-                            });
-                        }
-                    });
-                }
-                
-                // Salva cada acompanhamento
-                for (const acompanhamento of acompanhamentosAtualizados) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Acompanhamento atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isEditMode = false;
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar acompanhamento:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
-            }
+        }
         }
 
         function renderEditMode() {
@@ -3012,78 +2800,8 @@
         }
 
         async function saveChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Prepara dados do projeto
-                const projectData = {
-                    zona_portuaria: document.getElementById('edit-zona').value,
-                    uf: document.getElementById('edit-uf').value,
-                    obj_concessao: document.getElementById('edit-obj').value,
-                    capex_total: parseFloat(document.getElementById('edit-capex').value) || 0,
-                    descricao: document.getElementById('edit-descricao').value
-                };
-                
-                // Atualiza projeto
-                const projectResponse = await fetch(`/api/projects/${currentProject.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(projectData)
-                });
-                
-                if (!projectResponse.ok) {
-                    throw new Error('Erro ao atualizar projeto');
-                }
-                
-                // Salva acompanhamentos
-                for (const acompanhamento of currentProject.acompanhamentos) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Projeto atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isEditMode = false;
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Alterar Andamento';
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar alterações:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações');
-            }
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
         }
 
         function cancelEdit() {
