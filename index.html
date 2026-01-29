@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data.js"></script>
     <style>
         :root {
             --primary: #2E4E8C;
@@ -292,20 +293,17 @@
             }
         }
 
-        // Carregar dados do JSON
+        // Carregar dados do arquivo data.js
         async function loadData() {
             try {
-                // Adiciona timestamp para evitar cache
-                const timestamp = new Date().getTime();
-                const response = await fetch(`planilha_portos.json?t=${timestamp}`);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                // Verificar se os dados foram carregados
+                if (typeof dadosPortos === 'undefined') {
+                    throw new Error('Dados não encontrados. Verifique se data.js foi carregado.');
                 }
+
+                const jsonData = dadosPortos;
                 
-                const jsonData = await response.json();
-                
-                console.log('Dados carregados do JSON em:', new Date().toLocaleString());
+                console.log('Dados carregados em:', new Date().toLocaleString());
                 console.log('Registros encontrados:', jsonData['Tabela 00 - Cadastro']?.length || 0);
                 
                 const cadastros = jsonData['Tabela 00 - Cadastro'] || [];
