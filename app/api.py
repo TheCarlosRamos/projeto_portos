@@ -10,6 +10,24 @@ import db
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/')
+def home():
+    """Health check simples na raiz"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'API Portuária',
+        'version': '1.0.0'
+    })
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check para Railway"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'API Portuária',
+        'version': '1.0.0'
+    })
+
 @app.route('/api/portos', methods=['GET'])
 def get_portos():
     """Retorna todos os portos com dados completos para o dashboard"""
