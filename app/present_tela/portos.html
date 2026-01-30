@@ -295,9 +295,21 @@
         // Carregar dados da API
         async function loadData() {
             try {
-                // Adiciona timestamp para evitar cache
-                const timestamp = new Date().getTime();
-                const response = await fetch(`http://localhost:5000/api/projects?t=${timestamp}`);
+                // Detecta se está no Vercel ou localhost
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                
+                let apiUrl;
+                if (isVercel) {
+                    apiUrl = 'https://motivated-patience-production-62b2.up.railway.app/api/projects';
+                } else if (isLocalhost) {
+                    apiUrl = `http://localhost:5000/api/projects?t=${new Date().getTime()}`;
+                } else {
+                    apiUrl = '/api/projects';
+                }
+                
+                console.log('Tentando carregar da API:', apiUrl);
+                const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
                     throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -534,7 +546,12 @@
                 const numericId = projectId.replace('projeto-', '');
                 
                 // Carrega dados completos do projeto
-                const response = await fetch(`/api/projects`);
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const apiUrl = isVercel 
+                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
+                    : '/api/projects';
+                    
+                const response = await fetch(apiUrl);
                 if (!response.ok) {
                     throw new Error('Erro ao carregar detalhes do projeto');
                 }
@@ -1418,7 +1435,7 @@
             // Abordagem mais direta: recria todo o modal com as tabelas editáveis
             renderProjectDetailsEditMode('acompanhamento');
         }
-
+y
         function renderProjectDetailsEditMode(editMode) {
             const modal = document.getElementById('project-modal');
             const modalTitle = document.getElementById('modal-title');
@@ -2580,7 +2597,14 @@
         // Carregar dados ao iniciar
         async function loadData() {
             try {
-                const response = await fetch('/api/projects');
+                // Detecta se está no Vercel e usa API do Railway
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const apiUrl = isVercel 
+                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
+                    : '/api/projects';
+                
+                console.log('Carregando dados da API:', apiUrl);
+                const response = await fetch(apiUrl);
                 projetosData = await response.json();
                 projetosFiltrados = [...projetosData];
                 
