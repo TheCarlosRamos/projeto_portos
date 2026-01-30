@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copia requirements primeiro para cache do Docker
-COPY app/requirements.txt .
+COPY requirements.txt .
 
 # Instala dependências
 RUN pip install --no-cache-dir -r requirements.txt
@@ -14,5 +14,5 @@ COPY app/ .
 # Expõe a porta
 EXPOSE 8080
 
-# Comando para iniciar
+# Comando para iniciar (já está em /app)
 CMD ["python", "api.py"]
