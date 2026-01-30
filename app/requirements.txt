@@ -3,6 +3,7 @@ pandas>=2.0
 openpyxl>=3.1
 flask>=2.3
 flask-cors>=4.0
+gunicorn>=21.0
 plotly>=5.0
 folium>=0.14
 streamlit-folium>=0.12

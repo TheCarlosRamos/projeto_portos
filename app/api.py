@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import sqlite3
 import json
 from pathlib import Path
@@ -7,7 +8,11 @@ from flask_cors import CORS
 import db
 
 app = Flask(__name__)
-CORS(app)
+db.init_db()
+
+# CORS: use CORS_ORIGINS (ex: https://seu-app.vercel.app) no Railway para produção
+_origins = os.environ.get("CORS_ORIGINS", "*")
+CORS(app, origins=[o.strip() for o in _origins.split(",")] if _origins != "*" else None)
 
 @app.route('/api/portos', methods=['GET'])
 def get_portos():
@@ -252,6 +257,5 @@ def get_portos_summary():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Inicializar o banco de dados
-    db.init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", host="0.0.0.0", port=port)
