@@ -14,6 +14,19 @@ db.init_db()
 _origins = os.environ.get("CORS_ORIGINS", "*")
 CORS(app, origins=[o.strip() for o in _origins.split(",")] if _origins != "*" else None)
 
+@app.route('/')
+def index():
+    """Rota raiz: links para a API"""
+    base = request.url_root.rstrip('/')
+    return jsonify({
+        'api': 'Gestão de Concessões Portuárias',
+        'endpoints': {
+            'portos': f'{base}/api/portos',
+            'porto_id': f'{base}/api/portos/<id>',
+            'summary': f'{base}/api/portos/summary',
+        },
+    })
+
 @app.route('/api/portos', methods=['GET'])
 def get_portos():
     """Retorna todos os portos com dados completos para o dashboard"""
