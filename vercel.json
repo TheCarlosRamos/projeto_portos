@@ -3,22 +3,18 @@
   "name": "gestao-portos",
   "builds": [
     {
-      "src": "index.html",
+      "src": "app/present_tela/portos.html",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/data.js",
-      "dest": "/data.js"
+      "dest": "/app/present_tela/portos.html"
     },
     {
       "src": "/planilha_portos.json",
-      "dest": "/planilha_portos.json"
+      "dest": "/app/present_tela/planilha_portos.json"
     }
   ]
 }

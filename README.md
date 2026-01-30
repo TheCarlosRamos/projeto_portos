@@ -4,7 +4,8 @@ Sistema completo para gestão de concessões portuárias com dashboard interativ
 
 ## 📋 Estrutura do Projeto
 
-- **`index.html`** - Versão estática para apresentação (deploy no Vercel)
+- **`app/present_tela/portos.html`** - Versão estática para apresentação (deploy no Vercel)
+- **`app/present_tela/planilha_portos.json`** - Dados dos projetos
 - **`app/`** - Backend completo com API Flask (deploy no Railway)
   - **`api.py`** - API REST para dados dos portos
   - **`app.py`** - Dashboard Streamlit completo
@@ -75,10 +76,11 @@ Após o deploy:
 
 ## 🔄 Integração
 
-A versão estática no Vercel consumirá a API no Railway. Atualize a URL da API no `index.html`:
+A versão estática no Vercel consome os dados diretamente do arquivo `planilha_portos.json`. Se precisar conectar com a API no Railway, atualize o `portos.html`:
 
 ```javascript
-const API_URL = 'https://seu-app.railway.app';
+// Substitua o carregamento local por:
+const response = await fetch('https://seu-app.railway.app/api/projects');
 ```
 
 ## 📊 Funcionalidades
