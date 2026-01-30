@@ -15,7 +15,8 @@ import os
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-CORS(app)  # Permite requisições do frontend
+_origins = os.environ.get("CORS_ORIGINS", "*")
+CORS(app, origins=[o.strip() for o in _origins.split(",")] if _origins != "*" else None)
 
 # Configurações
 DATABASE = 'portos.db'
@@ -247,6 +248,8 @@ def import_from_json():
     return True
 
 # --- API Endpoints ----------------------------------------------------------
+
+init_db()  # Garante tabelas ao carregar (gunicorn)
 
 @app.route('/')
 def index():
@@ -859,14 +862,11 @@ def editar_page(projeto_id):
 # --- Inicialização ----------------------------------------------------------
 
 if __name__ == '__main__':
-    # Inicializa banco de dados
     init_db()
-    
-    # Importa dados do JSON se existir
     if Path(JSON_FILE).exists():
         print("Importando dados do JSON...")
         import_from_json()
         print("Importação concluída!")
-    
-    print("Servidor iniciado em http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Servidor iniciado em http://localhost:{port}")
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", host="0.0.0.0", port=port)

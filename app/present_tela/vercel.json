@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "framework": null,
+  "rewrites": [
+    { "source": "/", "destination": "/portos.html" },
+    { "source": "/cadastro", "destination": "/cadastro.html" },
+    { "source": "/planilhas", "destination": "/planilhas.html" }
+  ]
+}

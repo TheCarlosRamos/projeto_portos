@@ -6,6 +6,7 @@
     <title>Cadastro de Projetos - Sistema Portuário</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="config.js"></script>
     <style>
         :root {
             --primary: #2E4E8C;
@@ -400,7 +401,7 @@
             document.getElementById('uploadStatus').textContent = 'Enviando arquivo...';
             
             try {
-                const response = await fetch('/api/upload', {
+                const response = await fetch(`${window.API_BASE || ''}/api/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -455,7 +456,7 @@
             };
             
             try {
-                const response = await fetch('/api/projects', {
+                const response = await fetch(`${window.API_BASE || ''}/api/projects`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

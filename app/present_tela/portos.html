@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="config.js"></script>
     <style>
         :root {
             --primary: #2E4E8C;
@@ -297,7 +298,7 @@
             try {
                 // Adiciona timestamp para evitar cache
                 const timestamp = new Date().getTime();
-                const response = await fetch(`http://localhost:5000/api/projects?t=${timestamp}`);
+                const response = await fetch(`${window.API_BASE || ''}/api/projects?t=${timestamp}`);
                 
                 if (!response.ok) {
                     throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -534,7 +535,7 @@
                 const numericId = projectId.replace('projeto-', '');
                 
                 // Carrega dados completos do projeto
-                const response = await fetch(`/api/projects`);
+                const response = await fetch(`${window.API_BASE || ''}/api/projects`);
                 if (!response.ok) {
                     throw new Error('Erro ao carregar detalhes do projeto');
                 }
@@ -1912,7 +1913,7 @@
                 for (const servico of servicosAtualizados) {
                     if (servico.id && servico.id.toString().length < 13) {
                         // ID temporário, criar novo
-                        await fetch('/api/servicos', {
+                        await fetch(`${window.API_BASE || ''}/api/servicos`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1924,7 +1925,7 @@
                         });
                     } else {
                         // ID existente, atualizar
-                        await fetch(`/api/servicos/${servico.id}`, {
+                        await fetch(`${window.API_BASE || ''}/api/servicos/${servico.id}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -2173,7 +2174,7 @@
                 for (const acompanhamento of acompanhamentosAtualizados) {
                     if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
                         // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
+                        await fetch(`${window.API_BASE || ''}/api/acompanhamento`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -2185,7 +2186,7 @@
                         });
                     } else {
                         // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
+                        await fetch(`${window.API_BASE || ''}/api/acompanhamento/${acompanhamento.id}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -2580,7 +2581,7 @@
         // Carregar dados ao iniciar
         async function loadData() {
             try {
-                const response = await fetch('/api/projects');
+                const response = await fetch(`${window.API_BASE || ''}/api/projects`);
                 projetosData = await response.json();
                 projetosFiltrados = [...projetosData];
                 
@@ -2827,7 +2828,7 @@
                 for (const acompanhamento of acompanhamentosAtualizados) {
                     if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
                         // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
+                        await fetch(`${window.API_BASE || ''}/api/acompanhamento`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -2839,7 +2840,7 @@
                         });
                     } else {
                         // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
+                        await fetch(`${window.API_BASE || ''}/api/acompanhamento/${acompanhamento.id}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -3074,7 +3075,8 @@
                 };
                 
                 // Atualiza projeto
-                const projectResponse = await fetch(`/api/projects/${currentProject.id}`, {
+                const numericId = (currentProject.id || '').toString().replace('projeto-', '');
+                const projectResponse = await fetch(`${window.API_BASE || ''}/api/projects/${numericId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3090,7 +3092,7 @@
                 for (const acompanhamento of currentProject.acompanhamentos) {
                     if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
                         // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
+                        await fetch(`${window.API_BASE || ''}/api/acompanhamento`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -3102,7 +3104,7 @@
                         });
                     } else {
                         // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
+                        await fetch(`${window.API_BASE || ''}/api/acompanhamento/${acompanhamento.id}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json'
