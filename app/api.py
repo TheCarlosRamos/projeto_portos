@@ -1,6 +1,7 @@
 from __future__ import annotations
 import sqlite3
 import json
+import os
 from pathlib import Path
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -251,7 +252,17 @@ def get_portos_summary():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check para Railway"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'API Portuária',
+        'version': '1.0.0'
+    })
+
 if __name__ == '__main__':
     # Inicializar o banco de dados
     db.init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
