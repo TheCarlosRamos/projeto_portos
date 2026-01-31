@@ -296,9 +296,27 @@
         // Carregar dados da API
         async function loadData() {
             try {
+<<<<<<< HEAD
                 // Adiciona timestamp para evitar cache
                 const timestamp = new Date().getTime();
                 const response = await fetch(`${window.API_BASE || ''}/api/projects?t=${timestamp}`);
+=======
+                // Detecta se está no Vercel ou localhost
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                
+                let apiUrl;
+                if (isVercel) {
+                    apiUrl = 'https://motivated-patience-production-62b2.up.railway.app/api/projects';
+                } else if (isLocalhost) {
+                    apiUrl = `http://localhost:5000/api/projects?t=${new Date().getTime()}`;
+                } else {
+                    apiUrl = '/api/projects';
+                }
+                
+                console.log('Tentando carregar da API:', apiUrl);
+                const response = await fetch(apiUrl);
+>>>>>>> 7107e18a5a40f69aaeda272160ec8be7c528f253
                 
                 if (!response.ok) {
                     throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -535,7 +553,16 @@
                 const numericId = projectId.replace('projeto-', '');
                 
                 // Carrega dados completos do projeto
+<<<<<<< HEAD
                 const response = await fetch(`${window.API_BASE || ''}/api/projects`);
+=======
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const apiUrl = isVercel 
+                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
+                    : '/api/projects';
+                    
+                const response = await fetch(apiUrl);
+>>>>>>> 7107e18a5a40f69aaeda272160ec8be7c528f253
                 if (!response.ok) {
                     throw new Error('Erro ao carregar detalhes do projeto');
                 }
@@ -2581,7 +2608,18 @@
         // Carregar dados ao iniciar
         async function loadData() {
             try {
+<<<<<<< HEAD
                 const response = await fetch(`${window.API_BASE || ''}/api/projects`);
+=======
+                // Detecta se está no Vercel e usa API do Railway
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const apiUrl = isVercel 
+                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
+                    : '/api/projects';
+                
+                console.log('Carregando dados da API:', apiUrl);
+                const response = await fetch(apiUrl);
+>>>>>>> 7107e18a5a40f69aaeda272160ec8be7c528f253
                 projetosData = await response.json();
                 projetosFiltrados = [...projetosData];
                 

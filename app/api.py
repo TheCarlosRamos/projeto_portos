@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import json
+import os
 from pathlib import Path
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -25,6 +26,24 @@ def index():
             'porto_id': f'{base}/api/portos/<id>',
             'summary': f'{base}/api/portos/summary',
         },
+    })
+
+@app.route('/')
+def home():
+    """Health check simples na raiz"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'API Portuária',
+        'version': '1.0.0'
+    })
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check para Railway"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'API Portuária',
+        'version': '1.0.0'
     })
 
 @app.route('/api/portos', methods=['GET'])
@@ -270,5 +289,12 @@ def get_portos_summary():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1", host="0.0.0.0", port=port)
+=======
+    # Inicializar o banco de dados
+    db.init_db()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
+>>>>>>> 7107e18a5a40f69aaeda272160ec8be7c528f253

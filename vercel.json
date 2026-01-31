@@ -1,4 +1,24 @@
 {
   "version": 2,
+<<<<<<< HEAD
   "framework": null
+=======
+  "name": "gestao-portos",
+  "builds": [
+    {
+      "src": "app/present_tela/portos.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/app/present_tela/portos.html"
+    },
+    {
+      "src": "/planilha_portos.json",
+      "dest": "/app/present_tela/planilha_portos.json"
+    }
+  ]
+>>>>>>> 7107e18a5a40f69aaeda272160ec8be7c528f253
 }
