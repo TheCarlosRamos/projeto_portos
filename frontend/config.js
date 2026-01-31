@@ -5,10 +5,10 @@
 (function() {
     const isLocal = /localhost|127\.0\.0\.1/.test(window.location.hostname);
     
-    // Em localhost usa a API local, em produção usa a URL do Railway
+    // Em localhost usa a API local, em produção usa a URL do backend no Vercel
     window.API_BASE = isLocal 
         ? 'http://localhost:8000' 
-        : 'https://seu-backend.up.railway.app';  // SUBSTITUIR pela URL real do Railway
+        : 'https://projeto-portos-backend.vercel.app';  // URL do backend no Vercel
     
     console.log('API Base URL:', window.API_BASE);
 })();
