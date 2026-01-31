@@ -8,7 +8,7 @@
     // Em localhost usa a API local, em produção usa a URL do backend no Vercel
     window.API_BASE = isLocal 
         ? 'http://localhost:8000' 
-        : 'https://projeto-portos-backend.vercel.app';  // URL do backend no Vercel
+        : 'https://projeto-portos-qkwy.vercel.app';  // URL do backend no Vercel
     
     console.log('API Base URL:', window.API_BASE);
 })();
