@@ -6,6 +6,16 @@ let projetosData = [];
 let projetosFiltrados = [];
 let map = null;
 
+// Dados estáticos (fallback quando a API não responde ou retorna vazio)
+const DADOS_ESTATICOS = [
+  { id: 1, name: "Porto Organizado de Santos", description: "TECON 10", full_description: "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.", project_type: "Arrendamento", investment: 6454903000, progress_percentage: 0.006, status: "Em Andamento", ufs: "SP", latitude: -23.926132, longitude: -46.34027 },
+  { id: 2, name: "Não se aplica", description: "Hidrovia do Paraguai", full_description: "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.", project_type: "Concessão", investment: 63796000, progress_percentage: 0, status: "Planejamento", ufs: "MT; MS", latitude: null, longitude: null },
+  { id: 3, name: "Porto Organizado de Maceió", description: "TPM Macéio", full_description: "Terminal destinado a movimentação de passageiros.", project_type: "Arrendamento", investment: 1978000, progress_percentage: 0, status: "Planejamento", ufs: "AL", latitude: null, longitude: null },
+  { id: 4, name: "Porto Organizado do Rio de Janeiro", description: "RDJ07", full_description: "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.", project_type: "Arrendamento", investment: 101741000, progress_percentage: 0, status: "Planejamento", ufs: "RJ", latitude: -22.896621, longitude: -43.209639 },
+  { id: 5, name: "Não se aplica", description: "Canal de Paranaguá", full_description: "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.", project_type: "Concessão", investment: 1226475000, progress_percentage: 0, status: "Planejamento", ufs: "PR", latitude: -25.492142, longitude: -48.479187 },
+  { id: 6, name: "Porto Organizado de São Sebastião", description: "SSB01", full_description: "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.", project_type: "Arrendamento", investment: 656085000, progress_percentage: 0, status: "Planejamento", ufs: "SP", latitude: -23.812704, longitude: -45.400052 }
+];
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
@@ -45,32 +55,42 @@ function initMap() {
 }
 
 /**
- * Carrega projetos da API
+ * Carrega projetos da API (com fallback para dados estáticos)
  */
 async function loadProjects() {
-    try {
-        showLoading();
-        
-        const response = await fetch(`${window.API_BASE}/api/projects`);
-        
-        if (!response.ok) {
-            throw new Error(`Erro ao carregar projetos: ${response.status}`);
+    showLoading();
+    const urls = [
+        (window.API_BASE || '') + '/api/projects',
+        'https://projetoportos.vercel.app/api/projects',
+        'https://projeto-portos-qkwy.vercel.app/api/projects'
+    ].filter((u, i, a) => a.indexOf(u) === i);
+    
+    for (const url of urls) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) continue;
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+                projetosData = data;
+                projetosFiltrados = [...projetosData];
+                console.log('Projetos carregados da API:', projetosData.length);
+                renderProjects();
+                updateMap();
+                hideLoading();
+                return;
+            }
+        } catch (e) {
+            console.warn('Tentativa falhou:', url, e);
         }
-        
-        projetosData = await response.json();
-        projetosFiltrados = [...projetosData];
-        
-        console.log('Projetos carregados:', projetosData.length);
-        
-        renderProjects();
-        updateMap();
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Erro ao carregar projetos:', error);
-        showError('Erro ao carregar dados. Verifique se a API está rodando.');
-        hideLoading();
     }
+    
+    // Fallback: usar dados estáticos
+    projetosData = DADOS_ESTATICOS;
+    projetosFiltrados = [...projetosData];
+    console.log('Usando dados estáticos:', projetosData.length);
+    renderProjects();
+    updateMap();
+    hideLoading();
 }
 
 /**
@@ -208,16 +228,18 @@ function filterProjects(searchTerm) {
  * Mostra detalhes do projeto
  */
 async function showProjectDetails(projectId) {
+    const localProject = projetosData.find(p => p.id === projectId);
+    
     try {
         showLoading();
+        let project = localProject;
         
-        const response = await fetch(`${window.API_BASE}/api/projects/${projectId}`);
-        
-        if (!response.ok) {
-            throw new Error('Erro ao carregar detalhes do projeto');
+        const response = await fetch(`${window.API_BASE || 'https://projetoportos.vercel.app'}/api/projects/${projectId}`);
+        if (response.ok) {
+            project = await response.json();
         }
-        
-        const project = await response.json();
+        if (!project && localProject) project = localProject;
+        if (!project) throw new Error('Projeto não encontrado');
         
         const modal = document.getElementById('project-modal');
         const modalContent = document.getElementById('modal-content');
@@ -281,7 +303,7 @@ async function showProjectDetails(projectId) {
         
     } catch (error) {
         console.error('Erro ao carregar detalhes:', error);
-        showError('Erro ao carregar detalhes do projeto');
+        if (!localProject) showError('Erro ao carregar detalhes do projeto');
         hideLoading();
     }
 }
