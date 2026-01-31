@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: portos-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        value: sqlite:///./portos.db
+      - key: CORS_ORIGINS
+        value: "*"
+    disk:
+      name: portos-db
+      mountPath: /opt/render/project/src
+      sizeGB: 1

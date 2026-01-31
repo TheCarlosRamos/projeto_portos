@@ -33,13 +33,28 @@ projeto_portos/
 
 ## 🚀 Deploy
 
-### Produção
+### Opções de Deploy (100% Gratuitas)
 
-O sistema está configurado para deploy em:
+#### Opção 1: Tudo no Vercel (Mais Fácil) ⭐
+- **Backend**: Vercel Serverless
+- **Frontend**: Vercel
+- 📖 **Guia**: [DEPLOY_VERCEL_COMPLETO.md](./DEPLOY_VERCEL_COMPLETO.md)
+- ⏱️ **Tempo**: ~10 minutos
+- ✅ **Melhor para**: Protótipos, demos, MVPs
+
+#### Opção 2: Render + Vercel (Recomendado para Produção)
+- **Backend**: Render (com PostgreSQL)
+- **Frontend**: Vercel
+- 📖 **Guia**: [ALTERNATIVAS_GRATUITAS.md](./ALTERNATIVAS_GRATUITAS.md)
+- ⏱️ **Tempo**: ~15 minutos
+- ✅ **Melhor para**: Aplicações de produção
+
+#### Opção 3: Railway + Vercel (Requer Trial)
 - **Backend**: Railway
 - **Frontend**: Vercel
-
-Siga o [GUIA_DEPLOY.md](./GUIA_DEPLOY.md) para instruções detalhadas.
+- 📖 **Guia**: [GUIA_DEPLOY.md](./GUIA_DEPLOY.md)
+- ⏱️ **Tempo**: ~20 minutos
+- ⚠️ **Nota**: Railway requer trial (expirou)
 
 ### Desenvolvimento Local
 

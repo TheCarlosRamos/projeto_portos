@@ -4,8 +4,11 @@ from app.database import engine, Base
 from app.api import projects, services, monitoring
 import os
 
-# Cria tabelas no banco de dados
-Base.metadata.create_all(bind=engine)
+# Cria tabelas no banco de dados (apenas se não existirem)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Nota: {e}")
 
 app = FastAPI(
     title="Sistema de Gestão de Concessões Portuárias",
@@ -37,6 +40,16 @@ app.include_router(monitoring.router)
 
 @app.get("/")
 def root():
+    # Inicializar banco na primeira requisição (para Vercel)
+    try:
+        from app.database import SessionLocal
+        from app.init_data import init_from_json
+        db = SessionLocal()
+        init_from_json(db)
+        db.close()
+    except Exception as e:
+        print(f"Nota ao inicializar: {e}")
+    
     return {
         "message": "Sistema de Gestão de Concessões Portuárias API",
         "version": "1.0.0",
@@ -53,6 +66,9 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    # Railway fornece a porta via variável de ambiente PORT
+    # Para desenvolvimento local
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+# Para Vercel Serverless
+app = app
