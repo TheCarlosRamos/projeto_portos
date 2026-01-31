@@ -10,13 +10,28 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 @router.get("/", response_model=List[dict])
 def get_all_projects(db: Session = Depends(get_db)):
     """Retorna todos os projetos com informações agregadas"""
+    # No Vercel Serverless o SQLite não persiste; inicializa dados se vazio
     projects = db.query(Project).all()
+    if not projects:
+        try:
+            from app.init_data import init_from_json
+            init_from_json(db)
+            projects = db.query(Project).all()
+        except Exception as e:
+            print(f"init_data: {e}")
     return [project.to_dict() for project in projects]
 
 @router.get("/{project_id}", response_model=dict)
 def get_project(project_id: int, db: Session = Depends(get_db)):
     """Retorna um projeto específico com todos os detalhes"""
     project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        try:
+            from app.init_data import init_from_json
+            init_from_json(db)
+            project = db.query(Project).filter(Project.id == project_id).first()
+        except Exception as e:
+            print(f"init_data: {e}")
     if not project:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
     
