@@ -107,13 +107,11 @@
     </style>
 </head>
 <body>
-<!-- BANNER VERSÃO ESTÁTICA -->
+<!-- BANNER VERSÃO ESTÁTICA - BASEADO NO PORTOS.HTML -->
 <div style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 8px; font-size: 12px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    🚢 Versão Estática - GitHub Pages | Dados atualizados em 02/02/2026 09:23 | 
+    🚢 Versão Estática - Baseado no portos.html | Dados do banco em 02/02/2026 09:58 | 
     <a href="https://github.com/TheCarlosRamos/projeto_portos" target="_blank" style="color: white; text-decoration: underline;">Ver código</a>
 </div>
-
-<!-- ESPAÇO PARA O BANNER -->
 <div style="height: 40px;"></div>
 
     <div class="flex h-screen">
@@ -225,10 +223,391 @@
     </div>
 
     <script>
-        let projetosData = [];
-        let projetosFiltrados = [];
-        let currentProject = null;
-        let isEditMode = false;
+        // Dados do banco - Gerado em 02/02/2026 09:58:36
+// Versão estática - GitHub Pages
+const projetosData = [
+  {
+    "id": "projeto-23",
+    "zona": "Não se aplica",
+    "uf": "PR",
+    "objConcessao": "Canal de Paranaguá",
+    "tipo": "Concessão",
+    "descricao": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
+    "capexTotal": 1226475000.0,
+    "capexExecutado": 0,
+    "progresso": 0,
+    "dataAssinatura": "2026-02-20",
+    "etapa": "Em Andamento",
+    "latitude": -25.492142,
+    "longitude": -48.479187,
+    "coordenadaEUTM": null,
+    "coordenadaSUTM": null,
+    "fuso": null,
+    "dataCriacao": "2026-01-29 12:35:05",
+    "dataAtualizacao": "2026-01-29 12:35:05",
+    "coordenadasLatLon": {
+      "lat": -25.492142,
+      "lon": -48.479187
+    },
+    "servicos": [
+      {
+        "id": 25,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "1ª",
+        "servico": "Dragagem de Implantação de canal",
+        "descricao": "Evolução para  13,3m",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2029-02-19",
+        "percentualCapex": 0.1,
+        "capexServicoTotal": 122647500.0,
+        "capexServicoExec": 40473675.0,
+        "percCapexExec": 0.33,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 26,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "1ª",
+        "servico": "Dragagem de Implantação de berços",
+        "descricao": "a) berços 201-215; e b) berços 216-218",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2031-02-19",
+        "percentualCapex": 0.1,
+        "capexServicoTotal": 122647500.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 27,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "Disponibilidade de Infraestrutura",
+        "fase": "1ª",
+        "servico": "Alargamento de bacia de evolução",
+        "descricao": "Trechos Charlie 1 e 3",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2029-02-19",
+        "percentualCapex": 0.1,
+        "capexServicoTotal": 122647500.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 28,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "Disponibilidade de Infraestrutura",
+        "fase": "1ª",
+        "servico": "Derrocamento",
+        "descricao": "Pedra da Palangana - retificação do canal de acesso",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2031-02-19",
+        "percentualCapex": 0.25,
+        "capexServicoTotal": 306618750.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 29,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "2ª",
+        "servico": "Dragagem de Implantação de canal",
+        "descricao": "Evolução para e 15,5m",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2031-02-19",
+        "percentualCapex": 0.1,
+        "capexServicoTotal": 122647500.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 30,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "2ª",
+        "servico": "Dragagem de Implantação de berços",
+        "descricao": "a) berços 216-218; b) Pier L; c) Píer F; e d) Píer T",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2031-02-19",
+        "percentualCapex": 0.1,
+        "capexServicoTotal": 122647500.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 31,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "2ª",
+        "servico": "Derrocamento",
+        "descricao": "Pedra da Palangana - integração da área à bacia de evolução e manobras",
+        "dataInicio": "2028-02-20",
+        "dataFim": "2031-02-19",
+        "percentualCapex": 0.24,
+        "capexServicoTotal": 294354000.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 32,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "Disponibilidade de Infraestrutura",
+        "fase": "2ª",
+        "servico": "Implantação de Sistema",
+        "descricao": "Sistemas de Gerenciamento do Tráfego (VTS/VTMIS)",
+        "dataInicio": "2030-02-19",
+        "dataFim": null,
+        "percentualCapex": 0.01,
+        "capexServicoTotal": 12264750.0,
+        "capexServicoExec": null,
+        "percCapexExec": 0.0,
+        "dataCriacao": "2026-01-29 12:35:05"
+      }
+    ],
+    "acompanhamentos": [
+      {
+        "id": 12,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "1ª",
+        "servico": "Dragagem de Implantação de canal",
+        "descricao": "Evolução para  13,3m",
+        "percentualExecutada": 0.08,
+        "valorExecutado": 9811800.0,
+        "dataAtualizacao": "2031-10-08",
+        "responsavel": "Mateus",
+        "cargo": "Analista",
+        "setor": "PPI",
+        "riscosTipo": "Meio Ambiente",
+        "riscosDescricao": "Ainda não foi obtida Licença Operacional",
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 11,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "1ª",
+        "servico": "Dragagem de Implantação de canal",
+        "descricao": "Evolução para  13,3m",
+        "percentualExecutada": 0.15,
+        "valorExecutado": 18397125.0,
+        "dataAtualizacao": "2030-06-10",
+        "responsavel": "Mateus",
+        "cargo": "Analista",
+        "setor": "PPI",
+        "riscosTipo": "Financeiro",
+        "riscosDescricao": "Concessionária está com problemas financeiros para continuidade",
+        "dataCriacao": "2026-01-29 12:35:05"
+      },
+      {
+        "id": 10,
+        "idProjeto": "projeto-23",
+        "zonaPortuaria": "Não se aplica",
+        "uf": "PR",
+        "objConcessao": "Canal de Paranaguá",
+        "tipoServico": "CMO",
+        "fase": "1ª",
+        "servico": "Dragagem de Implantação de canal",
+        "descricao": "Evolução para  13,3m",
+        "percentualExecutada": 0.1,
+        "valorExecutado": 12264750.0,
+        "dataAtualizacao": "2029-06-06",
+        "responsavel": "Mateus",
+        "cargo": "Analista",
+        "setor": "PPI",
+        "riscosTipo": "Meio Ambiente",
+        "riscosDescricao": "Parte do trecho está com pendência de licenciamento ambiental",
+        "dataCriacao": "2026-01-29 12:35:05"
+      }
+    ]
+  },
+  {
+    "id": "projeto-20",
+    "zona": "Não se aplica",
+    "uf": "MT; MS",
+    "objConcessao": "Hidrovia do Paraguai",
+    "tipo": "Concessão",
+    "descricao": "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.",
+    "capexTotal": 63796000.0,
+    "capexExecutado": 0,
+    "progresso": 0,
+    "dataAssinatura": null,
+    "etapa": "Em Andamento",
+    "latitude": null,
+    "longitude": null,
+    "coordenadaEUTM": null,
+    "coordenadaSUTM": null,
+    "fuso": null,
+    "dataCriacao": "2026-01-29 12:35:05",
+    "dataAtualizacao": "2026-01-29 12:35:05",
+    "coordenadasLatLon": null,
+    "servicos": [],
+    "acompanhamentos": []
+  },
+  {
+    "id": "projeto-21",
+    "zona": "Porto Organizado de Maceió",
+    "uf": "AL",
+    "objConcessao": "TPM Macéio",
+    "tipo": "Arrendamento",
+    "descricao": "Terminal destinado a movimentação de passageiros.",
+    "capexTotal": 1978000.0,
+    "capexExecutado": 0,
+    "progresso": 0,
+    "dataAssinatura": null,
+    "etapa": "Em Andamento",
+    "latitude": null,
+    "longitude": null,
+    "coordenadaEUTM": null,
+    "coordenadaSUTM": null,
+    "fuso": null,
+    "dataCriacao": "2026-01-29 12:35:05",
+    "dataAtualizacao": "2026-01-29 12:35:05",
+    "coordenadasLatLon": null,
+    "servicos": [],
+    "acompanhamentos": []
+  },
+  {
+    "id": "projeto-19",
+    "zona": "Porto Organizado de Santos",
+    "uf": "SP",
+    "objConcessao": "TECON 10",
+    "tipo": "Arrendamento",
+    "descricao": "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.",
+    "capexTotal": 6454903000.0,
+    "capexExecutado": 40473675.0,
+    "progresso": 0.6270222031221848,
+    "dataAssinatura": null,
+    "etapa": "Em Andamento",
+    "latitude": -23.926132,
+    "longitude": -46.34027,
+    "coordenadaEUTM": null,
+    "coordenadaSUTM": null,
+    "fuso": null,
+    "dataCriacao": "2026-01-29 12:35:05",
+    "dataAtualizacao": "2026-01-29 12:35:05",
+    "coordenadasLatLon": {
+      "lat": -23.926132,
+      "lon": -46.34027
+    },
+    "servicos": [],
+    "acompanhamentos": []
+  },
+  {
+    "id": "projeto-24",
+    "zona": "Porto Organizado de São Sebastião",
+    "uf": "SP",
+    "objConcessao": "SSB01",
+    "tipo": "Arrendamento",
+    "descricao": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
+    "capexTotal": 656085000.0,
+    "capexExecutado": 0,
+    "progresso": 0,
+    "dataAssinatura": null,
+    "etapa": "Em Andamento",
+    "latitude": -23.812704,
+    "longitude": -45.400052,
+    "coordenadaEUTM": null,
+    "coordenadaSUTM": null,
+    "fuso": null,
+    "dataCriacao": "2026-01-29 12:35:05",
+    "dataAtualizacao": "2026-01-29 12:35:05",
+    "coordenadasLatLon": {
+      "lat": -23.812704,
+      "lon": -45.400052
+    },
+    "servicos": [],
+    "acompanhamentos": []
+  },
+  {
+    "id": "projeto-22",
+    "zona": "Porto Organizado do Rio de Janeiro",
+    "uf": "RJ",
+    "objConcessao": "RDJ07",
+    "tipo": "Arrendamento",
+    "descricao": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
+    "capexTotal": 101741000.0,
+    "capexExecutado": 0,
+    "progresso": 0,
+    "dataAssinatura": null,
+    "etapa": "Em Andamento",
+    "latitude": -22.896621,
+    "longitude": -43.209639,
+    "coordenadaEUTM": null,
+    "coordenadaSUTM": null,
+    "fuso": null,
+    "dataCriacao": "2026-01-29 12:35:05",
+    "dataAtualizacao": "2026-01-29 12:35:05",
+    "coordenadasLatLon": {
+      "lat": -22.896621,
+      "lon": -43.209639
+    },
+    "servicos": [],
+    "acompanhamentos": []
+  }
+];
+let projetosFiltrados = [...projetosData];
+let currentProject = null;
+let isEditMode = false;
+
+// Substituir função loadData para usar dados embutidos
+function loadData() {
+    console.log('Carregando dados embutidos (versão estática):', projetosData.length, 'projetos');
+    projetosFiltrados = [...projetosData];
+    
+    // Gera o mapa de projetos
+    generateProjectsMap(projetosData);
+    
+    renderProjects();
+    console.log('Dados carregados:', projetosData.length, 'projetos');
+    
+    // Atualizar contador do mapa
+    if (typeof updateMapCounter === 'function') {
+        updateMapCounter(projetosData);
+    }
+    
+    // Adicionar event listeners
+    if (typeof addEventListeners === 'function') {
+        addEventListeners();
+    }
+}
 
         // Função para converter UTM para Lat/Lon (WGS84)
         function utmToLatLon(easting, northing, zone) {
@@ -2603,126 +2982,29 @@
             }, 300);
         }
 
-        // Dados dos projetos - Gerado em 02/02/2026 09:23:17
-const projetosData = [
-  {
-    "id": "projeto-0",
-    "zona": "Porto Organizado de Santos",
-    "uf": "SP",
-    "objConcessao": "TECON 10",
-    "tipo": "Arrendamento",
-    "descricao": "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.",
-    "capexTotal": 6454903000,
-    "capexExecutado": 40473675.0,
-    "progresso": 0.63,
-    "coordenadasLatLon": {
-      "lat": -23.926132,
-      "lon": -46.34027
-    },
-    "dataAssinatura": null,
-    "etapa": "Em Andamento"
-  },
-  {
-    "id": "projeto-1",
-    "zona": "Não se aplica",
-    "uf": "MT; MS",
-    "objConcessao": "Hidrovia do Paraguai",
-    "tipo": "Concessão",
-    "descricao": "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.",
-    "capexTotal": 63796000,
-    "capexExecutado": null,
-    "progresso": 0,
-    "coordenadasLatLon": null,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento"
-  },
-  {
-    "id": "projeto-2",
-    "zona": "Porto Organizado de Maceió",
-    "uf": "AL",
-    "objConcessao": "TPM Macéio",
-    "tipo": "Arrendamento",
-    "descricao": "Terminal destinado a movimentação de passageiros.",
-    "capexTotal": 1978000,
-    "capexExecutado": null,
-    "progresso": 0,
-    "coordenadasLatLon": null,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento"
-  },
-  {
-    "id": "projeto-3",
-    "zona": "Porto Organizado do Rio de Janeiro",
-    "uf": "RJ",
-    "objConcessao": "RDJ07",
-    "tipo": "Arrendamento",
-    "descricao": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
-    "capexTotal": 101741000,
-    "capexExecutado": null,
-    "progresso": 0,
-    "coordenadasLatLon": {
-      "lat": -22.896621,
-      "lon": -43.209639
-    },
-    "dataAssinatura": null,
-    "etapa": "Em Andamento"
-  },
-  {
-    "id": "projeto-4",
-    "zona": "Não se aplica",
-    "uf": "PR",
-    "objConcessao": "Canal de Paranaguá",
-    "tipo": "Concessão",
-    "descricao": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
-    "capexTotal": 1226475000,
-    "capexExecutado": null,
-    "progresso": 0,
-    "coordenadasLatLon": {
-      "lat": -25.492142,
-      "lon": -48.479187
-    },
-    "dataAssinatura": "2026-02-20",
-    "etapa": "Em Andamento"
-  },
-  {
-    "id": "projeto-5",
-    "zona": "Porto Organizado de São Sebastião",
-    "uf": "SP",
-    "objConcessao": "SSB01",
-    "tipo": "Arrendamento",
-    "descricao": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
-    "capexTotal": 656085000,
-    "capexExecutado": null,
-    "progresso": 0,
-    "coordenadasLatLon": {
-      "lat": -23.812704,
-      "lon": -45.400052
-    },
-    "dataAssinatura": null,
-    "etapa": "Em Andamento"
-  }
-];
-let projetosFiltrados = [...projetosData];
-let currentProject = null;
-let isEditMode = false;
-
-// Função para carregar dados (agora usa dados embutidos)
-async function loadData() {
-    console.log('Carregando dados embutidos:', projetosData.length, 'projetos');
-    projetosFiltrados = [...projetosData];
-    
-    // Gera o mapa de projetos
-    generateProjectsMap(projetosData);
-    
-    renderProjects();
-    console.log('Dados carregados:', projetosData.length, 'projetos');
-    
-    // Atualizar contador do mapa
-    updateMapCounter();
-    
-    // Adicionar event listeners
-    addEventListeners();
-} catch (error) {
+        // Carregar dados ao iniciar
+        async function loadData() {
+            try {
+                // Detecta se está no Vercel e usa API do Railway
+                const isVercel = window.location.hostname.includes('vercel.app');
+                const apiUrl = isVercel 
+                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
+                    : '/api/projects';
+                
+                console.log('Carregando dados da API:', apiUrl);
+                const response = await fetch(apiUrl);
+                projetosData = await response.json();
+                projetosFiltrados = [...projetosData];
+                
+                // Gera o mapa de projetos
+                generateProjectsMap(projetosData);
+                
+                renderProjects();
+                console.log('Dados carregados:', projetosData.length, 'projetos');
+                
+                // Atualizar contador do mapa
+                updateMapCounter(projetosData);
+            } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 // Mostra mensagem de erro
                 document.getElementById('projects-grid').innerHTML = `
