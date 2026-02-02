@@ -1,15 +1,28 @@
 # 🚢 Gestão de Concessões Portuárias
 
-Sistema completo para gestão de concessões portuárias com dashboard interativo e API REST.
+Sistema completo para gestão e acompanhamento de concessões portuárias no Brasil, desenvolvido para visualização e análise de projetos de arrendamento de terminais portuários.
+
+## 🎯 O que é esta Aplicação
+
+Esta é uma plataforma web que gerencia e visualiza dados de concessões portuárias brasileiras, oferecendo:
+
+- **Dashboard Interativo**: Visualização completa de todos os projetos portuários com mapas, gráficos e estatísticas
+- **Gestão de Dados**: Sistema completo para cadastro e acompanhamento de projetos de concessão
+- **Análise Geográfica**: Mapas interativos com localização exata dos portos e terminais
+- **Relatórios Dinâmicos**: Geração automática de relatórios e indicadores de progresso
 
 ## 📋 Estrutura do Projeto
 
-- **`index.html`** - Versão principal com dados embutidos (GitHub Pages)
-- **`app/index.html`** - Versão alternativa
-- **`app/`** - Backend completo com API Flask (deploy no Railway)
-  - **`api.py`** - API REST para dados dos portos
-  - **`app.py`** - Dashboard Streamlit completo
-  - **`db.py`** - Configuração do banco SQLite
+### Frontend Principal
+- **`index.html`** - Aplicação web principal com dashboard interativo, mapas e visualizações
+- **`data.js`** - Dados dos projetos portuários convertidos para JavaScript
+- **`dados_completos.json`** - Base de dados completa com informações detalhadas dos projetos
+
+### Backend Completo
+- **`app/`** - Sistema backend completo com API REST e dashboard administrativo
+  - **`api.py`** - API RESTful para gerenciamento dos dados portuários
+  - **`app.py`** - Dashboard administrativo em Streamlit para gestão completa
+  - **`db.py`** - Configuração e gerenciamento do banco de dados SQLite
 
 ## 🚀 Deploy
 
@@ -76,40 +89,38 @@ Ou através do dashboard Railway:
 - `GET /api/portos` - Lista todos os portos
 - `GET /api/portos/summary` - Resumo estatístico
 
-## 📁 Arquivos de Configuração
 
-- **`vercel.json`** - Configuração do Vercel
-- **`railway.toml`** - Configuração do Railway
-- **`Procfile`** - Comando de execução no Railway
 
-## 🌐 URLs de Produção
 
-Após o deploy:
+## � O que a Aplicação Faz
 
-- **Vercel**: `https://seu-projeto.vercel.app`
-- **Railway**: `https://seu-app.railway.app`
+### Funcionalidades Principais
+- **Visualização de Projetos**: Exibe todos os projetos de concessão portuária com informações detalhadas como investimento, progresso e etapa atual
+- **Mapas Interativos**: Localização geográfica precisa dos portos e terminais com marcadores clicáveis
+- **Análise de Dados**: Gráficos e estatísticas sobre investimentos, progresso das obras e distribuição regional
+- **Gestão Administrativa**: Interface completa para cadastro, edição e acompanhamento dos projetos
+- **Relatórios Automáticos**: Geração de relatórios de progresso e indicadores de desempenho
 
-## 🔄 Integração
+### Fluxo de Dados
+1. **Dados Base**: Informações dos projetos são armazenadas em formato JSON
+2. **Frontend**: Carrega os dados e exibe visualizações interativas
+3. **Backend**: API REST para operações CRUD e dashboard administrativo
+4. **Banco de Dados**: SQLite para persistência dos dados no backend
 
-A versão estática no Vercel consome os dados diretamente do arquivo `planilha_portos.json`. Se precisar conectar com a API no Railway, atualize o `portos.html`:
+## 🛠️ Tecnologias Utilizadas
 
-```javascript
-// Substitua o carregamento local por:
-const response = await fetch('https://seu-app.railway.app/api/projects');
-```
+### Frontend
+- **HTML5 & CSS3**: Estrutura e estilo semântico
+- **Tailwind CSS**: Framework CSS para design responsivo e moderno
+- **JavaScript**: Lógica de interação e manipulação de dados
+- **Leaflet.js**: Biblioteca para mapas interativos
+- **Chart.js**: Visualização de dados com gráficos dinâmicos
+- **Font Awesome**: Ícones e elementos visuais
 
-## 📊 Funcionalidades
+### Backend
+- **Flask**: Framework web Python para API REST
+- **Streamlit**: Dashboard interativo para gestão administrativa
+- **SQLite**: Banco de dados leve e portátil
+- **Python 3.9+**: Linguagem principal do backend
 
-- ✅ Dashboard interativo com mapas
-- ✅ Cards de projetos com informações detalhadas
-- ✅ Mapa com marcadores geográficos
-- ✅ API REST completa
-- ✅ Banco de dados SQLite
-- ✅ Responsivo e moderno
 
-## 🛠️ Tecnologias
-
-- **Frontend**: HTML5, Tailwind CSS, Leaflet, Chart.js
-- **Backend**: Flask, SQLite
-- **Deploy**: Vercel, Railway
-- **CI/CD**: GitHub Actions
