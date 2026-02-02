@@ -4,8 +4,8 @@ Sistema completo para gestão de concessões portuárias com dashboard interativ
 
 ## 📋 Estrutura do Projeto
 
-- **`app/present_tela/portos.html`** - Versão estática para apresentação (deploy no Vercel)
-- **`app/present_tela/planilha_portos.json`** - Dados dos projetos
+- **`index.html`** - Versão principal com dados embutidos (GitHub Pages)
+- **`app/index.html`** - Versão alternativa
 - **`app/`** - Backend completo com API Flask (deploy no Railway)
   - **`api.py`** - API REST para dados dos portos
   - **`app.py`** - Dashboard Streamlit completo
@@ -13,7 +13,22 @@ Sistema completo para gestão de concessões portuárias com dashboard interativ
 
 ## 🚀 Deploy
 
-### 1. Vercel (Versão Estática)
+### 1. GitHub Pages (Versão Principal)
+
+A versão principal está configurada para GitHub Pages:
+
+1. **Ativação Manual (necessária apenas uma vez):**
+   - Vá para Settings > Pages do repositório
+   - Source: Deploy from a branch
+   - Branch: gh-pages
+   - Folder: / (root)
+   - Salve as configurações
+
+2. **Deploy Automático:**
+   - O workflow `.github/workflows/github-pages.yml` é acionado automaticamente
+   - Cada push para `main` atualiza o site
+
+### 2. Vercel (Versão Estática)
 
 A versão estática será implantada no Vercel:
 
@@ -30,7 +45,7 @@ Ou através do dashboard Vercel:
 2. Configure o diretório raiz
 3. Deploy automático
 
-### 2. Railway (API Backend)
+### 3. Railway (API Backend)
 
 A API será implantada no Railway:
 
