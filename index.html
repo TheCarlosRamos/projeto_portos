@@ -3,2607 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Concessões Portuárias - Apresentação</title>
+    <title>Gestão de Concessões Portuárias - Versão Estática</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root {
-            --primary: #2E4E8C;
-            --primary-dark: #243B6B;
-            --primary-light: #3E5FA4;
-            --accent-green: #2E7D32;
-            --accent-yellow: #F7B500;
-            --accent-red: #C62828;
-        }
-
-        body {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: #4A4A4A;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .modal-enter {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-        .modal-leave {
-            animation: fadeOut 0.3s ease-in forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: scale(1); }
-            to { opacity: 0; transform: scale(0.95); }
-        }
-
-        .project-card {
-            border: 1px solid #E5E7EB;
-            transition: all 0.3s ease;
-        }
-        .project-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .modal-info-grid {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        }
-
         .sidebar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             z-index: 40;
         }
-
         .nav-item {
             transition: all 0.3s ease;
         }
-
         .nav-item:hover {
-            background: var(--primary-light);
+            background: #3E5FA4;
             color: white;
         }
-
         .nav-item.active {
-            background: var(--primary);
+            background: #2E4E8C;
             color: white;
         }
-
-        /* Ajuste do z-index para o mapa */
-        #projects-map {
-            z-index: 1;
-        }
-        
         #leaflet-map {
             z-index: 1 !important;
         }
-        
         .leaflet-container {
             z-index: 1 !important;
         }
-        
         .leaflet-popup-pane {
             z-index: 1000 !important;
-        }
-
-        @media (min-width: 1024px) {
-            .modal-info-grid {
-                grid-template-areas:
-                    'descricao mapa'
-                    'etapa mapa';
-                grid-template-columns: 1fr 1fr;
-            }
-            .card--descricao { grid-area: descricao; }
-            .card--mapa { grid-area: mapa; }
-            .card--etapa { grid-area: etapa; }
         }
     </style>
 </head>
 <body>
 <!-- BANNER VERSÃO ESTÁTICA -->
 <div style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 8px; font-size: 12px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    🚢 Versão Estática - GitHub Pages | Dados atualizados em 02/02/2026 09:23 | 
+    🚢 Versão Estática - GitHub Pages | Dados atualizados em 02/02/2026 09:44 | 
     <a href="https://github.com/TheCarlosRamos/projeto_portos" target="_blank" style="color: white; text-decoration: underline;">Ver código</a>
 </div>
-
-<!-- ESPAÇO PARA O BANNER -->
 <div style="height: 40px;"></div>
 
-    <div class="flex h-screen">
-        <!-- Sidebar -->
-        <div class="sidebar w-64 h-full shadow-xl">
-            <div class="p-6">
-                <div class="flex items-center gap-3 mb-8">
-                    <i class="fas fa-ship text-2xl text-blue-600"></i>
-                    <h1 class="text-xl font-bold text-gray-800">Sistema Portuário</h1>
-                </div>
-                
-                <nav class="space-y-2">
-                    <a href="/" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
-                        <i class="fas fa-dashboard"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="/cadastro" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>Cadastro</span>
-                    </a>
-                    <a href="/planilhas" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
-                        <i class="fas fa-file-excel"></i>
-                        <span>Planilhas</span>
-                    </a>
-                </nav>
+<div class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 h-full shadow-xl">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-8">
+                <i class="fas fa-ship text-2xl text-blue-600"></i>
+                <h1 class="text-xl font-bold text-gray-800">Sistema Portuário</h1>
             </div>
+            <nav class="space-y-2">
+                <a href="/" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700">
+                    <i class="fas fa-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+            </nav>
         </div>
+    </div>
 
-        <!-- Main Content -->
-        <div class="flex-1 overflow-y-auto">
-            <div class="min-h-screen pb-12">
-                <!-- Header -->
-                <div class="bg-white shadow-md">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                        <h1 class="text-3xl font-bold text-gray-800">Gestão de Concessões Portuárias</h1>
-                        <p class="text-gray-600 mt-2">Acompanhamento de Projetos de Concessão</p>
-                    </div>
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto">
+        <div class="min-h-screen pb-12">
+            <!-- Header -->
+            <div class="bg-white shadow-md">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <h1 class="text-3xl font-bold text-gray-800">Gestão de Concessões Portuárias</h1>
+                    <p class="text-gray-600 mt-2">Acompanhamento de Projetos de Concessão</p>
                 </div>
+            </div>
 
-                <!-- Main Content -->
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Mapa de Projetos -->
-            <div class="mb-8">
-                <div class="bg-white rounded-xl shadow-lg p-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-map-marked-alt text-blue-600"></i>
-                        Mapa de Projetos Portuários
-                    </h2>
-                    <div class="mb-4">
-                        <div id="projects-map" class="w-full h-96 min-h-[400px] rounded-lg overflow-hidden">
-                            <!-- Mapa será inserido aqui -->
+            <!-- Main Content -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Mapa de Projetos -->
+                <div class="mb-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-map-marked-alt text-blue-600"></i>
+                            Mapa de Projetos Portuários
+                        </h2>
+                        <div class="mb-4">
+                            <div id="projects-map" class="w-full h-96 min-h-[400px] rounded-lg overflow-hidden">
+                                <!-- Mapa será inserido aqui -->
+                            </div>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2" id="map-legend">
-                        <!-- Legendas serão inseridas aqui -->
+                </div>
+                
+                <!-- Search and Filter -->
+                <div class="mb-6 flex gap-4">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" id="search-input" 
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="Buscar projetos...">
                     </div>
+                </div>
+
+                <!-- Projects Grid -->
+                <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards serão inseridos aqui via JavaScript -->
                 </div>
             </div>
-            
-            <!-- Search and Filter -->
-            <div class="mb-6 flex gap-4">
-                <div class="relative flex-1">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400"></i>
-                    </div>
-                    <input type="text" id="search-input" 
-                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500" 
-                           placeholder="Buscar projetos...">
-                </div>
-                <button id="reload-btn" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
-                    <i class="fas fa-sync-alt"></i>
-                    Recarregar Dados
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="project-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+    <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-800"></h2>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-
-            <!-- Projects Grid -->
-            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Cards serão inseridos aqui via JavaScript -->
-            </div>
+            <div id="modal-body" class="flex flex-wrap justify-center"></div>
         </div>
     </div>
+</div>
 
-    <!-- Modal -->
-    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 id="modal-title" class="text-2xl font-bold text-gray-800"></h2>
-                    <div class="flex items-center gap-3">
-                        <button id="edit-services-btn" onclick="toggleServicesMode()" 
-                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300">
-                            <i class="fas fa-tools"></i>
-                            <span id="edit-services-btn-text">Editar Serviços</span>
-                        </button>
-                        <button id="edit-project-btn" onclick="toggleEditMode()" 
-                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span id="edit-btn-text">Editar Acompanhamento</span>
-                        </button>
-                        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="modal-body" class="flex flex-wrap justify-center"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let projetosData = [];
-        let projetosFiltrados = [];
-        let currentProject = null;
-        let isEditMode = false;
-
-        // Função para converter UTM para Lat/Lon (WGS84)
-        function utmToLatLon(easting, northing, zone) {
-            try {
-                // Parâmetros do elipsoide WGS84
-                const a = 6378137.0; // semi-eixo maior (metros)
-                const f = 1 / 298.257223563; // achatamento
-                const e2 = 2 * f - f * f; // primeira excentricidade ao quadrado
-                const k0 = 0.9996; // fator de escala
-                
-                // Constantes
-                const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
-                
-                // Remover falsa origem
-                const x = easting - 500000; // falsa origem leste
-                
-                // Para o Brasil (hemisfério sul), não temos falsa origem no northing
-                // Mas vamos verificar se está no hemisfério sul (northing < 10,000,000)
-                const y = northing;
-                
-                // Calcular longitude do meridiano central do fuso
-                const lon0 = (zone - 1) * 6 - 180 + 3;
-                
-                // Calcular M (distância ao longo do meridiano desde o equador)
-                const M = y / k0;
-                
-                // Calcular mu (parâmetro auxiliar)
-                const mu = M / (a * (1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256));
-                
-                // Calcular latitude de referência (footprint latitude)
-                const lat1 = mu + (3*e1/2 - 27*e1*e1*e1/32) * Math.sin(2*mu) +
-                            (21*e1*e1/16 - 55*e1*e1*e1*e1/32) * Math.sin(4*mu) +
-                            (151*e1*e1*e1/96) * Math.sin(6*mu) +
-                            (1097*e1*e1*e1*e1/512) * Math.sin(8*mu);
-                
-                // Calcular constantes auxiliares
-                const N1 = a / Math.sqrt(1 - e2 * Math.sin(lat1) * Math.sin(lat1));
-                const T1 = Math.tan(lat1) * Math.tan(lat1);
-                const C1 = e2 * Math.cos(lat1) * Math.cos(lat1) / (1 - e2);
-                const R1 = a * (1 - e2) / Math.pow(1 - e2 * Math.sin(lat1) * Math.sin(lat1), 1.5);
-                const D = x / (N1 * k0);
-                
-                // Calcular latitude final
-                const lat = lat1 - (N1 * Math.tan(lat1) / (k0 * R1)) * (
-                    D*D/2 - (5 + 3*T1 + 10*C1 - 4*C1*C1 - 9*e2) * D*D*D*D/24 +
-                    (61 + 90*T1 + 298*C1 + 45*T1*T1 - 252*e2 - 3*C1*C1) * D*D*D*D*D*D/720
-                );
-                
-                // Calcular longitude final
-                const lon = lon0 + (
-                    D - (1 + 2*T1 + C1) * D*D*D/6 +
-                    (5 - 2*C1 + 28*T1 - 3*C1*C1 + 8*e2 + 24*T1*T1) * D*D*D*D*D/120
-                ) / Math.cos(lat1);
-                
-                const latDeg = lat * 180 / Math.PI;
-                const lonDeg = lon * 180 / Math.PI;
-                
-                // Validação básica para coordenadas do Brasil
-                if (latDeg < -35 || latDeg > 5 || lonDeg < -75 || lonDeg > -28) {
-                    console.warn('Coordenadas fora dos limites esperados para o Brasil:', latDeg, lonDeg);
-                }
-                
-                return {
-                    lat: latDeg,
-                    lon: lonDeg
-                };
-            } catch (error) {
-                console.error('Erro na conversão UTM:', error, 'Coords:', easting, northing, zone);
-                return null;
-            }
-        }
-
-        // Carregar dados da API
-        async function loadData() {
-            try {
-                // Detecta se está no Vercel ou localhost
-                const isVercel = window.location.hostname.includes('vercel.app');
-                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                
-                let apiUrl;
-                if (isVercel) {
-                    apiUrl = 'https://motivated-patience-production-62b2.up.railway.app/api/projects';
-                } else if (isLocalhost) {
-                    apiUrl = `http://localhost:5000/api/projects?t=${new Date().getTime()}`;
-                } else {
-                    apiUrl = '/api/projects';
-                }
-                
-                console.log('Tentando carregar da API:', apiUrl);
-                const response = await fetch(apiUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                console.log('Dados carregados da API em:', new Date().toLocaleString());
-                console.log('Registros encontrados:', data.length);
-                
-                // Processa os dados da API (já vem no formato correto)
-                projetosData = data.map((projeto, index) => {
-                    // Garante ID único
-                    projeto.id = projeto.id || `projeto-${index}`;
-                    return projeto;
-                });
-
-                projetosFiltrados = [...projetosData];
-                renderProjects();
-            } catch (error) {
-                console.error('Erro ao carregar dados da API:', error);
-                
-                // Tenta carregar do JSON como fallback
-                console.log('Tentando carregar do JSON como fallback...');
-                try {
-                    const timestamp = new Date().getTime();
-                    const response = await fetch(`planilha_portos.json?t=${timestamp}`);
-                    const jsonData = await response.json();
-                    
-                    console.log('Dados carregados do JSON em:', new Date().toLocaleString());
-                    console.log('Registros encontrados:', jsonData['Tabela 00 - Cadastro']?.length || 0);
-                    
-                    const cadastros = jsonData['Tabela 00 - Cadastro'] || [];
-                    const servicos = jsonData['Tabela 01 - Serviços'] || [];
-                    const acompanhamentos = jsonData['Tabela 02 - Acompanhamento'] || [];
-
-                    // Processar projetos (mantém lógica original)
-                    projetosData = cadastros.map((cadastro, index) => {
-                        const projetoId = `projeto-${index}`;
-                        const zona = cadastro['Zona portuária'] || 'Não informado';
-                        const obj = cadastro['Obj. de Concessão'] || '';
-                        const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
-
-                        // Buscar serviços relacionados
-                        const servicosProjeto = servicos.filter(s => 
-                            s['Zona portuária'] === cadastro['Zona portuária'] &&
-                            s['UF'] === cadastro['UF'] &&
-                            s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                        );
-
-                        // Buscar acompanhamentos relacionados
-                        const acompanhamentosProjeto = acompanhamentos.filter(a => 
-                            a['Zona portuária'] === cadastro['Zona portuária'] &&
-                            a['UF'] === cadastro['UF'] &&
-                            a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                        );
-
-                        // Calcular progresso baseado no acompanhamento mais recente
-                        let progresso = 0;
-                        if (acompanhamentosProjeto.length > 0) {
-                            const maisRecente = acompanhamentosProjeto.sort((a, b) => {
-                                const dataA = new Date(a['Data da atualização'] || 0);
-                                const dataB = new Date(b['Data da atualização'] || 0);
-                                return dataB - dataA;
-                            })[0];
-                            progresso = (maisRecente['% executada'] || 0) * 100;
-                        }
-
-                        // ETAPA baseada no status dos serviços
-                        let etapa = 'Planejamento';
-                        const servicosEmExecucao = servicosProjeto.filter(s => {
-                            if (!s['Data de início'] || !s['Data final']) return false;
-                            const inicio = new Date(s['Data de início']);
-                            const fim = new Date(s['Data final']);
-                            const hoje = new Date();
-                            return hoje >= inicio && hoje <= fim;
-                        });
-                        if (servicosEmExecucao.length > 0) {
-                            etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
-                        } else if (progresso > 0) {
-                            etapa = 'Em execução';
-                        }
-
-                        // Mapa - converter coordenadas se disponível
-                        let mapaEmbed = null;
-                        let coordenadasLatLon = null;
-                        
-                        // Verifica se já tem Lat/Lon direto ou precisa converter UTM
-                        if (cadastro['Latitude'] && cadastro['Longitude']) {
-                            // Usa coordenadas diretas (Lat/Lon)
-                            coordenadasLatLon = {
-                                lat: parseFloat(cadastro['Latitude']),
-                                lon: parseFloat(cadastro['Longitude'])
-                            };
-                            console.log(`Usando coordenadas diretas para ${nomeProjeto}:`, coordenadasLatLon);
-                        } else if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
-                            // Converte de UTM para Lat/Lon
-                            const coordE = parseFloat(cadastro['Coordenada E (UTM)']);
-                            const coordS = parseFloat(cadastro['Coordenada S (UTM)']);
-                            const fuso = parseInt(cadastro['Fuso']);
-                            
-                            console.log(`Convertendo coordenadas UTM para ${nomeProjeto}:`, {coordE, coordS, fuso});
-                            
-                            const latLon = utmToLatLon(coordE, coordS, fuso);
-                            if (latLon && !isNaN(latLon.lat) && !isNaN(latLon.lon)) {
-                                coordenadasLatLon = latLon;
-                                console.log(`Coordenadas convertidas para ${nomeProjeto}:`, latLon);
-                            } else {
-                                console.warn(`Falha na conversão de coordenadas UTM para ${nomeProjeto}:`, latLon);
-                            }
-                        } else {
-                            console.log(`Coordenadas não disponíveis para ${nomeProjeto}:`, {
-                                latitude: cadastro['Latitude'],
-                                longitude: cadastro['Longitude'],
-                                easting: cadastro['Coordenada E (UTM)'],
-                                northing: cadastro['Coordenada S (UTM)'],
-                                zone: cadastro['Fuso']
-                            });
-                        }
-                        
-                        // Gera o mapa se tiver coordenadas válidas
-                        if (coordenadasLatLon && !isNaN(coordenadasLatLon.lat) && !isNaN(coordenadasLatLon.lon)) {
-                            // Usar OpenStreetMap com bounding box adequada
-                            const bboxSize = 0.02; // ~2km de bbox
-                            const bbox = `${coordenadasLatLon.lon-bboxSize},${coordenadasLatLon.lat-bboxSize},${coordenadasLatLon.lon+bboxSize},${coordenadasLatLon.lat+bboxSize}`;
-                            
-                            mapaEmbed = `
-                                <div class="w-full h-full relative">
-                                    <iframe 
-                                        width="100%" 
-                                        height="100%" 
-                                        style="border:0; border-radius: 8px;" 
-                                        src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordenadasLatLon.lat},${coordenadasLatLon.lon}" 
-                                        frameborder="0"
-                                        allowfullscreen>
-                                    </iframe>
-                                    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
-                                        📍 ${coordenadasLatLon.lat.toFixed(6)}, ${coordenadasLatLon.lon.toFixed(6)}
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        return {
-                            id: projetoId,
-                            nome: nomeProjeto,
-                            zona: zona,
-                            uf: cadastro['UF'] || '',
-                            objConcessao: obj,
-                            tipo: cadastro['Tipo'] || '',
-                            capexTotal: cadastro['CAPEX Total'] || 0,
-                            dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
-                            descricao: cadastro['Descrição'] || 'Sem descrição disponível',
-                            progresso: progresso,
-                            etapa: etapa,
-                            servicos: servicosProjeto,
-                            acompanhamentos: acompanhamentosProjeto,
-                            mapaEmbed: mapaEmbed,
-                            coordenadas: {
-                                e: cadastro['Coordenada E (UTM)'],
-                                s: cadastro['Coordenada S (UTM)'],
-                                fuso: cadastro['Fuso'],
-                                latitude: cadastro['Latitude'],
-                                longitude: cadastro['Longitude']
-                            },
-                            coordenadasLatLon: coordenadasLatLon
-                        };
-                    });
-
-                    projetosFiltrados = [...projetosData];
-                    renderProjects();
-                    console.log('Dados carregados do JSON com sucesso!');
-                } catch (jsonError) {
-                    console.error('Erro ao carregar do JSON:', jsonError);
-                    document.getElementById('projects-grid').innerHTML = 
-                        '<div class="col-span-full text-center text-white p-8"><p>Erro ao carregar dados. Verifique se o servidor está rodando ou o arquivo JSON está disponível.</p></div>';
-                }
-            }
-        }
-
-        // Renderizar cards de projetos
-        function renderProjects() {
-            const grid = document.getElementById('projects-grid');
-            
-            if (projetosFiltrados.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center text-white p-8"><p>Nenhum projeto encontrado.</p></div>';
-                return;
-            }
-
-            grid.innerHTML = projetosFiltrados.map(projeto => {
-                const statusColor = projeto.progresso === 0 ? 'bg-gray-400' : 
-                                   projeto.progresso < 50 ? 'bg-yellow-500' : 
-                                   projeto.progresso < 100 ? 'bg-blue-500' : 'bg-green-500';
-                
-                return `
-                    <div data-id="${projeto.id}" class="project-card bg-white rounded-xl shadow-md p-6 cursor-pointer">
-                        <div>
-                            <p class="text-sm text-gray-500">${projeto.uf}</p>
-                            <h3 class="text-lg font-bold mt-1 text-gray-800">${projeto.objConcessao || 'Obj. de concessão não informado'}</h3>
-                            <p class="text-sm text-gray-600 mt-2 line-clamp-3">${projeto.descricao || 'Descrição não disponível'}</p>
-                        </div>
-                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                            <div class="flex items-center">
-                                <span class="w-3 h-3 rounded-full ${statusColor} mr-2"></span>
-                                <span class="text-sm font-medium text-gray-600">${projeto.etapa}</span>
-                            </div>
-                            ${projeto.capexTotal > 0 ? `
-                                <span class="text-xs text-gray-500">
-                                    R$ ${(projeto.capexTotal / 1000000).toFixed(1)}M
-                                </span>
-                            ` : ''}
-                        </div>
-                        ${projeto.progresso > 0 ? `
-                            <div class="mt-3">
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-blue-600 h-2 rounded-full" style="width: ${projeto.progresso}%"></div>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">${projeto.progresso.toFixed(1)}% concluído</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Renderizar detalhes do projeto no modal
-        async function renderProjectDetails(projectId) {
-            try {
-                // Limpa estado anterior
-                currentProject = null;
-                isEditMode = false;
-                
-                // Extrai ID numérico do ID do frontend (ex: "projeto-541" -> 541)
-                const numericId = projectId.replace('projeto-', '');
-                
-                // Carrega dados completos do projeto
-                const isVercel = window.location.hostname.includes('vercel.app');
-                const apiUrl = isVercel 
-                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
-                    : '/api/projects';
-                    
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar detalhes do projeto');
-                }
-                
-                const allProjects = await response.json();
-                const project = allProjects.find(p => p.id === projectId);
-                
-                if (!project) {
-                    throw new Error('Projeto não encontrado');
-                }
-                
-                // Define currentProject
-                currentProject = project;
-                
-                const modal = document.getElementById('project-modal');
-                const modalTitle = document.getElementById('modal-title');
-                const modalBody = document.getElementById('modal-body');
-                const modalContent = document.getElementById('modal-content');
-                
-                // Limpa classes de animação anteriores
-                modalContent.classList.remove('modal-leave');
-                
-                // Reseta botão de edição de acompanhamento
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                if (editBtn) {
-                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                    editBtnText.textContent = 'Editar Acompanhamento';
-                }
-                
-                // Reseta botão de edição de serviços
-                const servicesBtn = document.getElementById('edit-services-btn');
-                const servicesBtnText = document.getElementById('edit-services-btn-text');
-                if (servicesBtn) {
-                    servicesBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    servicesBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    servicesBtnText.textContent = 'Editar Serviços';
-                }
-                
-                // Configura título
-                const zona = currentProject.zona || 'Não informado';
-                const obj = currentProject.objConcessao || '';
-                const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
-                modalTitle.textContent = nomeProjeto;
-                
-                // Renderiza modo visualização com layout horizontal
-                modalBody.innerHTML = `
-                    <div class="flex flex-col lg:flex-row gap-6">
-                        <!-- Coluna Esquerda: Informações Básicas e Mapa -->
-                        <div class="flex-1 space-y-6">
-                            <!-- Informações Básicas -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-info-circle text-blue-600"></i>
-                                    Informações do Projeto
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">UF:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
-                                        <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
-                                        <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
-                                    </div>
-                                </div>
-                                ${currentProject.descricao ? `
-                                    <div class="mt-4">
-                                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
-                                        <p class="text-gray-800 mt-1">${currentProject.descricao}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
-
-                            <!-- Mapa -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
-                                    Localização
-                                </h3>
-                                ${generateMapEmbed(currentProject)}
-                            </div>
-                        </div>
-
-                        <!-- Coluna Direita: Tabelas -->
-                        <div class="flex-1 space-y-6">
-                            <!-- Serviços -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-cogs text-blue-600"></i>
-                                    Serviços
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 service-grid">
-                                    ${currentProject.servicos && currentProject.servicos.length > 0 ? 
-                                        currentProject.servicos.map((servico, index) => {
-                                            let percCapexExec = 0;
-                                            if (servico.perc_capex_exec) {
-                                                percCapexExec = servico.perc_capex_exec < 1 ? servico.perc_capex_exec * 100 : servico.perc_capex_exec;
-                                            }
-                                            
-                                            // Encontra acompanhamentos relacionados a este serviço
-                                            const servicoAcompanhamentos = currentProject.acompanhamentos ? 
-                                                currentProject.acompanhamentos.filter(a => 
-                                                    a.servico === servico.servico || 
-                                                    a.servico === servico.tipo_servico ||
-                                                    servico.servico?.includes(a.servico) ||
-                                                    a.servico?.includes(servico.servico)
-                                                ) : [];
-                                            
-                                            return `
-                                                <div class="service-card bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-200" 
-                                                     onclick="showServiceDetails(${index})">
-                                                    <div class="p-4">
-                                                        <!-- Cabeçalho do Card -->
-                                                        <div class="flex justify-between items-start mb-3">
-                                                            <div class="flex-1">
-                                                                <h4 class="font-semibold text-gray-800 text-sm mb-1 hover:text-blue-600 transition-colors">
-                                                                    <i class="fas fa-tools text-blue-500 mr-2"></i>
-                                                                    ${servico.servico || 'Serviço sem nome'}
-                                                                </h4>
-                                                                <div class="flex items-center gap-2 text-xs text-gray-600">
-                                                                    <span class="badge bg-blue-100 text-blue-700">
-                                                                        ${servico.tipo_servico || '-'}
-                                                                    </span>
-                                                                    <span class="badge bg-green-100 text-green-700">
-                                                                        ${servico.fase || '-'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="text-center">
-                                                                ${generateDonutChart(Math.round(percCapexExec))}
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- Descrição -->
-                                                        ${servico.descricao_servico ? `
-                                                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">
-                                                                ${servico.descricao_servico}
-                                                            </p>
-                                                        ` : ''}
-                                                        
-                                                        <!-- Datas -->
-                                                        <div class="flex justify-between text-xs text-gray-500 mb-3">
-                                                            <div>
-                                                                <i class="fas fa-calendar-alt mr-1"></i>
-                                                                Início: ${formatDate(servico.data_inicio) || '-'}
-                                                            </div>
-                                                            <div>
-                                                                <i class="fas fa-calendar-check mr-1"></i>
-                                                                Fim: ${formatDate(servico.data_final) || '-'}
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- CAPEX -->
-                                                        <div class="border-t pt-3">
-                                                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                                                <div class="text-center">
-                                                                    <div class="text-gray-500">CAPEX Total</div>
-                                                                    <div class="font-semibold text-gray-800">
-                                                                        R$ ${formatCurrency(servico.capex_servico_total || 0)}
-                                                                    </div>
-                                                                </div>
-                                                                <div class="text-center">
-                                                                    <div class="text-gray-500">CAPEX Exec.</div>
-                                                                    <div class="font-semibold text-green-600">
-                                                                        R$ ${formatCurrency(servico.capex_servico_exec || 0)}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- Indicador de Acompanhamentos -->
-                                                        ${servicoAcompanhamentos.length > 0 ? `
-                                                            <div class="mt-3 pt-3 border-t">
-                                                                <div class="flex items-center justify-between">
-                                                                    <span class="text-xs text-blue-600 font-medium">
-                                                                        <i class="fas fa-chart-line mr-1"></i>
-                                                                        ${servicoAcompanhamentos.length} acompanhamento(s)
-                                                                    </span>
-                                                                    <span class="text-xs text-gray-400">
-                                                                        Clique para ver detalhes →
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        ` : `
-                                                            <div class="mt-3 pt-3 border-t">
-                                                                <span class="text-xs text-gray-400">
-                                                                    <i class="fas fa-info-circle mr-1"></i>
-                                                                    Nenhum acompanhamento cadastrado
-                                                                </span>
-                                                            </div>
-                                                        `}
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }).join('') : 
-                                        `<div class="col-span-full text-center py-8 text-gray-500">
-                                            <i class="fas fa-cogs text-4xl mb-3 text-gray-300"></i>
-                                            <p>Nenhum serviço cadastrado</p>
-                                        </div>`
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- Acompanhamento -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-chart-line text-blue-600"></i>
-                                    Acompanhamento
-                                </h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full border-collapse border border-gray-300 text-sm">
-                                        <thead class="bg-gray-100">
-                                            <tr>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0 ? 
-                                                currentProject.acompanhamentos.map(acompanhamento => {
-                                                    let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
-                                                    if (percentual < 1) {
-                                                        percentual = percentual * 100;
-                                                    }
-                                                    percentual = Math.round(percentual);
-                                                    
-                                                    return `
-                                                        <tr class="hover:bg-gray-50">
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.fase || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.servico || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1 text-center">
-                                                                ${generateDonutChart(percentual)}
-                                                            </td>
-                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(acompanhamento.data_atualizacao) || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.responsavel || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.descricao || '-'}</td>
-                                                        </tr>
-                                                    `;
-                                                }).join('') : 
-                                                `<tr>
-                                                    <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                                                        Nenhum acompanhamento cadastrado
-                                                    </td>
-                                                </tr>`
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Mostra modal
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                
-                // Força reflow antes de adicionar classe de animação
-                void modal.offsetWidth;
-                
-                setTimeout(() => {
-                    modalContent.classList.add('modal-enter');
-                }, 10);
-                
-            } catch (error) {
-                console.error('Erro ao renderizar detalhes do projeto:', error);
-                showToast('error', 'Erro!', 'Falha ao carregar detalhes do projeto');
-            }
-        }
-
-        function renderServicos() {
-            if (!currentProject.servicos || currentProject.servicos.length === 0) {
-                return '<p class="text-gray-500 text-center py-4">Nenhum serviço cadastrado</p>';
-            }
-            
-            return currentProject.servicos.map((servico, index) => {
-                // Calcula percentual baseado nos acompanhamentos deste serviço
-                const percentual = calculateServiceProgress(servico);
-                
-                return `
-                    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:shadow-md transition-shadow">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                ${generateDonutChart(percentual)}
-                                <div>
-                                    <h4 class="font-semibold text-gray-800">${servico.tipo_servico || 'Serviço sem nome'}</h4>
-                                    <p class="text-sm text-gray-600">${servico.fase || 'Sem fase'}</p>
-                                </div>
-                            </div>
-                            <button onclick="editService(${index})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                                <i class="fas fa-edit mr-1"></i>Editar
-                            </button>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                                <span class="font-medium text-gray-600">Classe:</span>
-                                <span class="text-gray-800 ml-1">${servico.classe || '-'}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-600">Fase:</span>
-                                <span class="text-gray-800 ml-1">${servico.fase || '-'}</span>
-                            </div>
-                        </div>
-                        
-                        ${servico.descricao ? `
-                            <div class="mt-2">
-                                <span class="font-medium text-gray-600 text-sm">Descrição:</span>
-                                <p class="text-gray-800 text-sm mt-1">${servico.descricao}</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function calculateAccumulatedProgress(acompanhamentos) {
-            if (!acompanhamentos || acompanhamentos.length === 0) {
-                return { labels: [], data: [] };
-            }
-            
-            // Ordena acompanhamentos por data
-            const sortedAcompanhamentos = acompanhamentos
-                .filter(a => a.data_atualizacao)
-                .sort((a, b) => new Date(a.data_atualizacao) - new Date(b.data_atualizacao));
-            
-            if (sortedAcompanhamentos.length === 0) {
-                return { labels: [], data: [] };
-            }
-            
-            let accumulated = 0;
-            const labels = [];
-            const data = [];
-            
-            sortedAcompanhamentos.forEach(acompanhamento => {
-                let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
-                if (percentual < 1) {
-                    percentual = percentual * 100;
-                }
-                
-                accumulated += percentual;
-                const date = new Date(acompanhamento.data_atualizacao);
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                
-                labels.push(`${month}/${year}`);
-                data.push(Math.round(accumulated));
-            });
-            
-            return { labels, data };
-        }
-        
-        function createProgressChart(canvasId, acompanhamentos) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return null;
-            
-            const { labels, data } = calculateAccumulatedProgress(acompanhamentos);
-            
-            if (labels.length === 0) {
-                ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-                ctx.style.display = 'none';
-                return null;
-            }
-            
-            ctx.style.display = 'block';
-            
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Progresso Acumulado (%)',
-                        data: data,
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#3B82F6',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                },
-                                color: '#374151'
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: '#ffffff',
-                            bodyColor: '#ffffff',
-                            borderColor: '#3B82F6',
-                            borderWidth: 1,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return `Progresso: ${context.parsed.y}%`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Período',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                color: '#374151'
-                            },
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#6B7280'
-                            }
-                        },
-                        y: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Progresso Acumulado (%)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                color: '#374151'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#6B7280',
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            },
-                            min: 0
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
-                }
-            });
-        }
-        
-        function showServiceDetails(serviceIndex) {
-            if (!currentProject || !currentProject.servicos) return;
-            
-            const servico = currentProject.servicos[serviceIndex];
-            
-            // Encontra acompanhamentos relacionados a este serviço
-            const servicoAcompanhamentos = currentProject.acompanhamentos ? 
-                currentProject.acompanhamentos.filter(a => {
-                    const servicoNome = (servico.servico || '').toLowerCase().trim();
-                    const acompanhamentoServico = (a.servico || '').toLowerCase().trim();
-                    const servicoTipo = (servico.tipo_servico || '').toLowerCase().trim();
-                    const acompanhamentoTipo = (a.tipo_servico || '').toLowerCase().trim();
-                    
-                    // Verifica correspondência exata
-                    if (acompanhamentoServico === servicoNome) return true;
-                    
-                    // Verifica se o nome do acompanhamento contém o nome do serviço (vice-versa)
-                    if (acompanhamentoServico.includes(servicoNome) && servicoNome.length > 3) return true;
-                    if (servicoNome.includes(acompanhamentoServico) && acompanhamentoServico.length > 3) return true;
-                    
-                    // Verifica correspondência por tipo
-                    if (acompanhamentoTipo === servicoTipo) return true;
-                    
-                    // Verifica se o tipo contém palavras-chave em comum
-                    if (acompanhamentoTipo.includes(servicoTipo) && servicoTipo.length > 3) return true;
-                    if (servicoTipo.includes(acompanhamentoTipo) && acompanhamentoTipo.length > 3) return true;
-                    
-                    return false;
-                }) : [];
-            
-            // Calcula percentuais para exibição
-            let percCapexExec = 0;
-            if (servico.perc_capex_exec) {
-                percCapexExec = servico.perc_capex_exec < 1 ? servico.perc_capex_exec * 100 : servico.perc_capex_exec;
-            }
-            
-            // Cria o modal de detalhes do serviço
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-overlay';
-            modal.innerHTML = `
-                <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto modal-content">
-                    <div class="p-6">
-                        <!-- Cabeçalho -->
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="flex-1">
-                                <h2 class="text-2xl font-bold text-gray-800 mb-2">
-                                    <i class="fas fa-tools text-blue-500 mr-2"></i>
-                                    ${servico.servico || 'Serviço sem nome'}
-                                </h2>
-                                <div class="flex items-center gap-3">
-                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-                                        ${servico.tipo_servico || '-'}
-                                    </span>
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                                        ${servico.fase || '-'}
-                                    </span>
-                                    <div class="text-center">
-                                        ${generateDonutChart(Math.round(percCapexExec))}
-                                    </div>
-                                </div>
-                            </div>
-                            <button onclick="closeServiceModal()" class="text-gray-400 hover:text-gray-600">
-                                <i class="fas fa-times text-xl"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Informações do Serviço -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <!-- Coluna Esquerda -->
-                            <div class="space-y-4">
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <h3 class="font-semibold text-gray-700 mb-3">
-                                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                                        Informações do Serviço
-                                    </h3>
-                                    ${servico.descricao_servico ? `
-                                        <p class="text-sm text-gray-600 mb-3">${servico.descricao_servico}</p>
-                                    ` : ''}
-                                    <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-500">Data de Início:</span>
-                                            <span class="font-medium">${formatDate(servico.data_inicio) || '-'}</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-500">Data Final:</span>
-                                            <span class="font-medium">${formatDate(servico.data_final) || '-'}</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-500">Prazo Início:</span>
-                                            <span class="font-medium">${servico.prazo_inicio_anos || '-'} anos</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-500">Prazo Final:</span>
-                                            <span class="font-medium">${servico.prazo_final_anos || '-'} anos</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-500">Fonte (Prazo):</span>
-                                            <span class="font-medium">${servico.fonte_prazo || '-'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Coluna Direita -->
-                            <div class="space-y-4">
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <h3 class="font-semibold text-gray-700 mb-3">
-                                        <i class="fas fa-dollar-sign text-green-500 mr-2"></i>
-                                        CAPEX do Serviço
-                                    </h3>
-                                    <div class="space-y-3">
-                                        <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                            <div class="text-sm text-gray-600">CAPEX Total</div>
-                                            <div class="text-xl font-bold text-blue-600">
-                                                R$ ${formatCurrency(servico.capex_servico_total || 0)}
-                                            </div>
-                                        </div>
-                                        <div class="text-center p-3 bg-green-50 rounded-lg">
-                                            <div class="text-sm text-gray-600">CAPEX Executado</div>
-                                            <div class="text-xl font-bold text-green-600">
-                                                R$ ${formatCurrency(servico.capex_servico_exec || 0)}
-                                            </div>
-                                        </div>
-                                        <div class="text-center p-3 bg-purple-50 rounded-lg">
-                                            <div class="text-sm text-gray-600">% CAPEX Executado</div>
-                                            <div class="text-xl font-bold text-purple-600">
-                                                ${Math.round(percCapexExec)}%
-                                            </div>
-                                        </div>
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-gray-500">% CAPEX para o serviço:</span>
-                                            <span class="font-medium">${(servico.percentual_capex || 0) * 100}%</span>
-                                        </div>
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-gray-500">Fonte (% CAPEX):</span>
-                                            <span class="font-medium">${servico.fonte_percentual || '-'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Gráfico de Progresso Acumulado -->
-                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                            <h3 class="font-semibold text-gray-700 mb-4">
-                                <i class="fas fa-chart-line text-blue-500 mr-2"></i>
-                                Evolução do Progresso Acumulado
-                            </h3>
-                            <div class="bg-white rounded-lg p-4 border border-gray-200">
-                                <div style="height: 300px; position: relative;">
-                                    <canvas id="progress-chart-${serviceIndex}"></canvas>
-                                    ${servicoAcompanhamentos.length === 0 ? `
-                                        <div class="absolute inset-0 flex items-center justify-center">
-                                            <div class="text-center text-gray-500">
-                                                <i class="fas fa-chart-line text-4xl mb-3 text-gray-300"></i>
-                                                <p>Sem dados de acompanhamento para gerar gráfico</p>
-                                                <p class="text-xs text-gray-400 mt-2">Adicione acompanhamentos com datas para visualizar o progresso</p>
-                                            </div>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Acompanhamentos -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h3 class="font-semibold text-gray-700 mb-4">
-                                <i class="fas fa-chart-line text-blue-500 mr-2"></i>
-                                Acompanhamentos do Serviço
-                                <span class="ml-2 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
-                                    ${servicoAcompanhamentos.length} encontrado(s)
-                                </span>
-                            </h3>
-                            ${servicoAcompanhamentos.length > 0 ? `
-                                <div class="space-y-3">
-                                    ${servicoAcompanhamentos.map(acompanhamento => {
-                                        let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
-                                        if (percentual < 1) {
-                                            percentual = percentual * 100;
-                                        }
-                                        percentual = Math.round(percentual);
-                                        
-                                        return `
-                                            <div class="accompaniment-card bg-white rounded-lg p-4 border border-gray-200">
-                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div>
-                                                        <div class="text-xs text-gray-500 mb-1">Fase</div>
-                                                        <div class="font-medium text-sm">${acompanhamento.fase || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-xs text-gray-500 mb-1">% Executada</div>
-                                                        <div class="flex items-center gap-2">
-                                                            ${generateDonutChart(percentual)}
-                                                            <span class="font-medium text-sm">${percentual}%</span>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-xs text-gray-500 mb-1">Valor Executado</div>
-                                                        <div class="font-medium text-sm">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</div>
-                                                    </div>
-                                                </div>
-                                                ${acompanhamento.descricao ? `
-                                                    <div class="mt-3 pt-3 border-t">
-                                                        <div class="text-xs text-gray-500 mb-1">Descrição</div>
-                                                        <div class="text-sm text-gray-600">${acompanhamento.descricao}</div>
-                                                    </div>
-                                                ` : ''}
-                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 pt-3 border-t">
-                                                    <div>
-                                                        <div class="text-xs text-gray-500 mb-1">Data da Atualização</div>
-                                                        <div class="text-sm">${formatDate(acompanhamento.data_atualizacao) || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-xs text-gray-500 mb-1">Responsável</div>
-                                                        <div class="text-sm">${acompanhamento.responsavel || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-xs text-gray-500 mb-1">Cargo</div>
-                                                        <div class="text-sm">${acompanhamento.cargo || '-'}</div>
-                                                    </div>
-                                                </div>
-                                                ${acompanhamento.riscos_tipo || acompanhamento.riscos_descricao ? `
-                                                    <div class="mt-3 pt-3 border-t">
-                                                        <div class="text-xs text-gray-500 mb-1">Riscos Relacionados</div>
-                                                        <div class="text-sm">
-                                                            ${acompanhamento.riscos_tipo ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs mr-2">${acompanhamento.riscos_tipo}</span>` : ''}
-                                                            ${acompanhamento.riscos_descricao ? `<span class="text-gray-600">${acompanhamento.riscos_descricao}</span>` : ''}
-                                                        </div>
-                                                    </div>
-                                                ` : ''}
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            ` : `
-                                <div class="text-center py-8 text-gray-500">
-                                    <i class="fas fa-chart-line text-4xl mb-3 text-gray-300"></i>
-                                    <p>Nenhum acompanhamento encontrado para este serviço</p>
-                                    <p class="text-xs text-gray-400 mt-2">Os acompanhamentos são vinculados pelo nome do serviço ou tipo de serviço</p>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Adiciona o modal ao body
-            document.body.appendChild(modal);
-            
-            // Cria o gráfico de progresso após o modal ser adicionado ao DOM
-            setTimeout(() => {
-                createProgressChart(`progress-chart-${serviceIndex}`, servicoAcompanhamentos);
-            }, 100);
-            
-            // Fecha o modal ao clicar fora
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeServiceModal();
-                }
-            });
-        }
-        
-        function closeServiceModal() {
-            const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
-            if (modal) {
-                // Destroi todos os gráficos Chart.js no modal antes de remover
-                const canvases = modal.querySelectorAll('canvas');
-                canvases.forEach(canvas => {
-                    const chart = Chart.getChart(canvas);
-                    if (chart) {
-                        chart.destroy();
-                    }
-                });
-                
-                modal.remove();
-            }
-        }
-        
-        function calculateServiceProgress(servico) {
-            // Se o serviço tiver acompanhamentos, calcula o progresso baseado na Tabela 02
-            if (currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0) {
-                const serviceAccompanhamentos = currentProject.acompanhamentos.filter(
-                    a => a.servico === servico.tipo_servico || 
-                         a.servico === servico.descricao ||
-                         servico.tipo_servico?.includes(a.servico) ||
-                         a.servico?.includes(servico.tipo_servico)
-                );
-                
-                if (serviceAccompanhamentos.length > 0) {
-                    // Pega o maior percentual executado entre os acompanhamentos deste serviço
-                    const maxPercentual = Math.max(...serviceAccompanhamentos.map(a => {
-                        let percentual = parseFloat(a.percentual_executada) || 0;
-                        // Se for decimal (ex: 0.5), multiplica por 100
-                        if (percentual < 1) {
-                            percentual = percentual * 100;
-                        }
-                        return percentual;
-                    }));
-                    
-                    // Arredonda para número inteiro
-                    return Math.round(maxPercentual);
-                }
-            }
-            
-            // Se não tiver acompanhamentos, retorna 0
-            return 0;
-        }
-
-        function generateDonutChart(percentual) {
-            const size = 48; // Tamanho do SVG
-            const strokeWidth = 6; // Espessura da linha
-            const radius = (size - strokeWidth) / 2;
-            const circumference = 2 * Math.PI * radius;
-            const offset = circumference - (percentual / 100) * circumference;
-            
-            // Determina a cor baseada no percentual
-            let color;
-            if (percentual === 0) {
-                color = '#9CA3AF'; // gray-400
-            } else if (percentual < 50) {
-                color = '#EAB308'; // yellow-500
-            } else if (percentual < 100) {
-                color = '#3B82F6'; // blue-500
-            } else {
-                color = '#10B981'; // green-500
-            }
-            
-            return `
-                <div class="relative inline-flex items-center justify-center">
-                    <svg width="${size}" height="${size}" class="transform -rotate-90">
-                        <!-- Círculo de fundo -->
-                        <circle
-                            cx="${size/2}"
-                            cy="${size/2}"
-                            r="${radius}"
-                            stroke="#E5E7EB"
-                            stroke-width="${strokeWidth}"
-                            fill="none"
-                        />
-                        <!-- Círculo de progresso -->
-                        <circle
-                            cx="${size/2}"
-                            cy="${size/2}"
-                            r="${radius}"
-                            stroke="${color}"
-                            stroke-width="${strokeWidth}"
-                            fill="none"
-                            stroke-dasharray="${circumference}"
-                            stroke-dashoffset="${offset}"
-                            stroke-linecap="round"
-                            class="transition-all duration-500 ease-out"
-                        />
-                    </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-xs font-bold text-gray-700">${percentual}%</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Variável para controlar modo de edição de serviços
-        let isServicesEditMode = false;
-        let currentEditingServiceIndex = null;
-
-        function toggleServicesMode() {
-            isServicesEditMode = !isServicesEditMode;
-            const editBtn = document.getElementById('edit-services-btn');
-            const editBtnText = document.getElementById('edit-services-btn-text');
-            
-            if (isServicesEditMode) {
-                editBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                editBtn.classList.add('bg-green-500', 'hover:bg-green-600');
-                editBtnText.textContent = 'Salvar Serviços';
-                renderServicesEditMode();
-            } else {
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                editBtnText.textContent = 'Editar Serviços';
-                saveServicesChanges();
-            }
-        }
-
-        function renderServicesEditMode() {
-            if (!currentProject) return;
-            
-            // Abordagem mais direta: recria todo o modal com as tabelas editáveis
-            renderProjectDetailsEditMode('servicos');
-        }
-
-        function renderAcompanhamentoEditMode() {
-            if (!currentProject) return;
-            
-            // Abordagem mais direta: recria todo o modal com as tabelas editáveis
-            renderProjectDetailsEditMode('acompanhamento');
-        }
-
-        function renderProjectDetailsEditMode(editMode) {
-            const modal = document.getElementById('project-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalBody = document.getElementById('modal-body');
-            
-            // Configura título
-            const zona = currentProject.zona || 'Não informado';
-            const obj = currentProject.objConcessao || '';
-            const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
-            modalTitle.textContent = nomeProjeto;
-            
-            if (editMode === 'servicos') {
-                // Renderiza modo de edição de serviços
-                modalBody.innerHTML = `
-                    <div class="flex flex-col lg:flex-row gap-6">
-                        <!-- Coluna Esquerda: Informações Básicas e Mapa -->
-                        <div class="flex-1 space-y-6">
-                            <!-- Informações Básicas -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-info-circle text-blue-600"></i>
-                                    Informações do Projeto
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">UF:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
-                                        <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
-                                        <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
-                                    </div>
-                                </div>
-                                ${currentProject.descricao ? `
-                                    <div class="mt-4">
-                                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
-                                        <p class="text-gray-800 mt-1">${currentProject.descricao}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
-
-                            <!-- Mapa -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
-                                    Localização
-                                </h3>
-                                ${generateMapEmbed(currentProject)}
-                            </div>
-                        </div>
-
-                        <!-- Coluna Direita: Tabela de Serviços Editável -->
-                        <div class="flex-1 space-y-6">
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-edit text-blue-500"></i>
-                                    Editar Tabela 01 - Serviços
-                                </h3>
-                                <div class="space-y-4">
-                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                        <p class="text-sm text-blue-800">
-                                            <i class="fas fa-info-circle mr-1"></i>
-                                            Edite diretamente os dados da Tabela 01 - Serviços do projeto
-                                        </p>
-                                    </div>
-                                    
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full border-collapse border border-gray-300">
-                                            <thead class="bg-gray-100">
-                                                <tr>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Tipo de Serviço</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Descrição do serviço</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Data de início</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Data final</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">CAPEX do Serviço (total)</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">CAPEX do Serviço (exec.)</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">% CAPEX exec.</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="servicos-tbody">
-                                                ${renderServicosRows()}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    
-                                    <div class="flex gap-3">
-                                        <button onclick="addServicoRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                                            <i class="fas fa-plus mr-1"></i> Adicionar Serviço
-                                        </button>
-                                        <button onclick="cancelServicesEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                                            Cancelar
-                                        </button>
-                                        <button onclick="toggleServicesMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                                            <i class="fas fa-save mr-2"></i>Salvar Alterações
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tabela 02 - Acompanhamento (somente visualização) -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-chart-line text-blue-600"></i>
-                                    Tabela 02 - Acompanhamento
-                                </h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full border-collapse border border-gray-300 text-sm">
-                                        <thead class="bg-gray-100">
-                                            <tr>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0 ? 
-                                                currentProject.acompanhamentos.map(acompanhamento => {
-                                                    let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
-                                                    if (percentual < 1) {
-                                                        percentual = percentual * 100;
-                                                    }
-                                                    percentual = Math.round(percentual);
-                                                    
-                                                    return `
-                                                        <tr class="hover:bg-gray-50">
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.fase || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.servico || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1 text-center">
-                                                                ${generateDonutChart(percentual)}
-                                                            </td>
-                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(acompanhamento.data_atualizacao) || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.responsavel || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.descricao || '-'}</td>
-                                                        </tr>
-                                                    `;
-                                                }).join('') : 
-                                                `<tr>
-                                                    <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                                                        Nenhum acompanhamento cadastrado
-                                                    </td>
-                                                </tr>`
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (editMode === 'acompanhamento') {
-                // Renderiza modo de edição de acompanhamento
-                modalBody.innerHTML = `
-                    <div class="flex flex-col lg:flex-row gap-6">
-                        <!-- Coluna Esquerda: Informações Básicas e Mapa -->
-                        <div class="flex-1 space-y-6">
-                            <!-- Informações Básicas -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-info-circle text-blue-600"></i>
-                                    Informações do Projeto
-                                </h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">UF:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.uf || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.objConcessao || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.tipo || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
-                                        <span class="text-gray-800 ml-2">R$ ${formatCurrency(currentProject.capexTotal || 0)}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-600">Data Assinatura:</span>
-                                        <span class="text-gray-800 ml-2">${formatDate(currentProject.dataAssinatura) || '-'}</span>
-                                    </div>
-                                </div>
-                                ${currentProject.descricao ? `
-                                    <div class="mt-4">
-                                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
-                                        <p class="text-gray-800 mt-1">${currentProject.descricao}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
-
-                            <!-- Mapa -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-map-marker-alt text-blue-600"></i>
-                                    Localização
-                                </h3>
-                                ${generateMapEmbed(currentProject)}
-                            </div>
-                        </div>
-
-                        <!-- Coluna Direita: Tabelas -->
-                        <div class="flex-1 space-y-6">
-                            <!-- Tabela 01 - Serviços (somente visualização) -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-cogs text-blue-600"></i>
-                                    Tabela 01 - Serviços
-                                </h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full border-collapse border border-gray-300 text-sm">
-                                        <thead class="bg-gray-100">
-                                            <tr>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Classe</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${currentProject.servicos && currentProject.servicos.length > 0 ? 
-                                                currentProject.servicos.map(servico => `
-                                                    <tr class="hover:bg-gray-50">
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.tipo_servico || '-'}</td>
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.classe || '-'}</td>
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.fase || '-'}</td>
-                                                        <td class="border border-gray-300 px-2 py-1">${servico.descricao || '-'}</td>
-                                                    </tr>
-                                                `).join('') : 
-                                                `<tr>
-                                                    <td colspan="4" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                                                        Nenhum serviço cadastrado
-                                                    </td>
-                                                </tr>`
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Tabela 02 - Acompanhamento Editável -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-edit text-yellow-500"></i>
-                                    Editar Tabela 02 - Acompanhamento
-                                </h3>
-                                <div class="space-y-4">
-                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                        <p class="text-sm text-yellow-800">
-                                            <i class="fas fa-info-circle mr-1"></i>
-                                            Edite diretamente os dados da Tabela 02 - Acompanhamento do projeto
-                                        </p>
-                                    </div>
-                                    
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full border-collapse border border-gray-300">
-                                            <thead class="bg-gray-100">
-                                                <tr>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Data Atualização</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Cargo</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Setor</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Riscos Tipo</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Riscos Descrição</th>
-                                                    <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="acompanhamento-tbody">
-                                                ${renderAcompanhamentoRows()}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    
-                                    <div class="flex gap-3">
-                                        <button onclick="addAcompanhamentoRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                                            <i class="fas fa-plus mr-1"></i> Adicionar Acompanhamento
-                                        </button>
-                                        <button onclick="cancelAcompanhamentoEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                                            Cancelar
-                                        </button>
-                                        <button onclick="toggleEditMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                                            <i class="fas fa-save mr-2"></i>Salvar Alterações
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function renderServicosRows() {
-            if (!currentProject.servicos || currentProject.servicos.length === 0) {
-                return `
-                    <tr>
-                        <td colspan="10" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                            Nenhum serviço cadastrado
-                        </td>
-                    </tr>
-                `;
-            }
-            
-            return currentProject.servicos.map((servico, index) => `
-                <tr>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.tipo_servico || ''}" 
-                               id="tipo-servico-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Tipo de Serviço">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.fase || ''}" 
-                               id="fase-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Fase">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.servico || ''}" 
-                               id="servico-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Serviço">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${servico.descricao_servico || ''}" 
-                               id="descricao-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               placeholder="Descrição do serviço">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="date" value="${servico.data_inicio || ''}" 
-                               id="data-inicio-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="date" value="${servico.data_final || ''}" 
-                               id="data-final-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${servico.capex_servico_total || 0}" 
-                               id="capex-total-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               step="0.01">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${servico.capex_servico_exec || 0}" 
-                               id="capex-exec-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               step="0.01">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${servico.perc_capex_exec || 0}" 
-                               id="perc-capex-exec-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-blue-500"
-                               step="0.01" min="0" max="1">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1 text-center">
-                        <button onclick="removeServicoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function addServicoRow() {
-            if (!currentProject.servicos) {
-                currentProject.servicos = [];
-            }
-            
-            const novoServico = {
-                id: Date.now(),
-                projeto_id: currentProject.id.replace('projeto-', ''),
-                tipo_servico: '',
-                fase: '',
-                servico: '',
-                descricao_servico: '',
-                data_inicio: '',
-                data_final: '',
-                capex_servico_total: 0,
-                capex_servico_exec: 0,
-                perc_capex_exec: 0
-            };
-            
-            currentProject.servicos.push(novoServico);
-            
-            // Atualiza a tabela
-            const tbody = document.getElementById('servicos-tbody');
-            if (tbody) {
-                tbody.innerHTML = renderServicosRows();
-            }
-        }
-
-        function removeServicoRow(index) {
-            if (!currentProject.servicos) return;
-            
-            currentProject.servicos.splice(index, 1);
-            
-            // Atualiza a tabela
-            const tbody = document.getElementById('servicos-tbody');
-            if (tbody) {
-                tbody.innerHTML = renderServicosRows();
-            }
-        }
-
-        function cancelServicesEdit() {
-            isServicesEditMode = false;
-            const editBtn = document.getElementById('edit-services-btn');
-            const editBtnText = document.getElementById('edit-services-btn-text');
-            if (editBtn) {
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                editBtnText.textContent = 'Editar Serviços';
-            }
-            
-            // Recarrega o modal no modo visualização
-            renderProjectDetails(currentProject.id);
-        }
-
-        async function saveServicesChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Coleta os dados da tabela
-                const servicosAtualizados = [];
-                
-                if (currentProject.servicos && currentProject.servicos.length > 0) {
-                    currentProject.servicos.forEach((servico, index) => {
-                        const tipoServicoInput = document.getElementById(`tipo-servico-${index}`);
-                        const faseInput = document.getElementById(`fase-${index}`);
-                        const servicoInput = document.getElementById(`servico-${index}`);
-                        const descricaoInput = document.getElementById(`descricao-${index}`);
-                        const dataInicioInput = document.getElementById(`data-inicio-${index}`);
-                        const dataFinalInput = document.getElementById(`data-final-${index}`);
-                        const capexTotalInput = document.getElementById(`capex-total-${index}`);
-                        const capexExecInput = document.getElementById(`capex-exec-${index}`);
-                        const percCapexExecInput = document.getElementById(`perc-capex-exec-${index}`);
-                        
-                        if (tipoServicoInput) {
-                            servicosAtualizados.push({
-                                ...servico,
-                                tipo_servico: tipoServicoInput.value,
-                                fase: faseInput ? faseInput.value : '',
-                                servico: servicoInput ? servicoInput.value : '',
-                                descricao_servico: descricaoInput ? descricaoInput.value : '',
-                                data_inicio: dataInicioInput ? dataInicioInput.value : '',
-                                data_final: dataFinalInput ? dataFinalInput.value : '',
-                                capex_servico_total: capexTotalInput ? parseFloat(capexTotalInput.value) : 0,
-                                capex_servico_exec: capexExecInput ? parseFloat(capexExecInput.value) : 0,
-                                perc_capex_exec: percCapexExecInput ? parseFloat(percCapexExecInput.value) : 0
-                            });
-                        }
-                    });
-                }
-                
-                // Salva cada serviço
-                for (const servico of servicosAtualizados) {
-                    if (servico.id && servico.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/servicos', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...servico,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/servicos/${servico.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(servico)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Serviços atualizados com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isServicesEditMode = false;
-                const editBtn = document.getElementById('edit-services-btn');
-                const editBtnText = document.getElementById('edit-services-btn-text');
-                if (editBtn) {
-                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    editBtnText.textContent = 'Editar Serviços';
-                }
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar serviços:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações dos serviços');
-            }
-        }
-
-        function editService(index) {
-            currentEditingServiceIndex = index;
-            const servico = currentProject.servicos[index];
-            
-            // Abre modal de edição do serviço específico
-            const modal = document.getElementById('project-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalBody = document.getElementById('modal-body');
-            
-            modalTitle.textContent = `Editar Serviço: ${servico.tipo_servico || 'Serviço'}`;
-            
-            modalBody.innerHTML = `
-                <div class="space-y-6">
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <i class="fas fa-edit text-yellow-500"></i>
-                            Editar Tabela 02 - Acompanhamento deste Serviço
-                        </h3>
-                        <p class="text-sm text-yellow-800 mb-4">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Edite os acompanhamentos específicos para o serviço: <strong>${servico.tipo_servico || 'Serviço'}</strong>
-                        </p>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse border border-gray-300">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
-                                        <th class="border border-gray-300 px-2 py-1 text-xs">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="service-acompanhamento-tbody">
-                                    ${renderServiceAcompanhamentoRows(servico.tipo_servico)}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="flex gap-3 mt-4">
-                            <button onclick="addServiceAcompanhamentoRow('${servico.tipo_servico}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                                <i class="fas fa-plus mr-1"></i> Adicionar Acompanhamento
-                            </button>
-                            <button onclick="backToProjectDetails()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                                Voltar
-                            </button>
-                            <button onclick="saveServiceAcompanhamentoChanges('${servico.tipo_servico}')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                                <i class="fas fa-save mr-2"></i>Salvar Alterações
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderServiceAcompanhamentoRows(servicoNome) {
-            // Filtra acompanhamentos deste serviço
-            const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
-                a => a.servico === servicoNome
-            );
-            
-            if (serviceAcompanhamentos.length === 0) {
-                return `
-                    <tr>
-                        <td colspan="8" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                            Nenhum acompanhamento cadastrado para este serviço
-                        </td>
-                    </tr>
-                `;
-            }
-            
-            return serviceAcompanhamentos.map((acompanhamento, index) => `
-                <tr>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.fase || ''}" 
-                               id="service-fase-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Fase">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.servico || ''}" 
-                               id="service-servico-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Serviço">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${acompanhamento.percentual_executada || 0}" 
-                               id="service-percentual-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               step="0.01" min="0" max="100">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${acompanhamento.valor_executado || 0}" 
-                               id="service-valor-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               step="0.01">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="date" value="${acompanhamento.data_atualizacao || ''}" 
-                               id="service-data-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.responsavel || ''}" 
-                               id="service-responsavel-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Responsável">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.descricao || ''}" 
-                               id="service-descricao-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Descrição">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1 text-center">
-                        <button onclick="removeServiceAcompanhamentoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function addServiceAcompanhamentoRow(servicoNome) {
-            if (!currentProject.acompanhamentos) {
-                currentProject.acompanhamentos = [];
-            }
-            
-            const novoAcompanhamento = {
-                id: Date.now(),
-                projeto_id: currentProject.id.replace('projeto-', ''),
-                fase: '',
-                servico: servicoNome,
-                descricao: '',
-                percentual_executada: 0,
-                valor_executado: 0,
-                data_atualizacao: new Date().toISOString().split('T')[0],
-                responsavel: '',
-                cargo: '',
-                setor: '',
-                riscos_tipo: '',
-                riscos_descricao: ''
-            };
-            
-            currentProject.acompanhamentos.push(novoAcompanhamento);
-            
-            // Atualiza a tabela
-            const tbody = document.getElementById('service-acompanhamento-tbody');
-            if (tbody) {
-                tbody.innerHTML = renderServiceAcompanhamentoRows(servicoNome);
-            }
-        }
-
-        function removeServiceAcompanhamentoRow(index) {
-            if (!currentProject.acompanhamentos) return;
-            
-            const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
-                a => a.servico === currentProject.servicos[currentEditingServiceIndex].tipo_servico
-            );
-            
-            const acompanhamentoToRemove = serviceAcompanhamentos[index];
-            const globalIndex = currentProject.acompanhamentos.indexOf(acompanhamentoToRemove);
-            
-            if (globalIndex !== -1) {
-                currentProject.acompanhamentos.splice(globalIndex, 1);
-            }
-            
-            // Atualiza a tabela
-            const tbody = document.getElementById('service-acompanhamento-tbody');
-            if (tbody) {
-                tbody.innerHTML = renderServiceAcompanhamentoRows(currentProject.servicos[currentEditingServiceIndex].tipo_servico);
-            }
-        }
-
-        async function saveServiceAcompanhamentoChanges(servicoNome) {
-            try {
-                // Coleta os dados da tabela
-                const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
-                    a => a.servico === servicoNome
-                );
-                
-                const acompanhamentosAtualizados = [];
-                
-                serviceAcompanhamentos.forEach((acompanhamento, index) => {
-                    const faseInput = document.getElementById(`service-fase-${index}`);
-                    const servicoInput = document.getElementById(`service-servico-${index}`);
-                    const percentualInput = document.getElementById(`service-percentual-${index}`);
-                    const valorInput = document.getElementById(`service-valor-${index}`);
-                    const dataInput = document.getElementById(`service-data-${index}`);
-                    const responsavelInput = document.getElementById(`service-responsavel-${index}`);
-                    const descricaoInput = document.getElementById(`service-descricao-${index}`);
-                    
-                    if (faseInput) {
-                        acompanhamentosAtualizados.push({
-                            ...acompanhamento,
-                            fase: faseInput.value,
-                            servico: servicoInput ? servicoInput.value : '',
-                            percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
-                            valor_executado: parseFloat(valorInput ? valorInput.value : 0),
-                            data_atualizacao: dataInput ? dataInput.value : '',
-                            responsavel: responsavelInput ? responsavelInput.value : '',
-                            descricao: descricaoInput ? descricaoInput.value : ''
-                        });
-                    }
-                });
-                
-                // Salva cada acompanhamento
-                for (const acompanhamento of acompanhamentosAtualizados) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Acompanhamento do serviço atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para detalhes do projeto
-                backToProjectDetails();
-                
-            } catch (error) {
-                console.error('Erro ao salvar acompanhamento do serviço:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
-            }
-        }
-
-        function backToProjectDetails() {
-            currentEditingServiceIndex = null;
-            renderProjectDetails(currentProject.id);
-        }
-
-        function renderAcompanhamentos() {
-            if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
-                return '<p class="text-gray-500 text-center py-4">Nenhum acompanhamento cadastrado</p>';
-            }
-            
-            return currentProject.acompanhamentos.map((acompanhamento, index) => {
-                // Calcula percentual corretamente (multiplica por 100 se for decimal)
-                let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
-                if (percentual < 1) {
-                    percentual = percentual * 100;
-                }
-                percentual = Math.round(percentual);
-                
-                return `
-                    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="font-semibold text-gray-800">Acompanhamento ${index + 1}</h4>
-                            <span class="text-xs text-gray-500">${formatDate(acompanhamento.data_atualizacao)}</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                                <span class="font-medium text-gray-600">Fase:</span>
-                                <span class="text-gray-800 ml-1">${acompanhamento.fase || '-'}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-600">Serviço:</span>
-                                <span class="text-gray-800 ml-1">${acompanhamento.servico || '-'}</span>
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-600">Executada:</span>
-                                <div class="inline-block ml-1">
-                                    ${generateDonutChart(percentual)}
-                                </div>
-                            </div>
-                            <div>
-                                <span class="font-medium text-gray-600">Valor Executado:</span>
-                                <span class="text-gray-800 ml-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</span>
-                            </div>
-                        </div>
-                        
-                        ${acompanhamento.descricao ? `
-                            <div class="mt-2">
-                                <span class="font-medium text-gray-600 text-sm">Descrição:</span>
-                                <p class="text-gray-800 text-sm mt-1">${acompanhamento.descricao}</p>
-                            </div>
-                        ` : ''}
-                        
-                        ${acompanhamento.responsavel ? `
-                            <div class="mt-2">
-                                <span class="font-medium text-gray-600 text-sm">Responsável:</span>
-                                <span class="text-gray-800 text-sm ml-1">${acompanhamento.responsavel}</span>
-                                ${acompanhamento.cargo ? `(${acompanhamento.cargo})` : ''}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function generateProjectsMap(projects) {
-            console.log('generateProjectsMap chamado com projetos:', projects);
-            
-            const mapContainer = document.getElementById('projects-map');
-            const legendContainer = document.getElementById('map-legend');
-            
-            console.log('Elementos encontrados:', {
-                mapContainer: !!mapContainer,
-                legendContainer: !!legendContainer
-            });
-            
-            if (!mapContainer) {
-                console.error('Elemento #projects-map não encontrado!');
-                return;
-            }
-            
-            // Filtra projetos com coordenadas válidas
-            const projectsWithCoords = projects.filter(p => 
-                p.coordenadasLatLon && p.coordenadasLatLon.lat && p.coordenadasLatLon.lon
-            );
-            
-            console.log('Projetos com coordenadas:', projectsWithCoords.length);
-            
-            if (projectsWithCoords.length === 0) {
-                // Se não houver coordenadas, mostra o mapa padrão
-                mapContainer.innerHTML = `
-                    <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 0.5rem;">
-                        <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center; max-width: 500px; z-index: 1;">
-                            <div style="font-size: 80px; margin-bottom: 20px;">🗺️</div>
-                            <h3 style="color: #333; margin: 0 0 20px 0; font-size: 28px; font-weight: bold;">Mapa de Projetos Portuários</h3>
-                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                                <div style="font-size: 36px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
-                                    ${projects.length}
-                                </div>
-                                <div style="color: #666; font-size: 16px;">
-                                    Projetos Cadastrados
-                                </div>
-                            </div>
-                            <div style="color: #999; font-size: 14px; line-height: 1.5;">
-                                Nenhum projeto com coordenadas geográficas<br>
-                                Adicione latitude e longitude para visualizar no mapa
-                            </div>
-                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                                <div style="font-size: 12px; color: #999;">
-                                    Status: <span style="color: #28a745; font-weight: bold;">✓ Funcionando</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Cria mapa interativo com Leaflet
-                console.log('Criando mapa Leaflet com marcadores para', projectsWithCoords.length, 'projetos');
-                
-                // Limpa o container
-                mapContainer.innerHTML = '<div id="leaflet-map" style="width: 100%; height: 100%; border-radius: 0.5rem;"></div>';
-                
-                // Inicializa o mapa do Brasil
-                const map = L.map('leaflet-map').setView([-14.235, -51.925], 4);
-                
-                // Adiciona camada do OpenStreetMap
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
-                
-                // Array para armazenar todos os marcadores
-                const markers = [];
-                
-                // Adiciona marcadores para cada projeto
-                projectsWithCoords.forEach(p => {
-                    const lat = p.coordenadasLatLon.lat;
-                    const lon = p.coordenadasLatLon.lon;
-                    const nome = p.objConcessao || p.nome || 'Projeto';
-                    const uf = p.uf || '';
-                    const descricao = p.descricao || '';
-                    
-                    // Cria popup com informações do projeto
-                    const popupContent = `
-                        <div style="min-width: 200px;">
-                            <h4 style="margin: 0 0 8px 0; color: #2E4E8C; font-weight: bold;">${nome}</h4>
-                            ${uf ? `<p style="margin: 4px 0; color: #666;"><strong>UF:</strong> ${uf}</p>` : ''}
-                            ${descricao ? `<p style="margin: 4px 0; color: #666; font-size: 12px;">${descricao.substring(0, 100)}${descricao.length > 100 ? '...' : ''}</p>` : ''}
-                            <p style="margin: 8px 0 0 0; color: #999; font-size: 11px;">Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}</p>
-                        </div>
-                    `;
-                    
-                    // Cria marcador personalizado
-                    const marker = L.marker([lat, lon]).addTo(map);
-                    marker.bindPopup(popupContent);
-                    markers.push(marker);
-                });
-                
-                // Ajusta o mapa para mostrar todos os marcadores
-                if (markers.length > 0) {
-                    const group = new L.featureGroup(markers);
-                    map.fitBounds(group.getBounds().pad(0.1));
-                }
-                
-                // Adiciona controle de informações
-                const infoControl = L.control({position: 'topleft'});
-                infoControl.onAdd = function(map) {
-                    const div = L.DomUtil.create('div', 'info-control');
-                    div.style.background = 'rgba(255, 255, 255, 0.95)';
-                    div.style.padding = '12px 16px';
-                    div.style.borderRadius = '12px';
-                    div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-                    div.style.fontSize = '13px';
-                    div.style.backdropFilter = 'blur(4px)';
-                    div.innerHTML = `
-                        <div style="font-weight: bold; color: #333; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 16px;">🗺️</span>
-                            <span>${projectsWithCoords.length} Projetos com Localização</span>
-                        </div>
-                        <div style="color: #666; font-size: 12px;">
-                            ${projects.length - projectsWithCoords.length} projetos sem coordenadas
-                        </div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
-                            <div style="color: #999; font-size: 11px;">
-                                Clique nos marcadores para ver detalhes
-                            </div>
-                        </div>
-                    `;
-                    return div;
-                };
-                infoControl.addTo(map);
-            }
-            
-            // Cria legendas simples
-            if (projects && projects.length > 0) {
-                const tipos = [...new Set(projects.map(p => p.tipo || 'Não definido'))];
-                const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
-                
-                let legendHTML = '<div class="text-sm text-gray-600 mb-2">Tipos de Projetos:</div>';
-                tipos.forEach((tipo, index) => {
-                    const count = projects.filter(p => (p.tipo || 'Não definido') === tipo).length;
-                    const color = colors[index % colors.length];
-                    legendHTML += `
-                        <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300">
-                            <div class="w-3 h-3 rounded-full" style="background-color: ${color}"></div>
-                            <span class="text-xs font-medium">${tipo} (${count})</span>
-                        </div>
-                    `;
-                });
-                if (legendContainer) {
-                    legendContainer.innerHTML = legendHTML;
-                }
-            } else {
-                if (legendContainer) {
-                    legendContainer.innerHTML = '';
-                }
-            }
-        }
-
-        function generateMapEmbed(projeto) {
-            if (!projeto.coordenadas || !projeto.coordenadas.latitude || !projeto.coordenadas.longitude) {
-                return `
-                    <div class="text-center py-8">
-                        <i class="fas fa-map-marked-alt text-4xl text-gray-300 mb-3"></i>
-                        <p class="text-gray-500">Coordenadas não disponíveis</p>
-                        ${projeto.coordenadas && projeto.coordenadas.e && projeto.coordenadas.s ? `
-                            <p class="text-sm text-gray-400 mt-2">
-                                UTM: E=${projeto.coordenadas.e}, S=${projeto.coordenadas.s}, Fuso=${projeto.coordenadas.fuso}
-                            </p>
-                        ` : ''}
-                    </div>
-                `;
-            }
-            
-            const lat = projeto.coordenadas.latitude;
-            const lon = projeto.coordenadas.longitude;
-            const bboxSize = 0.02;
-            
-            return `
-                <div class="space-y-3">
-                    <div class="bg-blue-50 rounded-lg p-3">
-                        <p class="text-sm font-medium text-blue-800">
-                            <i class="fas fa-location-dot mr-1"></i>
-                            Coordenadas: ${lat.toFixed(6)}, ${lon.toFixed(6)}
-                        </p>
-                    </div>
-                    <iframe 
-                        width="100%" 
-                        height="300" 
-                        frameborder="0" 
-                        scrolling="no" 
-                        marginheight="0" 
-                        marginwidth="0" 
-                        src="https://www.openstreetmap.org/export/embed.html?bbox=${lon-bboxSize},${lat-bboxSize},${lon+bboxSize},${lat+bboxSize}&layer=mapnik&marker=${lat},${lon}">
-                    </iframe>
-                    <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}" 
-                       target="_blank" 
-                       class="text-blue-600 hover:text-blue-800 text-sm underline">
-                        <i class="fas fa-external-link-alt mr-1"></i>
-                        Ver no OpenStreetMap
-                    </a>
-                </div>
-            `;
-        }
-
-        function formatCurrency(value) {
-            return new Intl.NumberFormat('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(value);
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return null;
-            const date = new Date(dateString);
-            return date.toLocaleDateString('pt-BR');
-        }
-
-        // Event listeners
-        document.getElementById('reload-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('reload-btn');
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-            btn.disabled = true;
-            
-            try {
-                await loadData();
-                console.log('Dados recarregados com sucesso!');
-            } catch (error) {
-                console.error('Erro ao recarregar dados:', error);
-            } finally {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-            }
-        });
-
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            projetosFiltrados = projetosData.filter(projeto => 
-                projeto.nome.toLowerCase().includes(searchTerm) ||
-                projeto.descricao.toLowerCase().includes(searchTerm) ||
-                projeto.uf.toLowerCase().includes(searchTerm) ||
-                projeto.zona.toLowerCase().includes(searchTerm)
-            );
-            renderProjects();
-        });
-
-        document.getElementById('projects-grid').addEventListener('click', (e) => {
-            const card = e.target.closest('.project-card');
-            if (card && card.dataset.id) {
-                renderProjectDetails(card.dataset.id);
-            }
-        });
-
-        document.getElementById('close-modal').addEventListener('click', () => {
-            closeModal();
-        });
-
-        document.getElementById('project-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'project-modal') {
-                closeModal();
-            }
-        });
-
-        function closeModal() {
-            const modal = document.getElementById('project-modal');
-            const modalContent = document.getElementById('modal-content');
-            
-            // Remove classes de animação
-            modalContent.classList.remove('modal-enter');
-            modalContent.classList.add('modal-leave');
-            
-            // Limpa estado
-            currentProject = null;
-            isEditMode = false;
-            isServicesEditMode = false;
-            currentEditingServiceIndex = null;
-            
-            // Reseta botão de edição de acompanhamento
-            const editBtn = document.getElementById('edit-project-btn');
-            const editBtnText = document.getElementById('edit-btn-text');
-            if (editBtn) {
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
-            }
-            
-            // Reseta botão de edição de serviços
-            const servicesBtn = document.getElementById('edit-services-btn');
-            const servicesBtnText = document.getElementById('edit-services-btn-text');
-            if (servicesBtn) {
-                servicesBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                servicesBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                servicesBtnText.textContent = 'Editar Serviços';
-            }
-            
-            // Fecha modal após animação
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex', 'modal-enter', 'modal-leave');
-                // Limpa conteúdo do modal
-                const modalBody = document.getElementById('modal-body');
-                if (modalBody) {
-                    modalBody.innerHTML = '';
-                }
-            }, 300);
-        }
-
-        // Dados dos projetos - Gerado em 02/02/2026 09:23:17
+<script>
+// Dados dos projetos - Gerado em 02/02/2026 09:44:00
 const projetosData = [
   {
     "id": "projeto-0",
@@ -2656,58 +179,55 @@ const projetosData = [
     "uf": "RJ",
     "objConcessao": "RDJ07",
     "tipo": "Arrendamento",
-    "descricao": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
+    "descricao": "Terminal para movimentação de veículos e carga geral.",
     "capexTotal": 101741000,
     "capexExecutado": null,
     "progresso": 0,
-    "coordenadasLatLon": {
-      "lat": -22.896621,
-      "lon": -43.209639
-    },
+    "coordenadasLatLon": null,
     "dataAssinatura": null,
     "etapa": "Em Andamento"
   },
   {
     "id": "projeto-4",
-    "zona": "Não se aplica",
+    "zona": "Porto Organizado de Paranaguá",
     "uf": "PR",
-    "objConcessao": "Canal de Paranaguá",
-    "tipo": "Concessão",
-    "descricao": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
-    "capexTotal": 1226475000,
-    "capexExecutado": null,
-    "progresso": 0,
+    "objConcessao": "TECON PARANAGUÁ",
+    "tipo": "Arrendamento",
+    "descricao": "Terminal especializado em contêineres com moderna infraestrutura.",
+    "capexTotal": 2500000000,
+    "capexExecutado": 125000000,
+    "progresso": 5.0,
     "coordenadasLatLon": {
-      "lat": -25.492142,
-      "lon": -48.479187
+      "lat": -25.5255,
+      "lon": -48.5146
     },
-    "dataAssinatura": "2026-02-20",
+    "dataAssinatura": null,
     "etapa": "Em Andamento"
   },
   {
     "id": "projeto-5",
-    "zona": "Porto Organizado de São Sebastião",
-    "uf": "SP",
-    "objConcessao": "SSB01",
+    "zona": "Porto Organizado de Itajaí",
+    "uf": "SC",
+    "objConcessao": "Terminal Itajaí",
     "tipo": "Arrendamento",
-    "descricao": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
-    "capexTotal": 656085000,
-    "capexExecutado": null,
-    "progresso": 0,
+    "descricao": "Terminal multipropósito para contêineres e carga geral.",
+    "capexTotal": 850000000,
+    "capexExecutado": 42500000,
+    "progresso": 5.0,
     "coordenadasLatLon": {
-      "lat": -23.812704,
-      "lon": -45.400052
+      "lat": -26.9134,
+      "lon": -48.6721
     },
     "dataAssinatura": null,
     "etapa": "Em Andamento"
   }
 ];
+
 let projetosFiltrados = [...projetosData];
 let currentProject = null;
-let isEditMode = false;
 
-// Função para carregar dados (agora usa dados embutidos)
-async function loadData() {
+// Carregar dados ao iniciar
+function loadData() {
     console.log('Carregando dados embutidos:', projetosData.length, 'projetos');
     projetosFiltrados = [...projetosData];
     
@@ -2716,594 +236,226 @@ async function loadData() {
     
     renderProjects();
     console.log('Dados carregados:', projetosData.length, 'projetos');
+}
+
+// Renderizar cards de projetos
+function renderProjects() {
+    const grid = document.getElementById('projects-grid');
     
-    // Atualizar contador do mapa
-    updateMapCounter();
-    
-    // Adicionar event listeners
-    addEventListeners();
-} catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                // Mostra mensagem de erro
-                document.getElementById('projects-grid').innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Erro ao carregar dados</h3>
-                        <p class="text-gray-600">Não foi possível carregar os projetos. Tente novamente mais tarde.</p>
-                        <button onclick="loadData()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                            <i class="fas fa-sync-alt mr-2"></i>Tentar Novamente
-                        </button>
-                    </div>
-                `;
-            }
-        }
+    if (projetosFiltrados.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center text-white p-8"><p>Nenhum projeto encontrado.</p></div>';
+        return;
+    }
+
+    grid.innerHTML = projetosFiltrados.map(projeto => {
+        const statusColor = projeto.progresso === 0 ? 'bg-gray-400' : 
+                           projeto.progresso < 50 ? 'bg-yellow-500' : 
+                           projeto.progresso < 100 ? 'bg-blue-500' : 'bg-green-500';
         
-        // Atualizar contador do mapa quando os dados carregarem
-        function updateMapCounter(projects) {
-            const countElement = document.getElementById('project-count');
-            if (countElement) {
-                countElement.textContent = projects ? projects.length : '0';
-            }
-        }
-
-        // Funções de Edição Inline
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            const editBtn = document.getElementById('edit-project-btn');
-            const editBtnText = document.getElementById('edit-btn-text');
-            
-            if (isEditMode) {
-                editBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtn.classList.add('bg-green-500', 'hover:bg-green-600');
-                editBtnText.textContent = 'Salvar Acompanhamento';
-                renderAcompanhamentoEditMode();
-            } else {
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
-                saveAcompanhamentoChanges();
-            }
-        }
-
-        function renderAcompanhamentoRows() {
-            if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
-                return `
-                    <tr>
-                        <td colspan="12" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                            Nenhum acompanhamento cadastrado
-                        </td>
-                    </tr>
-                `;
-            }
-            
-            return currentProject.acompanhamentos.map((acompanhamento, index) => `
-                <tr>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.fase || ''}" 
-                               id="fase-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Fase">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.servico || ''}" 
-                               id="servico-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Serviço">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.descricao || ''}" 
-                               id="descricao-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Descrição">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${acompanhamento.percentual_executada || 0}" 
-                               id="percentual-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               step="0.01" min="0" max="100">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="number" value="${acompanhamento.valor_executado || 0}" 
-                               id="valor-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               step="0.01">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="date" value="${acompanhamento.data_atualizacao || ''}" 
-                               id="data-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.responsavel || ''}" 
-                               id="responsavel-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Responsável">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.cargo || ''}" 
-                               id="cargo-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Cargo">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.setor || ''}" 
-                               id="setor-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Setor">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.riscos_tipo || ''}" 
-                               id="riscos-tipo-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Riscos Tipo">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1">
-                        <input type="text" value="${acompanhamento.riscos_descricao || ''}" 
-                               id="riscos-descricao-${index}"
-                               class="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-yellow-500"
-                               placeholder="Riscos Descrição">
-                    </td>
-                    <td class="border border-gray-300 px-2 py-1 text-center">
-                        <button onclick="removeAcompanhamentoRow(${index})" class="text-red-500 hover:text-red-700 text-xs">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function addAcompanhamentoRow() {
-            if (!currentProject.acompanhamentos) {
-                currentProject.acompanhamentos = [];
-            }
-            
-            const novoAcompanhamento = {
-                id: Date.now(),
-                projeto_id: currentProject.id,
-                fase: '',
-                servico: '',
-                descricao: '',
-                percentual_executada: 0,
-                valor_executado: 0,
-                data_atualizacao: new Date().toISOString().split('T')[0],
-                responsavel: '',
-                cargo: '',
-                setor: '',
-                riscos_tipo: '',
-                riscos_descricao: ''
-            };
-            
-            currentProject.acompanhamentos.push(novoAcompanhamento);
-            
-            // Atualiza a tabela
-            const tbody = document.getElementById('acompanhamento-tbody');
-            if (tbody) {
-                tbody.innerHTML = renderAcompanhamentoRows();
-            }
-        }
-
-        function removeAcompanhamentoRow(index) {
-            if (!currentProject.acompanhamentos) return;
-            
-            currentProject.acompanhamentos.splice(index, 1);
-            
-            // Atualiza a tabela
-            const tbody = document.getElementById('acompanhamento-tbody');
-            if (tbody) {
-                tbody.innerHTML = renderAcompanhamentoRows();
-            }
-        }
-
-        function cancelAcompanhamentoEdit() {
-            // Limpa estado de edição
-            isEditMode = false;
-            
-            // Reseta botão de edição
-            const editBtn = document.getElementById('edit-project-btn');
-            const editBtnText = document.getElementById('edit-btn-text');
-            if (editBtn) {
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
-            }
-            
-            // Recarrega o modal no modo visualização
-            if (currentProject) {
-                renderProjectDetails(currentProject.id);
-            }
-        }
-
-        async function saveAcompanhamentoChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Coleta os dados da tabela
-                const acompanhamentosAtualizados = [];
-                
-                if (currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0) {
-                    currentProject.acompanhamentos.forEach((acompanhamento, index) => {
-                        const faseInput = document.getElementById(`fase-${index}`);
-                        const servicoInput = document.getElementById(`servico-${index}`);
-                        const descricaoInput = document.getElementById(`descricao-${index}`);
-                        const percentualInput = document.getElementById(`percentual-${index}`);
-                        const valorInput = document.getElementById(`valor-${index}`);
-                        const dataInput = document.getElementById(`data-${index}`);
-                        const responsavelInput = document.getElementById(`responsavel-${index}`);
-                        const cargoInput = document.getElementById(`cargo-${index}`);
-                        const setorInput = document.getElementById(`setor-${index}`);
-                        const riscosTipoInput = document.getElementById(`riscos-tipo-${index}`);
-                        const riscosDescricaoInput = document.getElementById(`riscos-descricao-${index}`);
-                        
-                        if (faseInput) {
-                            acompanhamentosAtualizados.push({
-                                ...acompanhamento,
-                                fase: faseInput.value,
-                                servico: servicoInput ? servicoInput.value : '',
-                                descricao: descricaoInput ? descricaoInput.value : '',
-                                percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
-                                valor_executado: parseFloat(valorInput ? valorInput.value : 0),
-                                data_atualizacao: dataInput ? dataInput.value : '',
-                                responsavel: responsavelInput ? responsavelInput.value : '',
-                                cargo: cargoInput ? cargoInput.value : '',
-                                setor: setorInput ? setorInput.value : '',
-                                riscos_tipo: riscosTipoInput ? riscosTipoInput.value : '',
-                                riscos_descricao: riscosDescricaoInput ? riscosDescricaoInput.value : ''
-                            });
-                        }
-                    });
-                }
-                
-                // Salva cada acompanhamento
-                for (const acompanhamento of acompanhamentosAtualizados) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Acompanhamento atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isEditMode = false;
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar acompanhamento:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
-            }
-        }
-
-        function renderEditMode() {
-            if (!currentProject) return;
-            
-            const modalBody = document.getElementById('modal-body');
-            
-            // Renderiza formulário de edição
-            modalBody.innerHTML = `
-                <div class="space-y-6">
-                    <!-- Informações Básicas -->
-                    <div class="bg-gray-50 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <i class="fas fa-edit text-yellow-500"></i>
-                            Editar Informações do Projeto
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Zona Portuária</label>
-                                <input type="text" id="edit-zona" value="${currentProject.zona_portuaria || ''}" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">UF</label>
-                                <input type="text" id="edit-uf" value="${currentProject.uf || ''}" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Objeto de Concessão</label>
-                                <input type="text" id="edit-obj" value="${currentProject.obj_concessao || ''}" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">CAPEX Total</label>
-                                <input type="number" id="edit-capex" value="${currentProject.capex_total || 0}" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
-                            </div>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                            <textarea id="edit-descricao" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">${currentProject.descricao || ''}</textarea>
-                        </div>
-                    </div>
-
-                    <!-- Acompanhamentos -->
-                    <div class="bg-gray-50 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-chart-line text-yellow-500"></i>
-                                Acompanhamento do Projeto
-                            </h3>
-                            <button onclick="addAcompanhamento()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">
-                                <i class="fas fa-plus mr-1"></i> Adicionar
-                            </button>
-                        </div>
-                        
-                        <div id="acompanhamentos-list" class="space-y-3">
-                            ${renderAcompanhamentosEdit()}
-                        </div>
-                    </div>
-
-                    <!-- Botões de Ação -->
-                    <div class="flex gap-3 justify-end">
-                        <button onclick="cancelEdit()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                            Cancelar
-                        </button>
-                        <button onclick="toggleEditMode()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                            <i class="fas fa-save mr-2"></i>Salvar Alterações
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderAcompanhamentosEdit() {
-            if (!currentProject.acompanhamentos || currentProject.acompanhamentos.length === 0) {
-                return '<p class="text-gray-500 text-center py-4">Nenhum acompanhamento cadastrado</p>';
-            }
-            
-            return currentProject.acompanhamentos.map((acompanhamento, index) => `
-                <div class="bg-white border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold text-gray-800">Acompanhamento ${index + 1}</h4>
-                        <button onclick="removeAcompanhamento(${acompanhamento.id})" class="text-red-500 hover:text-red-700">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Fase</label>
-                            <input type="text" value="${acompanhamento.fase || ''}" 
-                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'fase', this.value)"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Serviço</label>
-                            <input type="text" value="${acompanhamento.servico || ''}" 
-                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'servico', this.value)"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Executada</label>
-                            <input type="number" value="${acompanhamento.percentual_executada || 0}" 
-                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'percentual_executada', this.value)"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500" step="0.01" min="0" max="100">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Valor Executado</label>
-                            <input type="number" value="${acompanhamento.valor_executado || 0}" 
-                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'valor_executado', this.value)"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500" step="0.01">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Data Atualização</label>
-                            <input type="date" value="${acompanhamento.data_atualizacao || ''}" 
-                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'data_atualizacao', this.value)"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Responsável</label>
-                            <input type="text" value="${acompanhamento.responsavel || ''}" 
-                                   onchange="updateAcompanhamento(${acompanhamento.id}, 'responsavel', this.value)"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3">
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Descrição</label>
-                        <textarea rows="2" onchange="updateAcompanhamento(${acompanhamento.id}, 'descricao', this.value)"
-                                  class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">${acompanhamento.descricao || ''}</textarea>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateAcompanhamento(id, field, value) {
-            if (!currentProject.acompanhamentos) return;
-            
-            const acompanhamento = currentProject.acompanhamentos.find(a => a.id === id);
-            if (acompanhamento) {
-                acompanhamento[field] = value;
-            }
-        }
-
-        function addAcompanhamento() {
-            if (!currentProject.acompanhamentos) {
-                currentProject.acompanhamentos = [];
-            }
-            
-            const novoAcompanhamento = {
-                id: Date.now(), // ID temporário
-                projeto_id: currentProject.id,
-                fase: '',
-                servico: '',
-                descricao: '',
-                percentual_executada: 0,
-                valor_executado: 0,
-                data_atualizacao: new Date().toISOString().split('T')[0],
-                responsavel: '',
-                cargo: '',
-                setor: '',
-                riscos_tipo: '',
-                riscos_descricao: ''
-            };
-            
-            currentProject.acompanhamentos.push(novoAcompanhamento);
-            
-            // Atualiza a lista
-            const acompanhamentosList = document.getElementById('acompanhamentos-list');
-            if (acompanhamentosList) {
-                acompanhamentosList.innerHTML = renderAcompanhamentosEdit();
-            }
-        }
-
-        function removeAcompanhamento(id) {
-            if (!currentProject.acompanhamentos) return;
-            
-            currentProject.acompanhamentos = currentProject.acompanhamentos.filter(a => a.id !== id);
-            
-            // Atualiza a lista
-            const acompanhamentosList = document.getElementById('acompanhamentos-list');
-            if (acompanhamentosList) {
-                acompanhamentosList.innerHTML = renderAcompanhamentosEdit();
-            }
-        }
-
-        async function saveChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Prepara dados do projeto
-                const projectData = {
-                    zona_portuaria: document.getElementById('edit-zona').value,
-                    uf: document.getElementById('edit-uf').value,
-                    obj_concessao: document.getElementById('edit-obj').value,
-                    capex_total: parseFloat(document.getElementById('edit-capex').value) || 0,
-                    descricao: document.getElementById('edit-descricao').value
-                };
-                
-                // Atualiza projeto
-                const projectResponse = await fetch(`/api/projects/${currentProject.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(projectData)
-                });
-                
-                if (!projectResponse.ok) {
-                    throw new Error('Erro ao atualizar projeto');
-                }
-                
-                // Salva acompanhamentos
-                for (const acompanhamento of currentProject.acompanhamentos) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Projeto atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isEditMode = false;
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Alterar Andamento';
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar alterações:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações');
-            }
-        }
-
-        function cancelEdit() {
-            isEditMode = false;
-            const editBtn = document.getElementById('edit-project-btn');
-            const editBtnText = document.getElementById('edit-btn-text');
-            editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-            editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-            editBtnText.textContent = 'Alterar Andamento';
-            
-            // Renderiza modo visualização
-            renderProjectDetails(currentProject.id);
-        }
-
-        function showToast(type, title, message) {
-            // Cria toast notification
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-xl p-4 flex items-center gap-3 min-w-[300px]';
-            toast.innerHTML = `
-                <div class="${type === 'success' ? 'text-green-500' : 'text-red-500'}">
-                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} text-xl"></i>
-                </div>
+        return `
+            <div data-id="${projeto.id}" class="project-card bg-white rounded-xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow">
                 <div>
-                    <p class="text-gray-800 font-medium">${title}</p>
-                    <p class="text-sm text-gray-600">${message}</p>
+                    <p class="text-sm text-gray-500">${projeto.uf}</p>
+                    <h3 class="text-lg font-bold mt-1 text-gray-800">${projeto.objConcessao || 'Obj. de concessão não informado'}</h3>
+                    <p class="text-sm text-gray-600 mt-2 line-clamp-3">${projeto.descricao || 'Descrição não disponível'}</p>
                 </div>
-            `;
-            
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-        
-        // Carregar dados ao iniciar a página
-        loadData();
-    </script>
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 rounded-full ${statusColor} mr-2"></span>
+                        <span class="text-sm font-medium text-gray-600">${projeto.etapa}</span>
+                    </div>
+                    ${projeto.capexTotal > 0 ? `
+                        <span class="text-xs text-gray-500">
+                            R$ ${(projeto.capexTotal / 1000000).toFixed(1)}M
+                        </span>
+                    ` : ''}
+                </div>
+                ${projeto.progresso > 0 ? `
+                    <div class="mt-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: ${projeto.progresso}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">${projeto.progresso.toFixed(1)}% concluído</p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Gerar mapa de projetos
+function generateProjectsMap(projects) {
+    const mapContainer = document.getElementById('projects-map');
+    if (!mapContainer) return;
+    
+    // Filtrar projetos com coordenadas
+    const projectsWithCoords = projects.filter(p => p.coordenadasLatLon);
+    
+    if (projectsWithCoords.length === 0) {
+        mapContainer.innerHTML = `
+            <div class="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-map-marked-alt text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">Nenhum projeto com coordenadas disponíveis</p>
                 </div>
             </div>
+        `;
+        return;
+    }
+    
+    // Criar mapa interativo com Leaflet
+    mapContainer.innerHTML = '<div id="leaflet-map" style="width: 100%; height: 100%; border-radius: 0.5rem;"></div>';
+    
+    // Inicializa o mapa do Brasil
+    const map = L.map('leaflet-map').setView([-14.235, -51.925], 4);
+    
+    // Adiciona camada do OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Array para armazenar todos os marcadores
+    const markers = [];
+    
+    // Adiciona marcadores para cada projeto
+    projectsWithCoords.forEach(p => {
+        const lat = p.coordenadasLatLon.lat;
+        const lon = p.coordenadasLatLon.lon;
+        const nome = p.objConcessao || p.nome || 'Projeto';
+        const uf = p.uf || '';
+        const descricao = p.descricao || '';
+        
+        // Cria popup com informações do projeto
+        const popupContent = `
+            <div style="min-width: 200px;">
+                <h4 style="margin: 0 0 8px 0; color: #2E4E8C; font-weight: bold;">${nome}</h4>
+                ${uf ? `<p style="margin: 4px 0; color: #666;"><strong>UF:</strong> ${uf}</p>` : ''}
+                ${descricao ? `<p style="margin: 4px 0; color: #666; font-size: 12px;">${descricao.substring(0, 100)}${descricao.length > 100 ? '...' : ''}</p>` : ''}
+                <p style="margin: 8px 0 0 0; color: #999; font-size: 11px;">Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}</p>
+            </div>
+        `;
+        
+        // Cria marcador personalizado
+        const marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+    });
+    
+    // Ajusta o mapa para mostrar todos os marcadores
+    if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Event Listeners
+function addEventListeners() {
+    // Fechar modal
+    const closeModal = document.getElementById('close-modal');
+    const modal = document.getElementById('project-modal');
+    
+    if (closeModal && modal) {
+        closeModal.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+    }
+    
+    // Clicar nos cards
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.project-card');
+        if (card) {
+            const projectId = card.dataset.id;
+            renderProjectDetails(projectId);
+        }
+    });
+    
+    // Busca
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            projetosFiltrados = projetosData.filter(projeto => 
+                projeto.objConcessao.toLowerCase().includes(searchTerm) ||
+                projeto.descricao.toLowerCase().includes(searchTerm) ||
+                projeto.uf.toLowerCase().includes(searchTerm)
+            );
+            renderProjects();
+        });
+    }
+}
+
+// Renderizar detalhes do projeto
+function renderProjectDetails(projectId) {
+    const project = projetosData.find(p => p.id === projectId);
+    if (!project) return;
+    
+    currentProject = project;
+    
+    const modal = document.getElementById('project-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    if (!modal || !modalTitle || !modalBody) return;
+    
+    const zona = project.zona || 'Não informado';
+    const obj = project.objConcessao || '';
+    const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+    
+    modalTitle.textContent = nomeProjeto;
+    
+    modalBody.innerHTML = `
+        <div class="w-full max-w-4xl">
+            <div class="bg-gray-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-blue-600"></i>
+                    Informações do Projeto
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
+                        <span class="text-gray-800 ml-2">${project.zona || 'Não se aplica'}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">UF:</span>
+                        <span class="text-gray-800 ml-2">${project.uf || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Objeto de Concessão:</span>
+                        <span class="text-gray-800 ml-2">${project.objConcessao || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
+                        <span class="text-gray-800 ml-2">${project.tipo || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">CAPEX Total:</span>
+                        <span class="text-gray-800 ml-2">R$ ${(project.capexTotal / 1000000).toFixed(1)}M</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Progresso:</span>
+                        <span class="text-gray-800 ml-2">${project.progresso.toFixed(1)}%</span>
+                    </div>
+                </div>
+                ${project.descricao ? `
+                    <div class="mt-4">
+                        <span class="text-sm font-medium text-gray-600">Descrição:</span>
+                        <p class="text-gray-800 mt-1">${project.descricao}</p>
+                    </div>
+                ` : ''}
+            </div>
         </div>
-    </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// Inicializar quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    addEventListeners();
+});
+</script>
 </body>
 </html>
