@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data.js"></script>
     <style>
         :root {
             --primary: #2E4E8C;
@@ -104,16 +105,645 @@
             .card--mapa { grid-area: mapa; }
             .card--etapa { grid-area: etapa; }
         }
+
+
+        
+
     </style>
+<script>
+
+// === Helpers para dadosCompletos (JSON) ===
+function mapServiceDC(s){
+  if(!s) return null;
+  return {
+    tipo_servico: s.tipoServico || '',
+    fase: s.fase || '',
+    servico: s.servico || '',
+    descricao_servico: s.descricao || '',
+    data_inicio: s.dataInicio || '',
+    data_final: s.dataFim || '',
+    capex_servico_total: s.capexServicoTotal ?? 0,
+    capex_servico_exec: s.capexServicoExec ?? 0,
+    perc_capex_exec: s.percCapexExec ?? 0,
+    percentual_capex: s.percentualCapex ?? 0,
+    fonte_percentual: s.fontePercentual || '',
+    classe: s.tipoServico || ''
+  };
+}
+function mapAcompanhamentoDC(a){
+  if(!a) return null;
+  return {
+    fase: a.fase || '',
+    servico: a.servico || '',
+    descricao: a.descricao || '',
+    percentual_executada: a.percentualExecutada ?? 0,
+    valor_executado: a.valorExecutado ?? 0,
+    data_atualizacao: a.dataAtualizacao || '',
+    responsavel: a.responsavel || '',
+    cargo: a.cargo || '',
+    setor: a.setor || '',
+    riscos_tipo: a.riscosTipo || '',
+    riscos_descricao: a.riscosDescricao || ''
+  };
+}
+function uniqueByIdOrKey(arr){
+  const seen = new Set();
+  const out = [];
+  for(const x of arr){
+    if(!x) continue;
+    const key = (x.id ?? '') + '|' + (x.servico ?? '') + '|' + (x.tipo_servico ?? x.tipoServico ?? '') + '|' + (x.fase ?? '');
+    if(!seen.has(key)){ seen.add(key); out.push(x);}
+  }
+  return out;
+}
+async function loadFromDadosCompletos(){
+  const src = typeof dadosCompletos !== 'undefined' ? dadosCompletos : null;
+  if(!src || !Array.isArray(src.projetos)) throw new Error('dadosCompletos inválido');
+  projetosData = src.projetos.map(p=>{
+    const zona = p.zona || 'Não informado';
+    const obj = p.objConcessao || '';
+    const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+    // serviços: usar os do projeto + os do topo com idProjeto
+    const servTop = Array.isArray(src.servicos) ? src.servicos.filter(s=>s.idProjeto===p.id) : [];
+    const servProj = Array.isArray(p.servicos) ? p.servicos : [];
+    const servMerged = uniqueByIdOrKey([...servProj, ...servTop]).map(mapServiceDC).filter(Boolean);
+    // acompanhamentos: idem
+    const acompTop = Array.isArray(src.acompanhamentos) ? src.acompanhamentos.filter(a=>a.idProjeto===p.id) : [];
+    const acompProj = Array.isArray(p.acompanhamentos) ? p.acompanhamentos : [];
+    const acompMerged = uniqueByIdOrKey([...acompProj, ...acompTop]).map(mapAcompanhamentoDC).filter(Boolean);
+    // progresso: usar p.progresso (0..1 ou 0..100) ou derivar do acompanhamento mais recente
+    let progresso = 0;
+    if(typeof p.progresso === 'number'){ progresso = p.progresso <= 1 ? p.progresso*100 : p.progresso; }
+    if(progresso===0 && acompMerged.length>0){
+      const mr = [...acompMerged].sort((a,b)=> new Date(b.data_atualizacao||0)-new Date(a.data_atualizacao||0))[0];
+      progresso = (mr?.percentual_executada ?? 0) * 100;
+    }
+    return {
+      id: p.id,
+      nome: nomeProjeto,
+      zona: zona,
+      uf: p.uf || '',
+      objConcessao: obj,
+      tipo: p.tipo || '',
+      capexTotal: p.capexTotal ?? 0,
+      dataAssinatura: null,
+      descricao: p.descricao || 'Sem descrição disponível',
+      progresso: progresso,
+      etapa: p.etapa || '',
+      servicos: servMerged,
+      acompanhamentos: acompMerged,
+      coordenadas: { latitude: p.coordenadasLatLon?.lat ?? null, longitude: p.coordenadasLatLon?.lon ?? null },
+      coordenadasLatLon: p.coordenadasLatLon ?? null
+    };
+  });
+  projetosFiltrados = [...projetosData];
+  renderProjects();
+  generateProjectsMap(projetosData);
+}
+
+const dadosCompletos = {
+  "projetos": [
+    {
+      "id": "projeto-19",
+      "zona": "Porto Organizado de Santos",
+      "uf": "SP",
+      "objConcessao": "TECON 10",
+      "tipo": "Arrendamento",
+      "descricao": "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.",
+      "capexTotal": 6454903000.0,
+      "capexExecutado": 40473675.0,
+      "progresso": 0.6270222031221848,
+      "etapa": "Em Andamento",
+      "coordenadasLatLon": {
+        "lat": -23.926132,
+        "lon": -46.34027
+      },
+      "dataCriacao": "2026-01-29 12:35:05",
+      "dataAtualizacao": "2026-01-29 12:35:05",
+      "servicos": [],
+      "acompanhamentos": []
+    },
+    {
+      "id": "projeto-20",
+      "zona": "Não se aplica",
+      "uf": "MT; MS",
+      "objConcessao": "Hidrovia do Paraguai",
+      "tipo": "Concessão",
+      "descricao": "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.",
+      "capexTotal": 63796000.0,
+      "capexExecutado": 0,
+      "progresso": 0,
+      "etapa": "Em Andamento",
+      "coordenadasLatLon": null,
+      "dataCriacao": "2026-01-29 12:35:05",
+      "dataAtualizacao": "2026-01-29 12:35:05",
+      "servicos": [],
+      "acompanhamentos": []
+    },
+    {
+      "id": "projeto-21",
+      "zona": "Porto Organizado de Maceió",
+      "uf": "AL",
+      "objConcessao": "TPM Macéio",
+      "tipo": "Arrendamento",
+      "descricao": "Terminal destinado a movimentação de passageiros.",
+      "capexTotal": 1978000.0,
+      "capexExecutado": 0,
+      "progresso": 0,
+      "etapa": "Em Andamento",
+      "coordenadasLatLon": null,
+      "dataCriacao": "2026-01-29 12:35:05",
+      "dataAtualizacao": "2026-01-29 12:35:05",
+      "servicos": [],
+      "acompanhamentos": []
+    },
+    {
+      "id": "projeto-22",
+      "zona": "Porto Organizado do Rio de Janeiro",
+      "uf": "RJ",
+      "objConcessao": "RDJ07",
+      "tipo": "Arrendamento",
+      "descricao": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
+      "capexTotal": 101741000.0,
+      "capexExecutado": 0,
+      "progresso": 0,
+      "etapa": "Em Andamento",
+      "coordenadasLatLon": {
+        "lat": -22.896621,
+        "lon": -43.209639
+      },
+      "dataCriacao": "2026-01-29 12:35:05",
+      "dataAtualizacao": "2026-01-29 12:35:05",
+      "servicos": [],
+      "acompanhamentos": []
+    },
+    {
+      "id": "projeto-23",
+      "zona": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipo": "Concessão",
+      "descricao": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
+      "capexTotal": 1226475000.0,
+      "capexExecutado": 0,
+      "progresso": 0,
+      "etapa": "Em Andamento",
+      "coordenadasLatLon": {
+        "lat": -25.492142,
+        "lon": -48.479187
+      },
+      "dataCriacao": "2026-01-29 12:35:05",
+      "dataAtualizacao": "2026-01-29 12:35:05",
+      "servicos": [
+        {
+          "id": 25,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "1ª",
+          "servico": "Dragagem de Implantação de canal",
+          "descricao": "Evolução para  13,3m",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2029-02-19",
+          "percentualCapex": 0.1,
+          "capexServicoTotal": 122647500.0,
+          "capexServicoExec": 40473675.0,
+          "percCapexExec": 0.33,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 26,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "1ª",
+          "servico": "Dragagem de Implantação de berços",
+          "descricao": "a) berços 201-215; e b) berços 216-218",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2031-02-19",
+          "percentualCapex": 0.1,
+          "capexServicoTotal": 122647500.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 27,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "Disponibilidade de Infraestrutura",
+          "fase": "1ª",
+          "servico": "Alargamento de bacia de evolução",
+          "descricao": "Trechos Charlie 1 e 3",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2029-02-19",
+          "percentualCapex": 0.1,
+          "capexServicoTotal": 122647500.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 28,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "Disponibilidade de Infraestrutura",
+          "fase": "1ª",
+          "servico": "Derrocamento",
+          "descricao": "Pedra da Palangana - retificação do canal de acesso",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2031-02-19",
+          "percentualCapex": 0.25,
+          "capexServicoTotal": 306618750.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 29,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "2ª",
+          "servico": "Dragagem de Implantação de canal",
+          "descricao": "Evolução para e 15,5m",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2031-02-19",
+          "percentualCapex": 0.1,
+          "capexServicoTotal": 122647500.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 30,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "2ª",
+          "servico": "Dragagem de Implantação de berços",
+          "descricao": "a) berços 216-218; b) Pier L; c) Píer F; e d) Píer T",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2031-02-19",
+          "percentualCapex": 0.1,
+          "capexServicoTotal": 122647500.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 31,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "2ª",
+          "servico": "Derrocamento",
+          "descricao": "Pedra da Palangana - integração da área à bacia de evolução e manobras",
+          "dataInicio": "2028-02-20",
+          "dataFim": "2031-02-19",
+          "percentualCapex": 0.24,
+          "capexServicoTotal": 294354000.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 32,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "Disponibilidade de Infraestrutura",
+          "fase": "2ª",
+          "servico": "Implantação de Sistema",
+          "descricao": "Sistemas de Gerenciamento do Tráfego (VTS/VTMIS)",
+          "dataInicio": "2030-02-19",
+          "dataFim": null,
+          "percentualCapex": 0.01,
+          "capexServicoTotal": 12264750.0,
+          "capexServicoExec": null,
+          "percCapexExec": 0.0,
+          "dataCriacao": "2026-01-29 12:35:05"
+        }
+      ],
+      "acompanhamentos": [
+        {
+          "id": 12,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "1ª",
+          "servico": "Dragagem de Implantação de canal",
+          "descricao": "Evolução para  13,3m",
+          "percentualExecutada": 0.08,
+          "valorExecutado": 9811800.0,
+          "dataAtualizacao": "2031-10-08",
+          "responsavel": "Mateus",
+          "cargo": "Analista",
+          "setor": "PPI",
+          "riscosTipo": "Meio Ambiente",
+          "riscosDescricao": "Ainda não foi obtida Licença Operacional",
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 11,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "1ª",
+          "servico": "Dragagem de Implantação de canal",
+          "descricao": "Evolução para  13,3m",
+          "percentualExecutada": 0.15,
+          "valorExecutado": 18397125.0,
+          "dataAtualizacao": "2030-06-10",
+          "responsavel": "Mateus",
+          "cargo": "Analista",
+          "setor": "PPI",
+          "riscosTipo": "Financeiro",
+          "riscosDescricao": "Concessionária está com problemas financeiros para continuidade",
+          "dataCriacao": "2026-01-29 12:35:05"
+        },
+        {
+          "id": 10,
+          "idProjeto": "projeto-23",
+          "zonaPortuaria": "Não se aplica",
+          "uf": "PR",
+          "objConcessao": "Canal de Paranaguá",
+          "tipoServico": "CMO",
+          "fase": "1ª",
+          "servico": "Dragagem de Implantação de canal",
+          "descricao": "Evolução para  13,3m",
+          "percentualExecutada": 0.1,
+          "valorExecutado": 12264750.0,
+          "dataAtualizacao": "2029-06-06",
+          "responsavel": "Mateus",
+          "cargo": "Analista",
+          "setor": "PPI",
+          "riscosTipo": "Meio Ambiente",
+          "riscosDescricao": "Parte do trecho está com pendência de licenciamento ambiental",
+          "dataCriacao": "2026-01-29 12:35:05"
+        }
+      ]
+    },
+    {
+      "id": "projeto-24",
+      "zona": "Porto Organizado de São Sebastião",
+      "uf": "SP",
+      "objConcessao": "SSB01",
+      "tipo": "Arrendamento",
+      "descricao": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
+      "capexTotal": 656085000.0,
+      "capexExecutado": 0,
+      "progresso": 0,
+      "etapa": "Em Andamento",
+      "coordenadasLatLon": {
+        "lat": -23.812704,
+        "lon": -45.400052
+      },
+      "dataCriacao": "2026-01-29 12:35:05",
+      "dataAtualizacao": "2026-01-29 12:35:05",
+      "servicos": [],
+      "acompanhamentos": []
+    }
+  ],
+  "servicos": [
+    {
+      "id": 25,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "1ª",
+      "servico": "Dragagem de Implantação de canal",
+      "descricao": "Evolução para  13,3m",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2029-02-19",
+      "percentualCapex": 0.1,
+      "capexServicoTotal": 122647500.0,
+      "capexServicoExec": 40473675.0,
+      "percCapexExec": 0.33,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 26,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "1ª",
+      "servico": "Dragagem de Implantação de berços",
+      "descricao": "a) berços 201-215; e b) berços 216-218",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2031-02-19",
+      "percentualCapex": 0.1,
+      "capexServicoTotal": 122647500.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 27,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "Disponibilidade de Infraestrutura",
+      "fase": "1ª",
+      "servico": "Alargamento de bacia de evolução",
+      "descricao": "Trechos Charlie 1 e 3",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2029-02-19",
+      "percentualCapex": 0.1,
+      "capexServicoTotal": 122647500.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 28,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "Disponibilidade de Infraestrutura",
+      "fase": "1ª",
+      "servico": "Derrocamento",
+      "descricao": "Pedra da Palangana - retificação do canal de acesso",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2031-02-19",
+      "percentualCapex": 0.25,
+      "capexServicoTotal": 306618750.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 29,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "2ª",
+      "servico": "Dragagem de Implantação de canal",
+      "descricao": "Evolução para e 15,5m",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2031-02-19",
+      "percentualCapex": 0.1,
+      "capexServicoTotal": 122647500.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 30,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "2ª",
+      "servico": "Dragagem de Implantação de berços",
+      "descricao": "a) berços 216-218; b) Pier L; c) Píer F; e d) Píer T",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2031-02-19",
+      "percentualCapex": 0.1,
+      "capexServicoTotal": 122647500.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 31,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "2ª",
+      "servico": "Derrocamento",
+      "descricao": "Pedra da Palangana - integração da área à bacia de evolução e manobras",
+      "dataInicio": "2028-02-20",
+      "dataFim": "2031-02-19",
+      "percentualCapex": 0.24,
+      "capexServicoTotal": 294354000.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 32,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "Disponibilidade de Infraestrutura",
+      "fase": "2ª",
+      "servico": "Implantação de Sistema",
+      "descricao": "Sistemas de Gerenciamento do Tráfego (VTS/VTMIS)",
+      "dataInicio": "2030-02-19",
+      "dataFim": null,
+      "percentualCapex": 0.01,
+      "capexServicoTotal": 12264750.0,
+      "capexServicoExec": null,
+      "percCapexExec": 0.0,
+      "dataCriacao": "2026-01-29 12:35:05"
+    }
+  ],
+  "acompanhamentos": [
+    {
+      "id": 12,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "1ª",
+      "servico": "Dragagem de Implantação de canal",
+      "descricao": "Evolução para  13,3m",
+      "percentualExecutada": 0.08,
+      "valorExecutado": 9811800.0,
+      "dataAtualizacao": "2031-10-08",
+      "responsavel": "Mateus",
+      "cargo": "Analista",
+      "setor": "PPI",
+      "riscosTipo": "Meio Ambiente",
+      "riscosDescricao": "Ainda não foi obtida Licença Operacional",
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 11,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "1ª",
+      "servico": "Dragagem de Implantação de canal",
+      "descricao": "Evolução para  13,3m",
+      "percentualExecutada": 0.15,
+      "valorExecutado": 18397125.0,
+      "dataAtualizacao": "2030-06-10",
+      "responsavel": "Mateus",
+      "cargo": "Analista",
+      "setor": "PPI",
+      "riscosTipo": "Financeiro",
+      "riscosDescricao": "Concessionária está com problemas financeiros para continuidade",
+      "dataCriacao": "2026-01-29 12:35:05"
+    },
+    {
+      "id": 10,
+      "idProjeto": "projeto-23",
+      "zonaPortuaria": "Não se aplica",
+      "uf": "PR",
+      "objConcessao": "Canal de Paranaguá",
+      "tipoServico": "CMO",
+      "fase": "1ª",
+      "servico": "Dragagem de Implantação de canal",
+      "descricao": "Evolução para  13,3m",
+      "percentualExecutada": 0.1,
+      "valorExecutado": 12264750.0,
+      "dataAtualizacao": "2029-06-06",
+      "responsavel": "Mateus",
+      "cargo": "Analista",
+      "setor": "PPI",
+      "riscosTipo": "Meio Ambiente",
+      "riscosDescricao": "Parte do trecho está com pendência de licenciamento ambiental",
+      "dataCriacao": "2026-01-29 12:35:05"
+    }
+  ],
+  "resumo": {
+    "totalProjetos": 6,
+    "totalServicos": 8,
+    "totalAcompanhamentos": 3,
+    "capexTotal": 8504978000.0,
+    "capexExecutado": 40473675.0,
+    "progressoMedio": 0.10450370052036413
+  }
+};
+</script>
 </head>
 <body>
-<!-- BANNER VERSÃO ESTÁTICA - BASEADO NO PORTOS.HTML -->
-<div style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 8px; font-size: 12px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    🚢 Versão Estática - Baseado no portos.html | Dados do banco em 02/02/2026 09:58 | 
-    <a href="https://github.com/TheCarlosRamos/projeto_portos" target="_blank" style="color: white; text-decoration: underline;">Ver código</a>
-</div>
-<div style="height: 40px;"></div>
-
     <div class="flex h-screen">
         <!-- Sidebar -->
         <div class="sidebar w-64 h-full shadow-xl">
@@ -139,6 +769,7 @@
                 </nav>
             </div>
         </div>
+        
 
         <!-- Main Content -->
         <div class="flex-1 overflow-y-auto">
@@ -153,6 +784,7 @@
 
                 <!-- Main Content -->
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
             <!-- Mapa de Projetos -->
             <div class="mb-8">
                 <div class="bg-white rounded-xl shadow-lg p-6">
@@ -223,391 +855,10 @@
     </div>
 
     <script>
-        // Dados do banco - Gerado em 02/02/2026 09:58:36
-// Versão estática - GitHub Pages
-const projetosData = [
-  {
-    "id": "projeto-23",
-    "zona": "Não se aplica",
-    "uf": "PR",
-    "objConcessao": "Canal de Paranaguá",
-    "tipo": "Concessão",
-    "descricao": "Acesso aquaviário (canal de acesso) ao Porto de Paranaguá.",
-    "capexTotal": 1226475000.0,
-    "capexExecutado": 0,
-    "progresso": 0,
-    "dataAssinatura": "2026-02-20",
-    "etapa": "Em Andamento",
-    "latitude": -25.492142,
-    "longitude": -48.479187,
-    "coordenadaEUTM": null,
-    "coordenadaSUTM": null,
-    "fuso": null,
-    "dataCriacao": "2026-01-29 12:35:05",
-    "dataAtualizacao": "2026-01-29 12:35:05",
-    "coordenadasLatLon": {
-      "lat": -25.492142,
-      "lon": -48.479187
-    },
-    "servicos": [
-      {
-        "id": 25,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "1ª",
-        "servico": "Dragagem de Implantação de canal",
-        "descricao": "Evolução para  13,3m",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2029-02-19",
-        "percentualCapex": 0.1,
-        "capexServicoTotal": 122647500.0,
-        "capexServicoExec": 40473675.0,
-        "percCapexExec": 0.33,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 26,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "1ª",
-        "servico": "Dragagem de Implantação de berços",
-        "descricao": "a) berços 201-215; e b) berços 216-218",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2031-02-19",
-        "percentualCapex": 0.1,
-        "capexServicoTotal": 122647500.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 27,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "Disponibilidade de Infraestrutura",
-        "fase": "1ª",
-        "servico": "Alargamento de bacia de evolução",
-        "descricao": "Trechos Charlie 1 e 3",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2029-02-19",
-        "percentualCapex": 0.1,
-        "capexServicoTotal": 122647500.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 28,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "Disponibilidade de Infraestrutura",
-        "fase": "1ª",
-        "servico": "Derrocamento",
-        "descricao": "Pedra da Palangana - retificação do canal de acesso",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2031-02-19",
-        "percentualCapex": 0.25,
-        "capexServicoTotal": 306618750.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 29,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "2ª",
-        "servico": "Dragagem de Implantação de canal",
-        "descricao": "Evolução para e 15,5m",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2031-02-19",
-        "percentualCapex": 0.1,
-        "capexServicoTotal": 122647500.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 30,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "2ª",
-        "servico": "Dragagem de Implantação de berços",
-        "descricao": "a) berços 216-218; b) Pier L; c) Píer F; e d) Píer T",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2031-02-19",
-        "percentualCapex": 0.1,
-        "capexServicoTotal": 122647500.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 31,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "2ª",
-        "servico": "Derrocamento",
-        "descricao": "Pedra da Palangana - integração da área à bacia de evolução e manobras",
-        "dataInicio": "2028-02-20",
-        "dataFim": "2031-02-19",
-        "percentualCapex": 0.24,
-        "capexServicoTotal": 294354000.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 32,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "Disponibilidade de Infraestrutura",
-        "fase": "2ª",
-        "servico": "Implantação de Sistema",
-        "descricao": "Sistemas de Gerenciamento do Tráfego (VTS/VTMIS)",
-        "dataInicio": "2030-02-19",
-        "dataFim": null,
-        "percentualCapex": 0.01,
-        "capexServicoTotal": 12264750.0,
-        "capexServicoExec": null,
-        "percCapexExec": 0.0,
-        "dataCriacao": "2026-01-29 12:35:05"
-      }
-    ],
-    "acompanhamentos": [
-      {
-        "id": 12,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "1ª",
-        "servico": "Dragagem de Implantação de canal",
-        "descricao": "Evolução para  13,3m",
-        "percentualExecutada": 0.08,
-        "valorExecutado": 9811800.0,
-        "dataAtualizacao": "2031-10-08",
-        "responsavel": "Mateus",
-        "cargo": "Analista",
-        "setor": "PPI",
-        "riscosTipo": "Meio Ambiente",
-        "riscosDescricao": "Ainda não foi obtida Licença Operacional",
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 11,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "1ª",
-        "servico": "Dragagem de Implantação de canal",
-        "descricao": "Evolução para  13,3m",
-        "percentualExecutada": 0.15,
-        "valorExecutado": 18397125.0,
-        "dataAtualizacao": "2030-06-10",
-        "responsavel": "Mateus",
-        "cargo": "Analista",
-        "setor": "PPI",
-        "riscosTipo": "Financeiro",
-        "riscosDescricao": "Concessionária está com problemas financeiros para continuidade",
-        "dataCriacao": "2026-01-29 12:35:05"
-      },
-      {
-        "id": 10,
-        "idProjeto": "projeto-23",
-        "zonaPortuaria": "Não se aplica",
-        "uf": "PR",
-        "objConcessao": "Canal de Paranaguá",
-        "tipoServico": "CMO",
-        "fase": "1ª",
-        "servico": "Dragagem de Implantação de canal",
-        "descricao": "Evolução para  13,3m",
-        "percentualExecutada": 0.1,
-        "valorExecutado": 12264750.0,
-        "dataAtualizacao": "2029-06-06",
-        "responsavel": "Mateus",
-        "cargo": "Analista",
-        "setor": "PPI",
-        "riscosTipo": "Meio Ambiente",
-        "riscosDescricao": "Parte do trecho está com pendência de licenciamento ambiental",
-        "dataCriacao": "2026-01-29 12:35:05"
-      }
-    ]
-  },
-  {
-    "id": "projeto-20",
-    "zona": "Não se aplica",
-    "uf": "MT; MS",
-    "objConcessao": "Hidrovia do Paraguai",
-    "tipo": "Concessão",
-    "descricao": "Hidrovia no trecho brasileiro fazendo divisa com Paraguai e Bolívia.",
-    "capexTotal": 63796000.0,
-    "capexExecutado": 0,
-    "progresso": 0,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento",
-    "latitude": null,
-    "longitude": null,
-    "coordenadaEUTM": null,
-    "coordenadaSUTM": null,
-    "fuso": null,
-    "dataCriacao": "2026-01-29 12:35:05",
-    "dataAtualizacao": "2026-01-29 12:35:05",
-    "coordenadasLatLon": null,
-    "servicos": [],
-    "acompanhamentos": []
-  },
-  {
-    "id": "projeto-21",
-    "zona": "Porto Organizado de Maceió",
-    "uf": "AL",
-    "objConcessao": "TPM Macéio",
-    "tipo": "Arrendamento",
-    "descricao": "Terminal destinado a movimentação de passageiros.",
-    "capexTotal": 1978000.0,
-    "capexExecutado": 0,
-    "progresso": 0,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento",
-    "latitude": null,
-    "longitude": null,
-    "coordenadaEUTM": null,
-    "coordenadaSUTM": null,
-    "fuso": null,
-    "dataCriacao": "2026-01-29 12:35:05",
-    "dataAtualizacao": "2026-01-29 12:35:05",
-    "coordenadasLatLon": null,
-    "servicos": [],
-    "acompanhamentos": []
-  },
-  {
-    "id": "projeto-19",
-    "zona": "Porto Organizado de Santos",
-    "uf": "SP",
-    "objConcessao": "TECON 10",
-    "tipo": "Arrendamento",
-    "descricao": "Terminal destinado à movimentação e armazenagem de carga conteinerizada e carga geral.",
-    "capexTotal": 6454903000.0,
-    "capexExecutado": 40473675.0,
-    "progresso": 0.6270222031221848,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento",
-    "latitude": -23.926132,
-    "longitude": -46.34027,
-    "coordenadaEUTM": null,
-    "coordenadaSUTM": null,
-    "fuso": null,
-    "dataCriacao": "2026-01-29 12:35:05",
-    "dataAtualizacao": "2026-01-29 12:35:05",
-    "coordenadasLatLon": {
-      "lat": -23.926132,
-      "lon": -46.34027
-    },
-    "servicos": [],
-    "acompanhamentos": []
-  },
-  {
-    "id": "projeto-24",
-    "zona": "Porto Organizado de São Sebastião",
-    "uf": "SP",
-    "objConcessao": "SSB01",
-    "tipo": "Arrendamento",
-    "descricao": "Pátio de cargas para movimentação de carga conteinerizada, dentre outras.",
-    "capexTotal": 656085000.0,
-    "capexExecutado": 0,
-    "progresso": 0,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento",
-    "latitude": -23.812704,
-    "longitude": -45.400052,
-    "coordenadaEUTM": null,
-    "coordenadaSUTM": null,
-    "fuso": null,
-    "dataCriacao": "2026-01-29 12:35:05",
-    "dataAtualizacao": "2026-01-29 12:35:05",
-    "coordenadasLatLon": {
-      "lat": -23.812704,
-      "lon": -45.400052
-    },
-    "servicos": [],
-    "acompanhamentos": []
-  },
-  {
-    "id": "projeto-22",
-    "zona": "Porto Organizado do Rio de Janeiro",
-    "uf": "RJ",
-    "objConcessao": "RDJ07",
-    "tipo": "Arrendamento",
-    "descricao": "Terminal portuário destinado à movimentação e armazenagem de carga para apoio logístico Offshore.",
-    "capexTotal": 101741000.0,
-    "capexExecutado": 0,
-    "progresso": 0,
-    "dataAssinatura": null,
-    "etapa": "Em Andamento",
-    "latitude": -22.896621,
-    "longitude": -43.209639,
-    "coordenadaEUTM": null,
-    "coordenadaSUTM": null,
-    "fuso": null,
-    "dataCriacao": "2026-01-29 12:35:05",
-    "dataAtualizacao": "2026-01-29 12:35:05",
-    "coordenadasLatLon": {
-      "lat": -22.896621,
-      "lon": -43.209639
-    },
-    "servicos": [],
-    "acompanhamentos": []
-  }
-];
-let projetosFiltrados = [...projetosData];
-let currentProject = null;
-let isEditMode = false;
-
-// Substituir função loadData para usar dados embutidos
-function loadData() {
-    console.log('Carregando dados embutidos (versão estática):', projetosData.length, 'projetos');
-    projetosFiltrados = [...projetosData];
-    
-    // Gera o mapa de projetos
-    generateProjectsMap(projetosData);
-    
-    renderProjects();
-    console.log('Dados carregados:', projetosData.length, 'projetos');
-    
-    // Atualizar contador do mapa
-    if (typeof updateMapCounter === 'function') {
-        updateMapCounter(projetosData);
-    }
-    
-    // Adicionar event listeners
-    if (typeof addEventListeners === 'function') {
-        addEventListeners();
-    }
-}
+        let projetosData = [];
+        let projetosFiltrados = [];
+        let currentProject = null;
+        let isEditMode = false;
 
         // Função para converter UTM para Lat/Lon (WGS84)
         function utmToLatLon(easting, northing, zone) {
@@ -680,201 +931,171 @@ function loadData() {
             }
         }
 
-        // Carregar dados da API
+        // Carregar dados do arquivo data.js
         async function loadData() {
+  if (typeof dadosCompletos !== 'undefined') {
+    try { await loadFromDadosCompletos(); return; } catch(e) { console.error('Falha dadosCompletos', e); }
+  }
             try {
-                // Detecta se está no Vercel ou localhost
-                const isVercel = window.location.hostname.includes('vercel.app');
-                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                
-                let apiUrl;
-                if (isVercel) {
-                    apiUrl = 'https://motivated-patience-production-62b2.up.railway.app/api/projects';
-                } else if (isLocalhost) {
-                    apiUrl = `http://localhost:5000/api/projects?t=${new Date().getTime()}`;
-                } else {
-                    apiUrl = '/api/projects';
+                // Verificar se os dados foram carregados
+                if (typeof dadosPortos === 'undefined') {
+                    throw new Error('Dados não encontrados. Verifique se data.js foi carregado.');
                 }
+
+                const jsonData = dadosPortos;
                 
-                console.log('Tentando carregar da API:', apiUrl);
-                const response = await fetch(apiUrl);
+                console.log('Dados carregados em:', new Date().toLocaleString());
+                console.log('Registros encontrados:', jsonData['Tabela 00 - Cadastro']?.length || 0);
                 
-                if (!response.ok) {
-                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                console.log('Dados carregados da API em:', new Date().toLocaleString());
-                console.log('Registros encontrados:', data.length);
-                
-                // Processa os dados da API (já vem no formato correto)
-                projetosData = data.map((projeto, index) => {
-                    // Garante ID único
-                    projeto.id = projeto.id || `projeto-${index}`;
-                    return projeto;
+                const cadastros = jsonData['Tabela 00 - Cadastro'] || [];
+                const servicos = jsonData['Tabela 01 - Serviços'] || [];
+                const acompanhamentos = jsonData['Tabela 02 - Acompanhamento'] || [];
+
+                // Processar projetos (mantém lógica original)
+                projetosData = cadastros.map((cadastro, index) => {
+                    const projetoId = `projeto-${index}`;
+                    const zona = cadastro['Zona portuária'] || 'Não informado';
+                    const obj = cadastro['Obj. de Concessão'] || '';
+                    const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+
+                    // Buscar serviços relacionados
+                    const servicosProjeto = servicos.filter(s => 
+                        s['Zona portuária'] === cadastro['Zona portuária'] &&
+                        s['UF'] === cadastro['UF'] &&
+                        s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                    );
+
+                    // Buscar acompanhamentos relacionados
+                    const acompanhamentosProjeto = acompanhamentos.filter(a => 
+                        a['Zona portuária'] === cadastro['Zona portuária'] &&
+                        a['UF'] === cadastro['UF'] &&
+                        a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
+                    );
+
+                    // Calcular progresso baseado no acompanhamento mais recente
+                    let progresso = 0;
+                    if (acompanhamentosProjeto.length > 0) {
+                        const maisRecente = acompanhamentosProjeto.sort((a, b) => {
+                            const dataA = new Date(a['Data da atualização'] || 0);
+                            const dataB = new Date(b['Data da atualização'] || 0);
+                            return dataB - dataA;
+                        })[0];
+                        progresso = (maisRecente['% executada'] || 0) * 100;
+                    }
+
+                    // ETAPA baseada no status dos serviços
+                    let etapa = 'Planejamento';
+                    const servicosEmExecucao = servicosProjeto.filter(s => {
+                        if (!s['Data de início'] || !s['Data final']) return false;
+                        const inicio = new Date(s['Data de início']);
+                        const fim = new Date(s['Data final']);
+                        const hoje = new Date();
+                        return hoje >= inicio && hoje <= fim;
+                    });
+                    if (servicosEmExecucao.length > 0) {
+                        etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
+                    } else if (progresso > 0) {
+                        etapa = 'Em execução';
+                    }
+
+                    // Mapa - converter coordenadas se disponível
+                    let mapaEmbed = null;
+                    let coordenadasLatLon = null;
+                    
+                    // Verifica se já tem Lat/Lon direto ou precisa converter UTM
+                    if (cadastro['Latitude'] && cadastro['Longitude']) {
+                        // Usa coordenadas diretas (Lat/Lon)
+                        coordenadasLatLon = {
+                            lat: parseFloat(cadastro['Latitude']),
+                            lon: parseFloat(cadastro['Longitude'])
+                        };
+                        console.log(`Usando coordenadas diretas para ${nomeProjeto}:`, coordenadasLatLon);
+                    } else if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
+                        // Converte de UTM para Lat/Lon
+                        const coordE = parseFloat(cadastro['Coordenada E (UTM)']);
+                        const coordS = parseFloat(cadastro['Coordenada S (UTM)']);
+                        const fuso = parseInt(cadastro['Fuso']);
+                        
+                        console.log(`Convertendo coordenadas UTM para ${nomeProjeto}:`, {coordE, coordS, fuso});
+                        
+                        const latLon = utmToLatLon(coordE, coordS, fuso);
+                        if (latLon && !isNaN(latLon.lat) && !isNaN(latLon.lon)) {
+                            coordenadasLatLon = latLon;
+                            console.log(`Coordenadas convertidas para ${nomeProjeto}:`, latLon);
+                        } else {
+                            console.warn(`Falha na conversão de coordenadas UTM para ${nomeProjeto}:`, latLon);
+                        }
+                    } else {
+                        console.log(`Coordenadas não disponíveis para ${nomeProjeto}:`, {
+                            latitude: cadastro['Latitude'],
+                            longitude: cadastro['Longitude'],
+                            easting: cadastro['Coordenada E (UTM)'],
+                            northing: cadastro['Coordenada S (UTM)'],
+                            zone: cadastro['Fuso']
+                        });
+                    }
+                    
+                    // Gera o mapa se tiver coordenadas válidas
+                    if (coordenadasLatLon && !isNaN(coordenadasLatLon.lat) && !isNaN(coordenadasLatLon.lon)) {
+                        // Usar OpenStreetMap com bounding box adequada
+                        const bboxSize = 0.02; // ~2km de bbox
+                        const bbox = `${coordenadasLatLon.lon-bboxSize},${coordenadasLatLon.lat-bboxSize},${coordenadasLatLon.lon+bboxSize},${coordenadasLatLon.lat+bboxSize}`;
+                        
+                        mapaEmbed = `
+                            <div class="w-full h-full relative">
+                                <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    style="border:0; border-radius: 8px;" 
+                                    src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordenadasLatLon.lat},${coordenadasLatLon.lon}" 
+                                    frameborder="0"
+                                    allowfullscreen>
+                                </iframe>
+                                <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
+                                    📍 ${coordenadasLatLon.lat.toFixed(6)}, ${coordenadasLatLon.lon.toFixed(6)}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    return {
+                        id: projetoId,
+                        nome: nomeProjeto,
+                        zona: zona,
+                        uf: cadastro['UF'] || '',
+                        objConcessao: obj,
+                        tipo: cadastro['Tipo'] || '',
+                        capexTotal: cadastro['CAPEX Total'] || 0,
+                        dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
+                        descricao: cadastro['Descrição'] || 'Sem descrição disponível',
+                        progresso: progresso,
+                        etapa: etapa,
+                        servicos: servicosProjeto,
+                        acompanhamentos: acompanhamentosProjeto,
+                        mapaEmbed: mapaEmbed,
+                        coordenadas: {
+                            e: cadastro['Coordenada E (UTM)'],
+                            s: cadastro['Coordenada S (UTM)'],
+                            fuso: cadastro['Fuso'],
+                            latitude: cadastro['Latitude'],
+                            longitude: cadastro['Longitude']
+                        },
+                        coordenadasLatLon: coordenadasLatLon
+                    };
                 });
 
                 projetosFiltrados = [...projetosData];
                 renderProjects();
+                console.log('Dados carregados com sucesso! Total de projetos:', projetosData.length);
             } catch (error) {
-                console.error('Erro ao carregar dados da API:', error);
-                
-                // Tenta carregar do JSON como fallback
-                console.log('Tentando carregar do JSON como fallback...');
-                try {
-                    const timestamp = new Date().getTime();
-                    const response = await fetch(`planilha_portos.json?t=${timestamp}`);
-                    const jsonData = await response.json();
-                    
-                    console.log('Dados carregados do JSON em:', new Date().toLocaleString());
-                    console.log('Registros encontrados:', jsonData['Tabela 00 - Cadastro']?.length || 0);
-                    
-                    const cadastros = jsonData['Tabela 00 - Cadastro'] || [];
-                    const servicos = jsonData['Tabela 01 - Serviços'] || [];
-                    const acompanhamentos = jsonData['Tabela 02 - Acompanhamento'] || [];
-
-                    // Processar projetos (mantém lógica original)
-                    projetosData = cadastros.map((cadastro, index) => {
-                        const projetoId = `projeto-${index}`;
-                        const zona = cadastro['Zona portuária'] || 'Não informado';
-                        const obj = cadastro['Obj. de Concessão'] || '';
-                        const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
-
-                        // Buscar serviços relacionados
-                        const servicosProjeto = servicos.filter(s => 
-                            s['Zona portuária'] === cadastro['Zona portuária'] &&
-                            s['UF'] === cadastro['UF'] &&
-                            s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                        );
-
-                        // Buscar acompanhamentos relacionados
-                        const acompanhamentosProjeto = acompanhamentos.filter(a => 
-                            a['Zona portuária'] === cadastro['Zona portuária'] &&
-                            a['UF'] === cadastro['UF'] &&
-                            a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
-                        );
-
-                        // Calcular progresso baseado no acompanhamento mais recente
-                        let progresso = 0;
-                        if (acompanhamentosProjeto.length > 0) {
-                            const maisRecente = acompanhamentosProjeto.sort((a, b) => {
-                                const dataA = new Date(a['Data da atualização'] || 0);
-                                const dataB = new Date(b['Data da atualização'] || 0);
-                                return dataB - dataA;
-                            })[0];
-                            progresso = (maisRecente['% executada'] || 0) * 100;
-                        }
-
-                        // ETAPA baseada no status dos serviços
-                        let etapa = 'Planejamento';
-                        const servicosEmExecucao = servicosProjeto.filter(s => {
-                            if (!s['Data de início'] || !s['Data final']) return false;
-                            const inicio = new Date(s['Data de início']);
-                            const fim = new Date(s['Data final']);
-                            const hoje = new Date();
-                            return hoje >= inicio && hoje <= fim;
-                        });
-                        if (servicosEmExecucao.length > 0) {
-                            etapa = `Execução - ${servicosEmExecucao.length} serviço(s) em andamento`;
-                        } else if (progresso > 0) {
-                            etapa = 'Em execução';
-                        }
-
-                        // Mapa - converter coordenadas se disponível
-                        let mapaEmbed = null;
-                        let coordenadasLatLon = null;
-                        
-                        // Verifica se já tem Lat/Lon direto ou precisa converter UTM
-                        if (cadastro['Latitude'] && cadastro['Longitude']) {
-                            // Usa coordenadas diretas (Lat/Lon)
-                            coordenadasLatLon = {
-                                lat: parseFloat(cadastro['Latitude']),
-                                lon: parseFloat(cadastro['Longitude'])
-                            };
-                            console.log(`Usando coordenadas diretas para ${nomeProjeto}:`, coordenadasLatLon);
-                        } else if (cadastro['Coordenada E (UTM)'] && cadastro['Coordenada S (UTM)'] && cadastro['Fuso']) {
-                            // Converte de UTM para Lat/Lon
-                            const coordE = parseFloat(cadastro['Coordenada E (UTM)']);
-                            const coordS = parseFloat(cadastro['Coordenada S (UTM)']);
-                            const fuso = parseInt(cadastro['Fuso']);
-                            
-                            console.log(`Convertendo coordenadas UTM para ${nomeProjeto}:`, {coordE, coordS, fuso});
-                            
-                            const latLon = utmToLatLon(coordE, coordS, fuso);
-                            if (latLon && !isNaN(latLon.lat) && !isNaN(latLon.lon)) {
-                                coordenadasLatLon = latLon;
-                                console.log(`Coordenadas convertidas para ${nomeProjeto}:`, latLon);
-                            } else {
-                                console.warn(`Falha na conversão de coordenadas UTM para ${nomeProjeto}:`, latLon);
-                            }
-                        } else {
-                            console.log(`Coordenadas não disponíveis para ${nomeProjeto}:`, {
-                                latitude: cadastro['Latitude'],
-                                longitude: cadastro['Longitude'],
-                                easting: cadastro['Coordenada E (UTM)'],
-                                northing: cadastro['Coordenada S (UTM)'],
-                                zone: cadastro['Fuso']
-                            });
-                        }
-                        
-                        // Gera o mapa se tiver coordenadas válidas
-                        if (coordenadasLatLon && !isNaN(coordenadasLatLon.lat) && !isNaN(coordenadasLatLon.lon)) {
-                            // Usar OpenStreetMap com bounding box adequada
-                            const bboxSize = 0.02; // ~2km de bbox
-                            const bbox = `${coordenadasLatLon.lon-bboxSize},${coordenadasLatLon.lat-bboxSize},${coordenadasLatLon.lon+bboxSize},${coordenadasLatLon.lat+bboxSize}`;
-                            
-                            mapaEmbed = `
-                                <div class="w-full h-full relative">
-                                    <iframe 
-                                        width="100%" 
-                                        height="100%" 
-                                        style="border:0; border-radius: 8px;" 
-                                        src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordenadasLatLon.lat},${coordenadasLatLon.lon}" 
-                                        frameborder="0"
-                                        allowfullscreen>
-                                    </iframe>
-                                    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
-                                        📍 ${coordenadasLatLon.lat.toFixed(6)}, ${coordenadasLatLon.lon.toFixed(6)}
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        return {
-                            id: projetoId,
-                            nome: nomeProjeto,
-                            zona: zona,
-                            uf: cadastro['UF'] || '',
-                            objConcessao: obj,
-                            tipo: cadastro['Tipo'] || '',
-                            capexTotal: cadastro['CAPEX Total'] || 0,
-                            dataAssinatura: cadastro['Data de assinatura do contrato'] || null,
-                            descricao: cadastro['Descrição'] || 'Sem descrição disponível',
-                            progresso: progresso,
-                            etapa: etapa,
-                            servicos: servicosProjeto,
-                            acompanhamentos: acompanhamentosProjeto,
-                            mapaEmbed: mapaEmbed,
-                            coordenadas: {
-                                e: cadastro['Coordenada E (UTM)'],
-                                s: cadastro['Coordenada S (UTM)'],
-                                fuso: cadastro['Fuso'],
-                                latitude: cadastro['Latitude'],
-                                longitude: cadastro['Longitude']
-                            },
-                            coordenadasLatLon: coordenadasLatLon
-                        };
-                    });
-
-                    projetosFiltrados = [...projetosData];
-                    renderProjects();
-                    console.log('Dados carregados do JSON com sucesso!');
-                } catch (jsonError) {
-                    console.error('Erro ao carregar do JSON:', jsonError);
-                    document.getElementById('projects-grid').innerHTML = 
-                        '<div class="col-span-full text-center text-white p-8"><p>Erro ao carregar dados. Verifique se o servidor está rodando ou o arquivo JSON está disponível.</p></div>';
-                }
+                console.error('Erro ao carregar dados:', error);
+                const errorMsg = error.message || 'Erro ao carregar dados';
+                document.getElementById('projects-grid').innerHTML = 
+                    `<div class="col-span-full text-center text-white p-8">
+                        <p class="mb-4">Não foi possível carregar os projetos.</p>
+                        <p class="text-sm text-gray-300 mb-4">Erro: ${errorMsg}</p>
+                        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Tente novamente</button>
+                    </div>`;
             }
         }
 
@@ -933,18 +1154,8 @@ function loadData() {
                 // Extrai ID numérico do ID do frontend (ex: "projeto-541" -> 541)
                 const numericId = projectId.replace('projeto-', '');
                 
-                // Carrega dados completos do projeto
-                const isVercel = window.location.hostname.includes('vercel.app');
-                const apiUrl = isVercel 
-                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
-                    : '/api/projects';
-                    
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar detalhes do projeto');
-                }
-                
-                const allProjects = await response.json();
+                // Carrega dados completos do projeto usando dados já carregados
+                const allProjects = projetosData;
                 const project = allProjects.find(p => p.id === projectId);
                 
                 if (!project) {
@@ -2278,90 +2489,9 @@ function loadData() {
         }
 
         async function saveServicesChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Coleta os dados da tabela
-                const servicosAtualizados = [];
-                
-                if (currentProject.servicos && currentProject.servicos.length > 0) {
-                    currentProject.servicos.forEach((servico, index) => {
-                        const tipoServicoInput = document.getElementById(`tipo-servico-${index}`);
-                        const faseInput = document.getElementById(`fase-${index}`);
-                        const servicoInput = document.getElementById(`servico-${index}`);
-                        const descricaoInput = document.getElementById(`descricao-${index}`);
-                        const dataInicioInput = document.getElementById(`data-inicio-${index}`);
-                        const dataFinalInput = document.getElementById(`data-final-${index}`);
-                        const capexTotalInput = document.getElementById(`capex-total-${index}`);
-                        const capexExecInput = document.getElementById(`capex-exec-${index}`);
-                        const percCapexExecInput = document.getElementById(`perc-capex-exec-${index}`);
-                        
-                        if (tipoServicoInput) {
-                            servicosAtualizados.push({
-                                ...servico,
-                                tipo_servico: tipoServicoInput.value,
-                                fase: faseInput ? faseInput.value : '',
-                                servico: servicoInput ? servicoInput.value : '',
-                                descricao_servico: descricaoInput ? descricaoInput.value : '',
-                                data_inicio: dataInicioInput ? dataInicioInput.value : '',
-                                data_final: dataFinalInput ? dataFinalInput.value : '',
-                                capex_servico_total: capexTotalInput ? parseFloat(capexTotalInput.value) : 0,
-                                capex_servico_exec: capexExecInput ? parseFloat(capexExecInput.value) : 0,
-                                perc_capex_exec: percCapexExecInput ? parseFloat(percCapexExecInput.value) : 0
-                            });
-                        }
-                    });
-                }
-                
-                // Salva cada serviço
-                for (const servico of servicosAtualizados) {
-                    if (servico.id && servico.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/servicos', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...servico,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/servicos/${servico.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(servico)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Serviços atualizados com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isServicesEditMode = false;
-                const editBtn = document.getElementById('edit-services-btn');
-                const editBtnText = document.getElementById('edit-services-btn-text');
-                if (editBtn) {
-                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    editBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    editBtnText.textContent = 'Editar Serviços';
-                }
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar serviços:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações dos serviços');
-            }
+            // Funcionalidade desabilitada - página estática sem backend
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
         }
 
         function editService(index) {
@@ -2543,76 +2673,8 @@ function loadData() {
         }
 
         async function saveServiceAcompanhamentoChanges(servicoNome) {
-            try {
-                // Coleta os dados da tabela
-                const serviceAcompanhamentos = currentProject.acompanhamentos.filter(
-                    a => a.servico === servicoNome
-                );
-                
-                const acompanhamentosAtualizados = [];
-                
-                serviceAcompanhamentos.forEach((acompanhamento, index) => {
-                    const faseInput = document.getElementById(`service-fase-${index}`);
-                    const servicoInput = document.getElementById(`service-servico-${index}`);
-                    const percentualInput = document.getElementById(`service-percentual-${index}`);
-                    const valorInput = document.getElementById(`service-valor-${index}`);
-                    const dataInput = document.getElementById(`service-data-${index}`);
-                    const responsavelInput = document.getElementById(`service-responsavel-${index}`);
-                    const descricaoInput = document.getElementById(`service-descricao-${index}`);
-                    
-                    if (faseInput) {
-                        acompanhamentosAtualizados.push({
-                            ...acompanhamento,
-                            fase: faseInput.value,
-                            servico: servicoInput ? servicoInput.value : '',
-                            percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
-                            valor_executado: parseFloat(valorInput ? valorInput.value : 0),
-                            data_atualizacao: dataInput ? dataInput.value : '',
-                            responsavel: responsavelInput ? responsavelInput.value : '',
-                            descricao: descricaoInput ? descricaoInput.value : ''
-                        });
-                    }
-                });
-                
-                // Salva cada acompanhamento
-                for (const acompanhamento of acompanhamentosAtualizados) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Acompanhamento do serviço atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para detalhes do projeto
-                backToProjectDetails();
-                
-            } catch (error) {
-                console.error('Erro ao salvar acompanhamento do serviço:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
-            }
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
         }
 
         function backToProjectDetails() {
@@ -2983,41 +3045,10 @@ function loadData() {
         }
 
         // Carregar dados ao iniciar
-        async function loadData() {
-            try {
-                // Detecta se está no Vercel e usa API do Railway
-                const isVercel = window.location.hostname.includes('vercel.app');
-                const apiUrl = isVercel 
-                    ? 'https://motivated-patience-production-62b2.up.railway.app/api/projects'
-                    : '/api/projects';
-                
-                console.log('Carregando dados da API:', apiUrl);
-                const response = await fetch(apiUrl);
-                projetosData = await response.json();
-                projetosFiltrados = [...projetosData];
-                
-                // Gera o mapa de projetos
-                generateProjectsMap(projetosData);
-                
-                renderProjects();
-                console.log('Dados carregados:', projetosData.length, 'projetos');
-                
-                // Atualizar contador do mapa
-                updateMapCounter(projetosData);
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                // Mostra mensagem de erro
-                document.getElementById('projects-grid').innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Erro ao carregar dados</h3>
-                        <p class="text-gray-600">Não foi possível carregar os projetos. Tente novamente mais tarde.</p>
-                        <button onclick="loadData()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                            <i class="fas fa-sync-alt mr-2"></i>Tentar Novamente
-                        </button>
-                    </div>
-                `;
-            }
+        async function loadDataOld() {
+            // FUNÇÃO DESCONTINUADA - use loadData() que carrega de dadosPortos
+            showToast('error', 'Erro', 'Função descontinuada');
+            return;
         }
         
         // Atualizar contador do mapa quando os dados carregarem
@@ -3196,93 +3227,11 @@ function loadData() {
         }
 
         async function saveAcompanhamentoChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Coleta os dados da tabela
-                const acompanhamentosAtualizados = [];
-                
-                if (currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0) {
-                    currentProject.acompanhamentos.forEach((acompanhamento, index) => {
-                        const faseInput = document.getElementById(`fase-${index}`);
-                        const servicoInput = document.getElementById(`servico-${index}`);
-                        const descricaoInput = document.getElementById(`descricao-${index}`);
-                        const percentualInput = document.getElementById(`percentual-${index}`);
-                        const valorInput = document.getElementById(`valor-${index}`);
-                        const dataInput = document.getElementById(`data-${index}`);
-                        const responsavelInput = document.getElementById(`responsavel-${index}`);
-                        const cargoInput = document.getElementById(`cargo-${index}`);
-                        const setorInput = document.getElementById(`setor-${index}`);
-                        const riscosTipoInput = document.getElementById(`riscos-tipo-${index}`);
-                        const riscosDescricaoInput = document.getElementById(`riscos-descricao-${index}`);
-                        
-                        if (faseInput) {
-                            acompanhamentosAtualizados.push({
-                                ...acompanhamento,
-                                fase: faseInput.value,
-                                servico: servicoInput ? servicoInput.value : '',
-                                descricao: descricaoInput ? descricaoInput.value : '',
-                                percentual_executada: parseFloat(percentualInput ? percentualInput.value : 0),
-                                valor_executado: parseFloat(valorInput ? valorInput.value : 0),
-                                data_atualizacao: dataInput ? dataInput.value : '',
-                                responsavel: responsavelInput ? responsavelInput.value : '',
-                                cargo: cargoInput ? cargoInput.value : '',
-                                setor: setorInput ? setorInput.value : '',
-                                riscos_tipo: riscosTipoInput ? riscosTipoInput.value : '',
-                                riscos_descricao: riscosDescricaoInput ? riscosDescricaoInput.value : ''
-                            });
-                        }
-                    });
-                }
-                
-                // Salva cada acompanhamento
-                for (const acompanhamento of acompanhamentosAtualizados) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id.replace('projeto-', '')
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Acompanhamento atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isEditMode = false;
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Editar Acompanhamento';
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar acompanhamento:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações do acompanhamento');
-            }
+            // Funcionalidade desabilitada - página estática sem backend
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
         }
+        
 
         function renderEditMode() {
             if (!currentProject) return;
@@ -3473,78 +3422,8 @@ function loadData() {
         }
 
         async function saveChanges() {
-            if (!currentProject) return;
-            
-            try {
-                // Prepara dados do projeto
-                const projectData = {
-                    zona_portuaria: document.getElementById('edit-zona').value,
-                    uf: document.getElementById('edit-uf').value,
-                    obj_concessao: document.getElementById('edit-obj').value,
-                    capex_total: parseFloat(document.getElementById('edit-capex').value) || 0,
-                    descricao: document.getElementById('edit-descricao').value
-                };
-                
-                // Atualiza projeto
-                const projectResponse = await fetch(`/api/projects/${currentProject.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(projectData)
-                });
-                
-                if (!projectResponse.ok) {
-                    throw new Error('Erro ao atualizar projeto');
-                }
-                
-                // Salva acompanhamentos
-                for (const acompanhamento of currentProject.acompanhamentos) {
-                    if (acompanhamento.id && acompanhamento.id.toString().length < 13) {
-                        // ID temporário, criar novo
-                        await fetch('/api/acompanhamento', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                ...acompanhamento,
-                                projeto_id: currentProject.id
-                            })
-                        });
-                    } else {
-                        // ID existente, atualizar
-                        await fetch(`/api/acompanhamento/${acompanhamento.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(acompanhamento)
-                        });
-                    }
-                }
-                
-                // Mostra sucesso
-                showToast('success', 'Sucesso!', 'Projeto atualizado com sucesso!');
-                
-                // Recarrega dados
-                await loadData();
-                
-                // Volta para modo visualização
-                isEditMode = false;
-                const editBtn = document.getElementById('edit-project-btn');
-                const editBtnText = document.getElementById('edit-btn-text');
-                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                editBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
-                editBtnText.textContent = 'Alterar Andamento';
-                
-                // Renderiza modo visualização
-                renderProjectDetails(currentProject.id);
-                
-            } catch (error) {
-                console.error('Erro ao salvar alterações:', error);
-                showToast('error', 'Erro!', 'Falha ao salvar alterações');
-            }
+            showToast('info', 'Informação', 'Edição não disponível. Esta é uma versão estática de visualização.');
+            return;
         }
 
         function cancelEdit() {
