@@ -627,10 +627,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="flex-1 space-y-6">
                             <!-- Informações Básicas -->
                             <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-info-circle text-blue-600"></i>
-                                    Informações do Projeto
-                                </h3>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                        <i class="fas fa-info-circle text-blue-600"></i>
+                                        Informações do Projeto
+                                    </h3>
+                                    <button onclick="toggleProjectInfoEdit()" 
+                                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-all duration-300">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
@@ -795,58 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
 
-                            <!-- Acompanhamento -->
-                            <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-chart-line text-blue-600"></i>
-                                    Acompanhamento
-                                </h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full border-collapse border border-gray-300 text-sm">
-                                        <thead class="bg-gray-100">
-                                            <tr>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Fase</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Serviço</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">% Executada</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Valor Executado</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Data</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Responsável</th>
-                                                <th class="border border-gray-300 px-2 py-1 text-xs">Descrição</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${currentProject.acompanhamentos && currentProject.acompanhamentos.length > 0 ? 
-                                                currentProject.acompanhamentos.map(acompanhamento => {
-                                                    let percentual = parseFloat(acompanhamento.percentual_executada) || 0;
-                                                    if (percentual < 1) {
-                                                        percentual = percentual * 100;
-                                                    }
-                                                    percentual = Math.round(percentual);
-                                                    
-                                                    return `
-                                                        <tr class="hover:bg-gray-50">
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.fase || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.servico || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1 text-center">
-                                                                ${generateDonutChart(percentual)}
-                                                            </td>
-                                                            <td class="border border-gray-300 px-2 py-1">R$ ${formatCurrency(acompanhamento.valor_executado || 0)}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${formatDate(acompanhamento.data_atualizacao) || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.responsavel || '-'}</td>
-                                                            <td class="border border-gray-300 px-2 py-1">${acompanhamento.descricao || '-'}</td>
-                                                        </tr>
-                                                    `;
-                                                }).join('') : 
-                                                `<tr>
-                                                    <td colspan="7" class="border border-gray-300 px-2 py-4 text-center text-gray-500">
-                                                        Nenhum acompanhamento cadastrado
-                                                    </td>
-                                                </tr>`
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 `;
@@ -1477,10 +1432,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="flex-1 space-y-6">
                             <!-- Informações Básicas -->
                             <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-info-circle text-blue-600"></i>
-                                    Informações do Projeto
-                                </h3>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                        <i class="fas fa-info-circle text-blue-600"></i>
+                                        Informações do Projeto
+                                    </h3>
+                                    <button onclick="toggleProjectInfoEdit()" 
+                                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-all duration-300">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
@@ -1639,10 +1601,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="flex-1 space-y-6">
                             <!-- Informações Básicas -->
                             <div class="bg-gray-50 rounded-xl p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <i class="fas fa-info-circle text-blue-600"></i>
-                                    Informações do Projeto
-                                </h3>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                        <i class="fas fa-info-circle text-blue-600"></i>
+                                        Informações do Projeto
+                                    </h3>
+                                    <button onclick="toggleProjectInfoEdit()" 
+                                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-all duration-300">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
@@ -3191,6 +3160,132 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Renderiza modo visualização
             renderProjectDetails(currentProject.id);
+        }
+
+        let isProjectInfoEditMode = false;
+
+        function toggleProjectInfoEdit() {
+            isProjectInfoEditMode = !isProjectInfoEditMode;
+            
+            if (isProjectInfoEditMode) {
+                renderProjectInfoEditMode();
+            } else {
+                renderProjectDetails(currentProject.id);
+            }
+        }
+
+        function renderProjectInfoEditMode() {
+            if (!currentProject) return;
+            
+            const modalBody = document.getElementById('modal-body');
+            
+            // Encontra o card de informações do projeto e substitui pelo formulário de edição
+            const infoCard = modalBody.querySelector('.bg-gray-50.rounded-xl.p-6');
+            if (infoCard) {
+                infoCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-edit text-blue-600"></i>
+                            Editar Informações do Projeto
+                        </h3>
+                        <div class="flex gap-2">
+                            <button onclick="saveProjectInfo()" 
+                                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-all duration-300">
+                                <i class="fas fa-save"></i>
+                                <span>Salvar</span>
+                            </button>
+                            <button onclick="toggleProjectInfoEdit()" 
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-all duration-300">
+                                <i class="fas fa-times"></i>
+                                <span>Cancelar</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <form id="project-info-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Zona Portuária:</label>
+                                <input type="text" id="edit-zona" value="${currentProject.zona || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">UF:</label>
+                                <input type="text" id="edit-uf" value="${currentProject.uf || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Objeto de Concessão:</label>
+                                <input type="text" id="edit-objConcessao" value="${currentProject.objConcessao || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo:</label>
+                                <input type="text" id="edit-tipo" value="${currentProject.tipo || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CAPEX Total:</label>
+                                <input type="number" id="edit-capexTotal" value="${currentProject.capexTotal || 0}" step="0.01"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Data Assinatura:</label>
+                                <input type="date" id="edit-dataAssinatura" value="${currentProject.dataAssinatura || ''}" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descrição:</label>
+                            <textarea id="edit-descricao" rows="3" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">${currentProject.descricao || ''}</textarea>
+                        </div>
+                    </form>
+                `;
+            }
+        }
+
+        async function saveProjectInfo() {
+            if (!currentProject) return;
+            
+            const projectId = currentProject.id.replace('projeto-', '');
+            
+            const updatedData = {
+                zona_portuaria: document.getElementById('edit-zona').value,
+                uf: document.getElementById('edit-uf').value,
+                obj_concessao: document.getElementById('edit-objConcessao').value,
+                tipo: document.getElementById('edit-tipo').value,
+                capex_total: parseFloat(document.getElementById('edit-capexTotal').value) || 0,
+                data_assinatura: document.getElementById('edit-dataAssinatura').value,
+                descricao: document.getElementById('edit-descricao').value
+            };
+            
+            try {
+                const response = await fetch(`/api/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+                
+                if (response.ok) {
+                    // Atualiza os dados locais
+                    Object.assign(currentProject, updatedData);
+                    
+                    // Volta para o modo de visualização
+                    isProjectInfoEditMode = false;
+                    renderProjectDetails(currentProject.id);
+                    
+                    showToast('success', 'Sucesso!', 'Informações do projeto atualizadas com sucesso!');
+                } else {
+                    const error = await response.json();
+                    showToast('error', 'Erro!', error.error || 'Falha ao atualizar informações do projeto');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar informações do projeto:', error);
+                showToast('error', 'Erro!', 'Falha ao conectar com o servidor');
+            }
         }
 
         function showToast(type, title, message) {
