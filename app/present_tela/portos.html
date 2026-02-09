@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Concessões Portuárias - Apresentação</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS - Em produção, considere instalar via npm/build -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -371,20 +372,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Processar projetos (mantém lógica original)
                     projetosData = cadastros.map((cadastro, index) => {
                         const projetoId = `projeto-${index}`;
-                        const zona = cadastro['Zona portuária'] || 'Não informado';
+                        const setor = cadastro['Setor'] || 'Não informado';
+                        const local = cadastro['Local'] || 'Não informado';
                         const obj = cadastro['Obj. de Concessão'] || '';
-                        const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
+                        const nomeProjeto = local === 'Não se aplica' ? obj : `${local} - ${obj}`;
 
                         // Buscar serviços relacionados
                         const servicosProjeto = servicos.filter(s => 
-                            s['Zona portuária'] === cadastro['Zona portuária'] &&
+                            s['Local'] === cadastro['Local'] &&
                             s['UF'] === cadastro['UF'] &&
                             s['Obj. de Concessão'] === cadastro['Obj. de Concessão']
                         );
 
                         // Buscar acompanhamentos relacionados
                         const acompanhamentosProjeto = acompanhamentos.filter(a => 
-                            a['Zona portuária'] === cadastro['Zona portuária'] &&
+                            a['Local'] === cadastro['Local'] &&
                             a['UF'] === cadastro['UF'] &&
                             a['Obj. de Concessão'] === cadastro['Obj. de Concessão']
                         );
@@ -478,7 +480,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return {
                             id: projetoId,
                             nome: nomeProjeto,
-                            zona: zona,
+                            setor: setor,
+                            local: local,
                             uf: cadastro['UF'] || '',
                             objConcessao: obj,
                             tipo: cadastro['Tipo'] || '',
@@ -614,13 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     servicesBtnText.textContent = 'Editar Serviços';
                 }
                 
-                // Configura título
-                const zona = currentProject.zona || 'Não informado';
-                const obj = currentProject.objConcessao || '';
-                const nomeProjeto = zona === 'Não se aplica' ? obj : `${zona} - ${obj}`;
-                modalTitle.textContent = nomeProjeto;
-                
-                // Renderiza modo visualização com layout horizontal
+                // Renderiza conteúdo do modal
                 modalBody.innerHTML = `
                     <div class="flex flex-col lg:flex-row gap-6">
                         <!-- Coluna Esquerda: Informações Básicas e Mapa -->
@@ -640,8 +637,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <span class="text-sm font-medium text-gray-600">Zona Portuária:</span>
-                                        <span class="text-gray-800 ml-2">${currentProject.zona || 'Não se aplica'}</span>
+                                        <span class="text-sm font-medium text-gray-600">Setor:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.setor || 'Não se aplica'}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-600">Local:</span>
+                                        <span class="text-gray-800 ml-2">${currentProject.local || 'Não se aplica'}</span>
                                     </div>
                                     <div>
                                         <span class="text-sm font-medium text-gray-600">UF:</span>
@@ -709,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                             
                                             return `
                                                 <div class="service-card bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-200" 
-                                                     onclick="showServiceDetails(${index})">
+                                                     onclick="handleServiceCardClick(event, ${index})">
                                                     <div class="p-4">
                                                         <!-- Cabeçalho do Card -->
                                                         <div class="flex justify-between items-start mb-3">
@@ -727,8 +728,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            <div class="text-center">
-                                                                ${generateDonutChart(Math.round(percCapexExec))}
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="text-center">
+                                                                    ${generateDonutChart(Math.round(percCapexExec))}
+                                                                </div>
+                                                                <button onclick="editServiceInline(${index})" 
+                                                                        class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-all duration-200"
+                                                                        title="Editar serviço">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
                                                             </div>
                                                         </div>
                                                         
@@ -2037,6 +2045,246 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('Erro ao salvar serviços:', error);
                 showToast('error', 'Erro!', 'Falha ao salvar alterações dos serviços');
+            }
+        }
+
+        let editingServiceIndex = null;
+
+        function handleServiceCardClick(event, index) {
+            // Verifica se o clique foi no botão de edição
+            if (event.target.closest('button[onclick*="editServiceInline"]')) {
+                return; // Não faz nada, deixando o botão tratar
+            }
+            
+            // Se não foi no botão de edição, mostra detalhes do serviço
+            showServiceDetails(index);
+        }
+
+        function editServiceInline(index) {
+            if (editingServiceIndex !== null && editingServiceIndex !== index) {
+                // Se já está editando outro serviço, cancela primeiro
+                cancelServiceInlineEdit();
+            }
+            
+            if (editingServiceIndex === index) {
+                // Se já está editando este serviço, salva
+                saveServiceInlineEdit(index);
+                return;
+            }
+            
+            editingServiceIndex = index;
+            const servico = currentProject.servicos[index];
+            
+            // Encontra o card do serviço e substitui pelo formulário de edição
+            const serviceCard = document.querySelector(`.service-card:nth-child(${index + 1})`);
+            if (serviceCard) {
+                serviceCard.innerHTML = `
+                    <div class="p-4">
+                        <!-- Cabeçalho de Edição -->
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-edit text-blue-500"></i>
+                                <span class="font-semibold text-gray-800">Editando Serviço</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="saveServiceInlineEdit(${index})" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all duration-200">
+                                    <i class="fas fa-save"></i>
+                                    <span>Salvar</span>
+                                </button>
+                                <button onclick="cancelServiceInlineEdit()" 
+                                        class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all duration-200">
+                                    <i class="fas fa-times"></i>
+                                    <span>Cancelar</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Formulário de Edição -->
+                        <div class="space-y-4">
+                            <!-- Tipo e Fase -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de Serviço</label>
+                                    <input type="text" 
+                                           id="inline-tipo-servico-${index}"
+                                           value="${servico.tipo_servico || ''}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                           placeholder="Tipo de Serviço">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Fase</label>
+                                    <input type="text" 
+                                           id="inline-fase-${index}"
+                                           value="${servico.fase || ''}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                           placeholder="Fase">
+                                </div>
+                            </div>
+                            
+                            <!-- Nome e Descrição -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Nome do Serviço</label>
+                                    <input type="text" 
+                                           id="inline-servico-${index}"
+                                           value="${servico.servico || ''}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                           placeholder="Nome do serviço">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Descrição</label>
+                                    <input type="text" 
+                                           id="inline-descricao-${index}"
+                                           value="${servico.descricao_servico || ''}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                           placeholder="Descrição do serviço">
+                                </div>
+                            </div>
+                            
+                            <!-- Datas -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">
+                                        <i class="fas fa-calendar-alt mr-1"></i>Data de Início
+                                    </label>
+                                    <input type="date" 
+                                           id="inline-data-inicio-${index}"
+                                           value="${servico.data_inicio || ''}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">
+                                        <i class="fas fa-calendar-check mr-1"></i>Data Final
+                                    </label>
+                                    <input type="date" 
+                                           id="inline-data-final-${index}"
+                                           value="${servico.data_final || ''}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                            
+                            <!-- Valores CAPEX -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fas fa-dollar-sign text-green-600"></i>
+                                    <span class="text-sm font-semibold text-gray-700">Valores CAPEX</span>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">CAPEX Total</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                                            <input type="number" 
+                                                   id="inline-capex-total-${index}"
+                                                   value="${servico.capex_servico_total || 0}" 
+                                                   step="0.01"
+                                                   class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">CAPEX Executado</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                                            <input type="number" 
+                                                   id="inline-capex-exec-${index}"
+                                                   value="${servico.capex_servico_exec || 0}" 
+                                                   step="0.01"
+                                                   class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">% Executado</label>
+                                        <div class="relative">
+                                            <input type="number" 
+                                                   id="inline-perc-capex-exec-${index}"
+                                                   value="${servico.perc_capex_exec || 0}" 
+                                                   step="0.01" min="0" max="1"
+                                                   class="w-full pr-8 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Adiciona classe de edição ao card
+                serviceCard.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+            }
+        }
+
+        function saveServiceInlineEdit(index) {
+            const servico = currentProject.servicos[index];
+            
+            // Atualiza os dados do serviço com os valores do formulário
+            servico.tipo_servico = document.getElementById(`inline-tipo-servico-${index}`).value;
+            servico.fase = document.getElementById(`inline-fase-${index}`).value;
+            servico.servico = document.getElementById(`inline-servico-${index}`).value;
+            servico.descricao_servico = document.getElementById(`inline-descricao-${index}`).value;
+            servico.data_inicio = document.getElementById(`inline-data-inicio-${index}`).value;
+            servico.data_final = document.getElementById(`inline-data-final-${index}`).value;
+            servico.capex_servico_total = parseFloat(document.getElementById(`inline-capex-total-${index}`).value) || 0;
+            servico.capex_servico_exec = parseFloat(document.getElementById(`inline-capex-exec-${index}`).value) || 0;
+            servico.perc_capex_exec = parseFloat(document.getElementById(`inline-perc-capex-exec-${index}`).value) || 0;
+            
+            // Salva no banco de dados
+            saveServiceToDatabase(servico);
+            
+            // Reseta o estado de edição
+            editingServiceIndex = null;
+            
+            // Recarrega a visualização do projeto
+            renderProjectDetails(currentProject.id);
+            
+            showToast('success', 'Sucesso!', 'Serviço atualizado com sucesso!');
+        }
+
+        function cancelServiceInlineEdit() {
+            editingServiceIndex = null;
+            renderProjectDetails(currentProject.id);
+        }
+
+        async function saveServiceToDatabase(servico) {
+            try {
+                if (servico.id && servico.id.toString().length < 13) {
+                    // ID temporário, cria novo
+                    await fetch('/api/servicos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ...servico,
+                            projeto_id: currentProject.id.replace('projeto-', '')
+                        })
+                    });
+                } else if (servico.id) {
+                    // ID existente, atualiza
+                    await fetch(`/api/servicos/${servico.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(servico)
+                    });
+                } else {
+                    // Sem ID, cria novo
+                    await fetch('/api/servicos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ...servico,
+                            projeto_id: currentProject.id.replace('projeto-', '')
+                        })
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao salvar serviço:', error);
+                showToast('error', 'Erro!', 'Falha ao salvar serviço no banco de dados');
             }
         }
 

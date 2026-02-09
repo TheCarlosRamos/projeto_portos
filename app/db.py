@@ -62,7 +62,8 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS cadastro (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            zona_portuaria TEXT NOT NULL,
+            setor TEXT,
+            local TEXT NOT NULL,
             uf_texto TEXT,
             obj_concessao TEXT NOT NULL,
             tipo TEXT CHECK(tipo IN ('Concessão', 'Arrendamento', 'Autorização') OR tipo IS NULL),
@@ -75,7 +76,7 @@ def init_db():
             longitude REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(zona_portuaria, obj_concessao)
+            UNIQUE(local, obj_concessao)
         )
     ''')
     
@@ -95,6 +96,10 @@ def init_db():
         CREATE TABLE IF NOT EXISTS servico (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cadastro_id INTEGER NOT NULL,
+            setor TEXT,
+            local TEXT,
+            uf TEXT,
+            obj_concessao TEXT,
             tipo_servico TEXT,
             fase TEXT,
             servico TEXT,
@@ -105,7 +110,7 @@ def init_db():
             data_final TEXT,
             fonte_prazo TEXT,
             perc_capex REAL CHECK(perc_capex IS NULL OR (perc_capex >= 0 AND perc_capex <= 1)),
-            capex_servico_total REAL,
+            capex_servico REAL,
             capex_servico_exec REAL,
             perc_capex_exec REAL CHECK(perc_capex_exec IS NULL OR (perc_capex_exec >= 0 AND perc_capex_exec <= 1)),
             fonte_perc_capex TEXT,
@@ -121,6 +126,13 @@ def init_db():
         CREATE TABLE IF NOT EXISTS acompanhamento (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             servico_id INTEGER NOT NULL,
+            setor TEXT,
+            local TEXT,
+            uf TEXT,
+            obj_concessao TEXT,
+            tipo_servico TEXT,
+            fase TEXT,
+            servico TEXT,
             descricao TEXT,
             perc_executada REAL CHECK(perc_executada IS NULL OR (perc_executada >= 0 AND perc_executada <= 1)),
             capex_reaj REAL,
@@ -128,7 +140,7 @@ def init_db():
             data_atualizacao TEXT,
             responsavel TEXT,
             cargo TEXT,
-            setor TEXT,
+            setor2 TEXT,
             risco_tipo TEXT,
             risco_descricao TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -138,11 +150,11 @@ def init_db():
     ''')
     
     # Criar índices
-    cursor.execute('CREATE INDEX IF NOT EXISTS ix_cadastro_zona ON cadastro(zona_portuaria)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS ix_cadastro_local ON cadastro(local)')
     cursor.execute('CREATE INDEX IF NOT EXISTS ix_cadastro_obj ON cadastro(obj_concessao)')
     cursor.execute('CREATE INDEX IF NOT EXISTS ix_servico_cadastro ON servico(cadastro_id)')
     cursor.execute('CREATE INDEX IF NOT EXISTS ix_servico_natural ON servico(tipo_servico, fase, servico)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS ix_acomp_servico ON acompanhamento(servico_id)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS ix_acompanhamento_servico ON acompanhamento(servico_id)')
     cursor.execute('CREATE INDEX IF NOT EXISTS ix_acomp_data ON acompanhamento(data_atualizacao)')
     
     # Criar views para exportação (compatíveis com planilhas)
@@ -150,7 +162,8 @@ def init_db():
         CREATE VIEW IF NOT EXISTS vw_tabela_00_cadastro AS
         SELECT
             c.id AS "ID",
-            c.zona_portuaria AS "Zona portuária",
+            c.setor AS "Setor",
+            c.local AS "Local",
             c.uf_texto AS "UF",
             c.obj_concessao AS "Obj. de Concessão",
             c.tipo AS "Tipo",
@@ -168,9 +181,10 @@ def init_db():
         CREATE VIEW IF NOT EXISTS vw_tabela_01_servicos AS
         SELECT
             s.id AS "ID",
-            c.zona_portuaria AS "Zona portuária",
-            c.uf_texto AS "UF",
-            c.obj_concessao AS "Obj. de Concessão",
+            s.setor AS "Setor",
+            s.local AS "Local",
+            s.uf AS "UF",
+            s.obj_concessao AS "Obj. de Concessão",
             s.tipo_servico AS "Tipo de Serviço",
             s.fase AS "Fase",
             s.servico AS "Serviço",
@@ -181,7 +195,7 @@ def init_db():
             s.data_final AS "Data final",
             s.fonte_prazo AS "Fonte (Prazo)",
             s.perc_capex AS "% de CAPEX para o serviço",
-            s.capex_servico_total AS "CAPEX do Serviço (total)",
+            s.capex_servico AS "CAPEX do Serviço",
             s.capex_servico_exec AS "CAPEX do Serviço (exec.)",
             s.perc_capex_exec AS "% CAPEX exec.",
             s.fonte_perc_capex AS "Fonte (% do CAPEX)"
@@ -193,9 +207,10 @@ def init_db():
         CREATE VIEW IF NOT EXISTS vw_tabela_02_acompanhamento AS
         SELECT
             a.id AS "ID",
-            c.zona_portuaria AS "Zona portuária",
-            c.uf_texto AS "UF",
-            c.obj_concessao AS "Obj. de Concessão",
+            a.setor AS "Setor",
+            a.local AS "Local",
+            a.uf AS "UF",
+            a.obj_concessao AS "Obj. de Concessão",
             s.tipo_servico AS "Tipo de Serviço",
             s.fase AS "Fase",
             s.servico AS "Serviço",
@@ -206,7 +221,7 @@ def init_db():
             a.data_atualizacao AS "Data da atualização",
             a.responsavel AS "Responsável",
             a.cargo AS "Cargo",
-            a.setor AS "Setor",
+            a.setor2 AS "Setor2",
             a.risco_tipo AS "Riscos Relacionados (Tipo)",
             a.risco_descricao AS "Riscos Relacionados (Descrição)"
         FROM acompanhamento a
@@ -263,7 +278,8 @@ def _df_to_db_cadastro(df: pd.DataFrame) -> list:
     rows = []
     for _, row in df.iterrows():
         rows.append((
-            str(row.get('Zona portuária', '')),
+            str(row.get('Setor', '')),
+            str(row.get('Local', '')),
             _normalize_uf_texto(row.get('UF')),
             str(row.get('Obj. de Concessão', '')),
             str(row.get('Tipo', '')) if pd.notna(row.get('Tipo')) else None,
@@ -311,8 +327,8 @@ def save_cadastro(df: pd.DataFrame) -> bool:
             ''', row)
             cadastro_id = cursor.lastrowid
             # Salvar relacionamento com UFs
-            if row[1]:  # uf_texto
-                _save_cadastro_ufs(conn, cadastro_id, row[1])
+            if row[2]:  # uf_texto
+                _save_cadastro_ufs(conn, cadastro_id, row[2])
         
         conn.commit()
         conn.close()
@@ -331,17 +347,18 @@ def _db_to_df_cadastro(rows: list) -> pd.DataFrame:
     data = []
     for row in rows:
         data.append({
-            'Zona portuária': row[1],
-            'UF': row[2] if row[2] else None,
-            'Obj. de Concessão': row[3],
-            'Tipo': row[4] if row[4] else None,
-            'CAPEX Total': row[5] if row[5] is not None else None,
-            'CAPEX Executado': row[6] if row[6] is not None else None,
-            '% CAPEX Executado': row[7] if row[7] is not None else None,
-            'Data de assinatura do contrato': _format_date(row[8]) if row[8] else None,
-            'Descrição': row[9] if row[9] else None,
-            'Latitude': row[10] if row[10] is not None else None,
-            'Longitude': row[11] if row[11] is not None else None,
+            'Setor': row[1],
+            'Local': row[2],
+            'UF': row[3] if row[3] else None,
+            'Obj. de Concessão': row[4],
+            'Tipo': row[5] if row[5] else None,
+            'CAPEX Total': row[6] if row[6] is not None else None,
+            'CAPEX Executado': row[7] if row[7] is not None else None,
+            '% CAPEX Executado': row[8] if row[8] is not None else None,
+            'Data de assinatura do contrato': _format_date(row[9]) if row[9] else None,
+            'Descrição': row[10] if row[10] else None,
+            'Latitude': row[11] if row[11] is not None else None,
+            'Longitude': row[12] if row[12] is not None else None,
         })
     df = pd.DataFrame(data)
     # Garantir todas as colunas

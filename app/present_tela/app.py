@@ -42,13 +42,14 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS projetos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            zona_portuaria TEXT,
+            setor TEXT,
+            local TEXT,
             uf TEXT,
             obj_concessao TEXT,
-            tipo TEXT,
+            tipo TEXT CHECK(tipo IN ('Concessão', 'Arrendamento', 'Autorização') OR tipo IS NULL),
             capex_total REAL,
             capex_executado REAL,
-            perc_capex_executado REAL,
+            perc_capex_executado REAL CHECK(perc_capex_executado IS NULL OR (perc_capex_executado >= 0 AND perc_capex_executado <= 1)),
             data_assinatura TEXT,
             descricao TEXT,
             latitude REAL,
@@ -57,7 +58,8 @@ def init_db():
             coordenada_s_utm REAL,
             fuso INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(local, obj_concessao)
         )
     ''')
     
@@ -66,7 +68,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS servicos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             projeto_id INTEGER,
-            zona_portuaria TEXT,
+            local TEXT,
             uf TEXT,
             obj_concessao TEXT,
             tipo_servico TEXT,
@@ -79,7 +81,7 @@ def init_db():
             data_final TEXT,
             fonte_prazo TEXT,
             percentual_capex REAL,
-            capex_servico_total REAL,
+            capex_servico REAL,
             capex_servico_exec REAL,
             perc_capex_exec REAL,
             fonte_percentual TEXT,
@@ -93,7 +95,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS acompanhamento (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             projeto_id INTEGER,
-            zona_portuaria TEXT,
+            local TEXT,
             uf TEXT,
             obj_concessao TEXT,
             tipo_servico TEXT,
@@ -106,6 +108,7 @@ def init_db():
             responsavel TEXT,
             cargo TEXT,
             setor TEXT,
+            setor2 TEXT,
             riscos_tipo TEXT,
             riscos_descricao TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -145,12 +148,13 @@ def import_from_json():
     for cadastro in cadastros:
         cursor.execute('''
             INSERT INTO projetos (
-                zona_portuaria, uf, obj_concessao, tipo, capex_total,
+                setor, local, uf, obj_concessao, tipo, capex_total,
                 capex_executado, perc_capex_executado, data_assinatura, descricao, latitude, longitude,
                 coordenada_e_utm, coordenada_s_utm, fuso
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            cadastro.get('Zona portuária'),
+            cadastro.get('Setor'),
+            cadastro.get('Local'),
             cadastro.get('UF'),
             cadastro.get('Obj. de Concessão'),
             cadastro.get('Tipo'),
@@ -172,7 +176,7 @@ def import_from_json():
         servicos = data.get('Tabela 01 - Serviços', [])
         servicos_projeto = [
             s for s in servicos 
-            if s.get('Zona portuária') == cadastro.get('Zona portuária') and
+            if s.get('Local') == cadastro.get('Local') and
                s.get('UF') == cadastro.get('UF') and
                s.get('Obj. de Concessão') == cadastro.get('Obj. de Concessão')
         ]
@@ -180,14 +184,14 @@ def import_from_json():
         for servico in servicos_projeto:
             cursor.execute('''
                 INSERT INTO servicos (
-                    projeto_id, zona_portuaria, uf, obj_concessao,
+                    projeto_id, local, uf, obj_concessao,
                     tipo_servico, fase, servico, descricao_servico,
                     prazo_inicio_anos, data_inicio, prazo_final_anos, data_final,
-                    fonte_prazo, percentual_capex, capex_servico_total, capex_servico_exec, perc_capex_exec, fonte_percentual
+                    fonte_prazo, percentual_capex, capex_servico, capex_servico_exec, perc_capex_exec, fonte_percentual
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 projeto_id,
-                servico.get('Zona portuária'),
+                servico.get('Local'),
                 servico.get('UF'),
                 servico.get('Obj. de Concessão'),
                 servico.get('Tipo de Serviço'),
@@ -200,7 +204,7 @@ def import_from_json():
                 servico.get('Data final'),
                 servico.get('Fonte (Prazo)'),
                 servico.get('% de CAPEX para o serviço'),
-                servico.get('CAPEX do Serviço (total)'),
+                servico.get('CAPEX do Serviço'),
                 servico.get('CAPEX do Serviço (exec.)'),
                 servico.get('% CAPEX exec.'),
                 servico.get('Fonte (% do CAPEX)')
@@ -210,7 +214,7 @@ def import_from_json():
         acompanhamentos = data.get('Tabela 02 - Acompanhamento', [])
         acompanhamentos_projeto = [
             a for a in acompanhamentos
-            if a.get('Zona portuária') == cadastro.get('Zona portuária') and
+            if a.get('Local') == cadastro.get('Local') and
                a.get('UF') == cadastro.get('UF') and
                a.get('Obj. de Concessão') == cadastro.get('Obj. de Concessão')
         ]
@@ -218,14 +222,14 @@ def import_from_json():
         for acomp in acompanhamentos_projeto:
             cursor.execute('''
                 INSERT INTO acompanhamento (
-                    projeto_id, zona_portuaria, uf, obj_concessao,
+                    projeto_id, local, uf, obj_concessao,
                     tipo_servico, fase, servico, descricao,
                     percentual_executada, valor_executado, data_atualizacao,
-                    responsavel, cargo, setor, riscos_tipo, riscos_descricao
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    responsavel, cargo, setor, setor2, riscos_tipo, riscos_descricao, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ''', (
                 projeto_id,
-                acomp.get('Zona portuária'),
+                acomp.get('Local'),
                 acomp.get('UF'),
                 acomp.get('Obj. de Concessão'),
                 acomp.get('Tipo de Serviço'),
@@ -238,6 +242,7 @@ def import_from_json():
                 acomp.get('Responsável'),
                 acomp.get('Cargo'),
                 acomp.get('Setor'),
+                acomp.get('Setor2'),
                 acomp.get('Riscos Relacionados (Tipo)'),
                 acomp.get('Riscos Relacionados (Descrição)')
             ))
@@ -256,117 +261,109 @@ def index():
 @app.route('/api/projects')
 def get_projects():
     """Retorna todos os projetos no formato esperado pelo frontend"""
-    conn = get_db_connection()
-    
-    # Busca projetos
-    projetos = conn.execute('''
-        SELECT * FROM projetos ORDER BY zona_portuaria, obj_concessao
-    ''').fetchall()
-    
-    result = []
-    
-    for projeto in projetos:
-        # Converte Row para dict
-        projeto_dict = dict(projeto)
+    try:
+        conn = get_db_connection()
         
-        # Busca serviços do projeto
-        servicos = conn.execute('''
-            SELECT * FROM servicos WHERE projeto_id = ?
-        ''', (projeto_dict['id'],)).fetchall()
+        # Busca projetos
+        projetos = conn.execute('SELECT * FROM projetos ORDER BY local, obj_concessao').fetchall()
         
-        # Busca acompanhamentos do projeto
-        acompanhamentos = conn.execute('''
-            SELECT * FROM acompanhamento WHERE projeto_id = ?
-        ''', (projeto_dict['id'],)).fetchall()
+        result = []
         
-        # Converte para dict
-        acompanhamentos_dict = [dict(a) for a in acompanhamentos] if acompanhamentos else []
-        servicos_dict = [dict(s) for s in servicos] if servicos else []
-        
-        # Calcula progresso baseado nos acompanhamentos
-        progresso = 0
-        if acompanhamentos_dict:
-            progresso = max([a.get('percentual_executada', 0) or 0 for a in acompanhamentos_dict])
-        
-        # Determina etapa baseada nos acompanhamentos
-        etapa = 'Planejamento'
-        if acompanhamentos_dict:
-            # Pega o acompanhamento mais recente
-            mais_recente = max(acompanhamentos_dict, key=lambda x: x.get('data_atualizacao', ''))
-            if mais_recente.get('fase'):
-                etapa = mais_recente['fase']
-            elif progresso > 0:
-                etapa = 'Em execução'
-            else:
-                etapa = 'Em andamento'
-        
-        # Prepara coordenadas
-        latitude = projeto_dict['latitude']
-        longitude = projeto_dict['longitude']
-        
-        # Gera mapa se tiver coordenadas
-        mapa_embed = None
-        coordenadas_lat_lon = None
-        
-        if latitude and longitude:
-            coordenadas_lat_lon = {
-                'lat': latitude,
-                'lon': longitude
-            }
+        for projeto in projetos:
+            projeto_dict = dict(projeto)
             
-            bbox_size = 0.02
-            bbox = f"{longitude-bbox_size},{latitude-bbox_size},{longitude+bbox_size},{latitude+bbox_size}"
+            # Busca serviços do projeto
+            servicos = conn.execute('SELECT * FROM servicos WHERE projeto_id = ?', (projeto_dict['id'],)).fetchall()
+            servicos_dict = [dict(s) for s in servicos] if servicos else []
             
-            mapa_embed = f'''
-                <div class="w-full h-full relative">
-                    <iframe 
-                        width="100%" 
-                        height="100%" 
-                        style="border:0; border-radius: 8px;" 
-                        src="https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latitude},{longitude}" 
-                        frameborder="0"
-                        allowfullscreen>
-                    </iframe>
-                    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
-                        📍 {latitude:.6f}, {longitude:.6f}
-                    </div>
-                </div>
-            '''
+            # Busca acompanhamentos do projeto
+            acompanhamentos = conn.execute('SELECT * FROM acompanhamento WHERE projeto_id = ?', (projeto_dict['id'],)).fetchall()
+            acompanhamentos_dict = [dict(a) for a in acompanhamentos] if acompanhamentos else []
+            
+            # Calcula progresso baseado nos acompanhamentos
+            progresso = 0
+            if acompanhamentos_dict:
+                progresso = max([a.get('percentual_executada', 0) or 0 for a in acompanhamentos_dict])
+            
+            # Determina etapa baseada nos acompanhamentos
+            etapa = 'Planejamento'
+            if acompanhamentos_dict:
+                # Pega o acompanhamento mais recente
+                mais_recente = max(acompanhamentos_dict, key=lambda x: x.get('data_atualizacao', ''))
+                if mais_recente.get('fase'):
+                    etapa = mais_recente['fase']
+                elif progresso > 0:
+                    etapa = 'Em execução'
+                else:
+                    etapa = 'Em andamento'
+            
+            # Coordenadas
+            latitude = projeto_dict.get('latitude')
+            longitude = projeto_dict.get('longitude')
+            
+            # Mapa (só se tiver coordenadas válidas)
+            mapa_embed = None
+            coordenadas_lat_lon = None
+            
+            if latitude and longitude:
+                try:
+                    lat_float = float(latitude)
+                    lon_float = float(longitude)
+                    coordenadas_lat_lon = {'lat': lat_float, 'lon': lon_float}
+                    
+                    bbox_size = 0.02
+                    bbox = f"{lon_float-bbox_size},{lat_float-bbox_size},{lon_float+bbox_size},{lat_float+bbox_size}"
+                    
+                    mapa_embed = f'''
+                        <div class="w-full h-full relative">
+                            <iframe width="100%" height="100%" style="border:0; border-radius: 8px;" 
+                                src="https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={lat_float},{lon_float}" 
+                                frameborder="0" allowfullscreen>
+                            </iframe>
+                            <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs text-gray-700">
+                                📍 {lat_float:.6f}, {lon_float:.6f}
+                            </div>
+                        </div>
+                    '''
+                except Exception:
+                    mapa_embed = None
+            
+            # Nome do projeto
+            local = projeto_dict.get('local') or 'Não informado'
+            obj = projeto_dict.get('obj_concessao') or ''
+            nome_projeto = local if local == 'Não se aplica' else f"{local} - {obj}"
+            
+            result.append({
+                'id': f"projeto-{projeto_dict['id']}",
+                'nome': nome_projeto,
+                'setor': projeto_dict.get('setor', ''),
+                'local': local,
+                'uf': projeto_dict.get('uf', ''),
+                'objConcessao': obj,
+                'tipo': projeto_dict.get('tipo', ''),
+                'capexTotal': projeto_dict.get('capex_total', 0),
+                'dataAssinatura': projeto_dict.get('data_assinatura'),
+                'descricao': projeto_dict.get('descricao', 'Sem descrição disponível'),
+                'progresso': progresso,
+                'etapa': etapa,
+                'servicos': servicos_dict,
+                'acompanhamentos': acompanhamentos_dict,
+                'mapaEmbed': mapa_embed,
+                'coordenadas': {
+                    'e': projeto_dict.get('coordenada_e_utm'),
+                    's': projeto_dict.get('coordenada_s_utm'),
+                    'fuso': projeto_dict.get('fuso'),
+                    'latitude': latitude,
+                    'longitude': longitude
+                },
+                'coordenadasLatLon': coordenadas_lat_lon
+            })
         
-        # Nome do projeto
-        zona = projeto_dict['zona_portuaria'] or 'Não informado'
-        obj = projeto_dict['obj_concessao'] or ''
-        nome_projeto = zona if zona == 'Não se aplica' else f"{zona} - {obj}"
+        conn.close()
+        return jsonify(result)
         
-        result.append({
-            'id': f"projeto-{projeto_dict['id']}",
-            'nome': nome_projeto,
-            'zona': zona,
-            'uf': projeto_dict['uf'] or '',
-            'objConcessao': obj,
-            'tipo': projeto_dict['tipo'] or '',
-            'capexTotal': projeto_dict['capex_total'] or 0,
-            'dataAssinatura': projeto_dict['data_assinatura'],
-            'descricao': projeto_dict['descricao'] or 'Sem descrição disponível',
-            'progresso': progresso,
-            'etapa': etapa,
-            'servicos': servicos_dict,
-            'acompanhamentos': acompanhamentos_dict,
-            'mapaEmbed': mapa_embed,
-            'coordenadas': {
-                'e': projeto_dict['coordenada_e_utm'],
-                's': projeto_dict['coordenada_s_utm'],
-                'fuso': projeto_dict['fuso'],
-                'latitude': latitude,
-                'longitude': longitude
-            },
-            'coordenadasLatLon': coordenadas_lat_lon
-        })
-    
-    conn.close()
-    
-    # Formato compatível com o frontend
-    return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/import', methods=['POST'])
 def import_data():
@@ -614,6 +611,45 @@ def create_servico():
         conn.close()
         
         return jsonify({'message': 'Serviço criado com sucesso!', 'id': cursor.lastrowid})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/servicos/<int:servico_id>', methods=['PUT'])
+def update_servico(servico_id):
+    """Atualiza um serviço existente"""
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        
+        # Busca o serviço atual
+        servico = conn.execute('SELECT * FROM servicos WHERE id = ?', (servico_id,)).fetchone()
+        
+        if not servico:
+            return jsonify({'error': 'Serviço não encontrado'}), 404
+        
+        cursor = conn.execute('''
+            UPDATE servicos SET
+                tipo_servico = ?, fase = ?, servico = ?, descricao_servico = ?,
+                data_inicio = ?, data_final = ?, capex_servico_total = ?,
+                capex_servico_exec = ?, perc_capex_exec = ?
+            WHERE id = ?
+        ''', (
+            data.get('tipo_servico', servico['tipo_servico']),
+            data.get('fase', servico['fase']),
+            data.get('servico', servico['servico']),
+            data.get('descricao_servico', servico['descricao_servico']),
+            data.get('data_inicio', servico['data_inicio']),
+            data.get('data_final', servico['data_final']),
+            data.get('capex_servico_total', servico['capex_servico_total']),
+            data.get('capex_servico_exec', servico['capex_servico_exec']),
+            data.get('perc_capex_exec', servico['perc_capex_exec']),
+            servico_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'message': 'Serviço atualizado com sucesso!'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

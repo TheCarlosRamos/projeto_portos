@@ -37,7 +37,7 @@ def show_porto_details(porto_id):
         query_porto = """
         SELECT 
             c.id,
-            c.zona_portuaria as name,
+            c.local as name,
             c.obj_concessao as description,
             c.tipo as project_type,
             c.capex_total as investment,
@@ -268,7 +268,7 @@ if pagina == "📊 Dashboard":
         query_portos = """
         SELECT 
             c.id,
-            c.zona_portuaria as name,
+            c.local as name,
             c.obj_concessao as description,
             c.tipo as project_type,
             c.capex_total as investment,
@@ -289,7 +289,7 @@ if pagina == "📊 Dashboard":
         LEFT JOIN servico s ON c.id = s.cadastro_id
         LEFT JOIN acompanhamento a ON s.id = a.servico_id
         GROUP BY c.id
-        ORDER BY c.zona_portuaria
+        ORDER BY c.local
         """
         
         df_portos = pd.read_sql_query(query_portos, conn)
